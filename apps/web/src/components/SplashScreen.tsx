@@ -1,33 +1,39 @@
 export function SplashScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0C2B50] p-6 text-white">
-      <div className="flex flex-col items-center gap-6">
-<div className="relative">
-          <div className="absolute inset-0 animate-ping rounded-full bg-white/10" />
-          <img
-            src="/brand/muhsin_learn.png"
-            alt="Logo Muhsin"
-            className="relative h-24 w-24 rounded-full object-cover"
-          />
-        </div>
-        <div className="text-center">
-          <h1 className="flex items-center justify-center gap-2 text-3xl font-bold">
-            <img
-              src="/brand/moon_star_icon.svg"
-              alt=""
-              className="h-6 w-6"
-            />
-            Muhsin
+    <div className="relative flex min-h-screen flex-col items-center justify-between bg-gradient-to-b from-[#EFF8FC] via-[#F5FAFD] to-[#FFFFFF] px-6 py-10 text-center">
+      {/* Spacer */}
+      <div />
+
+      {/* Main Content (Mascot + Title) */}
+      <div className="my-auto flex flex-col items-center gap-4">
+        <img
+          src="/brand/muhsin_learn.png"
+          alt="Mascot Muhsin"
+          className="h-44 w-44 object-contain drop-shadow-sm"
+        />
+        <div className="space-y-1">
+          <h1 className="text-4xl font-extrabold tracking-wider text-[#1CB8CE]">
+            MUHSIN
           </h1>
-          <p className="mt-1 text-sm text-white/70">
-            Manajemen TTQ &amp; Ibadah Yaumiyah Siswa
+          <p className="text-sm font-semibold tracking-wide text-[#0C2B50]">
+            Membangun Generasi Qur'ani
           </p>
         </div>
-        <div className="h-1 w-40 overflow-hidden rounded-full bg-white/20">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-[#22B8CF]" />
+      </div>
+
+      {/* Footer Branding */}
+      <div className="flex w-full max-w-xs flex-col items-center gap-1.5">
+        <div className="h-[1px] w-48 bg-slate-300/80" />
+        <h2 className="text-sm font-bold uppercase tracking-wider text-[#1CB8CE]">
+          SMP IT AL FITRAH
+        </h2>
+        <div className="space-y-0.5 text-xs text-slate-400">
+          <p>
+            Powered by <span className="font-semibold text-slate-600">MuhsinApp</span>
+          </p>
+          <p className="text-[10px] text-slate-400">v1.0.0</p>
         </div>
       </div>
-      <p className="absolute bottom-6 text-xs text-white/50">v1.0.0</p>
     </div>
   );
 }
