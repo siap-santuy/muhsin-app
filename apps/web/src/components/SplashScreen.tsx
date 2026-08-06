@@ -5,8 +5,8 @@ export function SplashScreen() {
 <div className="relative">
           <div className="absolute inset-0 animate-ping rounded-full bg-white/10" />
           <img
-            src="/brand/logo_ttq_alfitrah.png"
-            alt="Logo"
+            src="/brand/muhsin_learn.png"
+            alt="Logo Muhsin"
             className="relative h-24 w-24 rounded-full object-cover"
           />
         </div>

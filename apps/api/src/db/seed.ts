@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { createDb } from "./client";
+import { createDb, closeDb } from "./client";
 import { schools, users, academicPeriods, assessmentCategories, assessmentSubcategories } from "./schema";
 import { hash } from "@node-rs/argon2";
 
@@ -223,7 +223,12 @@ async function main() {
   console.log(`[seed] login demo: ${KOORDINATOR_EMAIL} / ${DEFAULT_PASSWORD}`);
 }
 
-main().catch((err) => {
-  console.error("[seed] failed:", err);
-  process.exit(1);
-});
+main()
+  .then(async () => {
+    await closeDb();
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("[seed] failed:", err);
+    process.exit(1);
+  });
