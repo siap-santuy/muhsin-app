@@ -24,7 +24,9 @@ Monorepo management menggunakan **npm workspaces** (Bun sebagai package manager 
 ├── packages/
 │   └── shared/               # Package `@muhsin/shared` (zod schema dsb.)
 ├── design/                   # Aset desain (icon, UI-UX)
-├── PRD.md / PROJECT.md       # Dokumentasi produk & teknis
+└── docs/
+│   ├── PRD.md                # Dokumentasi produk & teknis
+│   ├── PROJECT.md            # Dokumentasi produk & teknis
 └── dump.rdb                  # Artefak runtime Redis (jangan di-commit)
 ```
 

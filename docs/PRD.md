@@ -225,7 +225,7 @@ Sesuai arahan: **mulai dari yang sederhana** — Level, EXP/Point, dan Streak.
 | **Tampilan**     | Progress bar EXP menuju level berikutnya + badge streak di dashboard siswa. Leaderboard sederhana per kelas (opsional, bisa di-toggle sekolah — lihat #8 milestone; per keputusan bisnis di `PROPOSAL.md`, fitur ini jadi diferensiator Paket Medium ke atas, bukan tersedia default di semua tier). |
 | **Achievement Munaqosah** *(baru, masuk MVP)* | 1 tipe achievement diparameterisasi (`munaqosah_juz`, field `juz_ke` 1-30) — BUKAN 30 definisi badge terpisah, tetap 1 template visual + logic, cuma beda angka. Diberikan otomatis saat hasil Munaqosah = Lulus (lihat #4.3c). Muncul di modal pencapaian yang sama dengan Level Up (lihat `UI_DESIGN_PROMPT.md` #2.9) — tidak perlu komponen UI baru. |
 
-> Formula & bobot poin adalah **starting point**, bukan aturan baku — disimpan sebagai konfigurasi agar bisa di-tuning tanpa deploy ulang code (lihat `gamification_config` di `PROJECT.md`).
+> Formula & bobot poin adalah **starting point**, bukan aturan baku — disimpan sebagai konfigurasi agar bisa di-tuning tanpa deploy ulang code (lihat `gamification_config` di `docs/PROJECT.md`).
 
 ---
 

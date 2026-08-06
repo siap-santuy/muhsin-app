@@ -1,6 +1,6 @@
 # PROJECT.md — Muhsin App
 
-> Dokumen ini adalah **base knowledge** untuk AI coding agent yang bekerja di repo ini. Baca ini sebelum menyentuh kode apa pun. Untuk requirement produk lengkap, lihat `PRD.md`. Untuk persona & cara kerja agent, lihat `AGENT.md`.
+> Dokumen ini adalah **base knowledge** untuk AI coding agent yang bekerja di repo ini. Baca ini sebelum menyentuh kode apa pun. Untuk requirement produk lengkap, lihat `docs/PRD.md`. Untuk persona & cara kerja agent, lihat `AGENTS.md`.
 
 ---
 
@@ -125,8 +125,9 @@ muhsin-app/
 │       └── package.json
 ├── packages/
 │   └── shared/                        # Zod schema & type dipakai bareng FE/BE (khususnya DTO application layer & validators presentation layer)
-├── PRD.md
-├── PROJECT.md
+└── docs/
+│   ├── PRD.md                         # Dokumentasi produk & teknis
+│   ├── PROJECT.md                     # Dokumentasi produk & teknis
 └── AGENT.md
 ```
 
@@ -234,7 +235,7 @@ Dua mekanisme berjalan bersamaan, BUKAN pilih salah satu:
 
 ---
 
-## 5. Business Rules Kunci (ringkas — detail penuh di `PRD.md` #4.6–4.7)
+## 5. Business Rules Kunci (ringkas — detail penuh di `docs/PRD.md` #4.6–4.7)
 
 - **Bobot poin sholat fardhu default:** BA=5, MA=4, BT=3, MT=2, H=5, T=0 (dan −100 poin kualitatif khusus T).
 - **Nilai akumulasi sub-kategori setoran** = rata-rata dari rata-rata `score_fields` seluruh entri sub-kategori tsb di bulan berjalan.
@@ -297,4 +298,4 @@ bun run dev   # menjalankan api & web secara paralel (turbo/concurrently)
 
 ## 8. Referensi Dokumen Sumber
 
-Skema di atas adalah generalisasi multi-tenant dari dokumen awal `TTQ_Tracker.md` (spesifikasi pilot untuk SMP IT Al Fitrah) dan hasil wawancara `meeting_1 - narasumber.md` (konteks bahwa TTQ tidak seragam antar sekolah IT, mengikuti pedoman dasar JSIT namun disesuaikan kebijakan masing-masing sekolah). Untuk requirement fungsional lengkap & rationale keputusan, selalu rujuk `PRD.md` sebagai source of truth produk. Untuk rencana migrasi backend ke Go di masa depan, lihat `MIGRATION_TO_GO.md`.
+Skema di atas adalah generalisasi multi-tenant dari dokumen awal `TTQ_Tracker.md` (spesifikasi pilot untuk SMP IT Al Fitrah) dan hasil wawancara `meeting_1 - narasumber.md` (konteks bahwa TTQ tidak seragam antar sekolah IT, mengikuti pedoman dasar JSIT namun disesuaikan kebijakan masing-masing sekolah). Untuk requirement fungsional lengkap & rationale keputusan, selalu rujuk `docs/PRD.md` sebagai source of truth produk. Untuk rencana migrasi backend ke Go di masa depan, lihat `MIGRATION_TO_GO.md`.
