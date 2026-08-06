@@ -1,0 +1,59 @@
+import { describe, it, expect } from "vitest";
+import { createApp } from "../bootstrap/container";
+import { TokenService } from "../modules/auth/application/services/TokenService";
+
+const tokenService = new TokenService(
+  "access-secret-test-0123456789",
+  "refresh-secret-test-0123456789",
+  900,
+  604800
+);
+
+const app = createApp({
+  loginUseCase: {} as never,
+  refreshTokenUseCase: {} as never,
+  tokenService,
+});
+
+async function signToken(userId: string, schoolId: string, role: string) {
+  return tokenService.signAccessToken({ id: userId, schoolId, role });
+}
+
+describe("tenant isolation", () => {
+  it("rejects request without token (401)", async () => {
+    const res = await app.request("/auth/me", { method: "GET" });
+    expect(res.status).toBe(401);
+  });
+
+  it("accepts request when school_id matches token (200)", async () => {
+    const token = await signToken("user-1", "school-1", "teacher");
+    const res = await app.request("/auth/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { data: { schoolId: string } };
+    expect(body.data.schoolId).toBe("school-1");
+  });
+
+  it("rejects cross-tenant request via X-School-Id header (403)", async () => {
+    const token = await signToken("user-1", "school-1", "teacher");
+    const res = await app.request("/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-School-Id": "school-2",
+      },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects cross-tenant request via schoolId query param (403)", async () => {
+    const token = await signToken("user-1", "school-1", "teacher");
+    const res = await app.request("/auth/me?schoolId=school-2", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(403);
+  });
+});

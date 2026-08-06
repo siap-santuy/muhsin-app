@@ -1,0 +1,32 @@
+{
+  "name": "@muhsin/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:create": "bun run src/db/manage-db.ts create",
+    "db:reset": "bun run src/db/manage-db.ts reset && bun run db:migrate",
+    "db:seed": "bun run src/db/seed.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@muhsin/shared": "workspace:*",
+    "@node-rs/argon2": "^1.8.0",
+    "drizzle-orm": "^0.33.0",
+    "hono": "^4.6.0",
+    "ioredis": "^5.4.1",
+    "jose": "^5.9.0",
+    "postgres": "^3.4.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.10",
+    "drizzle-kit": "^0.24.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2"
+  }
+}
