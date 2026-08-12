@@ -1,0 +1,33 @@
+import { Bell } from "lucide-react";
+import { TopAppBar } from "./TopAppBar";
+
+export function AppHeader() {
+  return (
+    <TopAppBar
+      left={
+        <>
+          <img
+            src="/brand/logo_smp.png"
+            alt="Logo SMP Islam Terpadu Al Fitrah"
+            className="h-10 w-10 rounded-lg object-contain"
+          />
+          <div className="leading-tight">
+            <p className="text-base font-bold text-brand-navy">
+              SMP Islam Terpadu
+            </p>
+            <p className="text-base font-bold text-brand-navy">AL FITRAH</p>
+          </div>
+        </>
+      }
+      right={
+        <button
+          type="button"
+          aria-label="Notifikasi"
+          className="flex h-10 w-10 items-center justify-center rounded-full"
+        >
+          <Bell className="h-5 w-5 text-brand-amber" />
+        </button>
+      }
+    />
+  );
+}

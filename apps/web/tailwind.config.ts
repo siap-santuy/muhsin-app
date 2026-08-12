@@ -9,6 +9,15 @@ export default {
         sans: ['"Baloo 2"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
+        brand: {
+          page: "#f9fafb",
+          navy: "#0c2b50",
+          cyan: "#22bad0",
+          "cyan-dark": "#159db5",
+          amber: "#ffc107",
+          line: "#c1c6d5",
+          "text-muted": "#3d4a41",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
