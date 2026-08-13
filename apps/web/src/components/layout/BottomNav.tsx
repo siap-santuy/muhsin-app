@@ -28,6 +28,8 @@ export function BottomNav({ items, activeIndex, onSelect }: BottomNavProps) {
               } else {
                 if (item.label === "Beranda") window.location.hash = "#/student";
                 if (item.label === "Yaumiyah") window.location.hash = "#/student-yaumiyah";
+                if (item.label === "Raport") window.location.hash = "#/student-raport";
+                if (item.label === "Profil") window.location.hash = "#/student-profile";
               }
             }}
             aria-current={active ? "page" : undefined}

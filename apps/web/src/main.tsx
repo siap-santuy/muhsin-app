@@ -9,6 +9,10 @@ import { StudentMonthlySummaryPage } from "@/pages/StudentMonthlySummaryPage";
 import { StudentYaumiyahInputPage } from "@/pages/StudentYaumiyahInputPage";
 import { StudentYaumiyahPage } from "@/pages/StudentYaumiyahPage";
 import { StudentYaumiyahViewPage } from "@/pages/StudentYaumiyahViewPage";
+import { StudentRaportPage } from "@/pages/StudentRaportPage";
+import { StudentMonthlyRaportPage } from "@/pages/StudentMonthlyRaportPage";
+import { StudentSemesterRaportPage } from "@/pages/StudentSemesterRaportPage";
+import { StudentProfilePage } from "@/pages/StudentProfilePage";
 import { useAuthStore } from "@/store/authStore";
 import "@/index.css";
 
@@ -33,18 +37,22 @@ const PREVIEW_ROUTES = [
   "#/student-yaumiyah",
   "#/student-yaumiyah-input",
   "#/student-yaumiyah-view",
+  "#/student-raport",
+  "#/student-monthly-raport",
+  "#/student-semester-raport",
+  "#/student-profile",
 ];
 
 function DevPreviewSwitcher() {
   const route = useHashRoute();
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 gap-2 rounded-full border border-brand-line bg-white p-1 shadow-lg">
+    <div className="fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 gap-2 overflow-x-auto rounded-full border border-brand-line bg-white p-1.5 shadow-lg no-scrollbar">
       {PREVIEW_ROUTES.map((r) => (
         <button
           key={r}
           type="button"
           onClick={() => (window.location.hash = r)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+          className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${
             route === r ? "bg-brand-cyan text-white" : "text-brand-navy"
           }`}
         >
@@ -83,6 +91,22 @@ function App() {
 
   if (route === "#/student-yaumiyah-view") {
     return <StudentYaumiyahViewPage />;
+  }
+
+  if (route === "#/student-raport") {
+    return <StudentRaportPage />;
+  }
+
+  if (route === "#/student-monthly-raport") {
+    return <StudentMonthlyRaportPage />;
+  }
+
+  if (route === "#/student-semester-raport") {
+    return <StudentSemesterRaportPage />;
+  }
+
+  if (route === "#/student-profile") {
+    return <StudentProfilePage />;
   }
 
   if (route === "#/parent") {
