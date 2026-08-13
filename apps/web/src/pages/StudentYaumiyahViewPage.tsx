@@ -57,6 +57,12 @@ const SHOLAT_RECORDS: SholatRecord[] = [
   },
 ];
 
+const SUNNAH_LAINNYA_MOCK: { name: string; done: boolean }[] = [
+  { name: "Tahajud", done: true },
+  { name: "Dhuha", done: true },
+  { name: "Puasa", done: false },
+];
+
 interface StudentYaumiyahViewPageProps {
   onBack?: () => void;
   onEdit?: () => void;
@@ -101,7 +107,7 @@ export function StudentYaumiyahViewPage({
       </div>
 
       {/* Body */}
-      <main className="flex-1 overflow-y-auto px-4 pb-20 pt-1">
+      <main className="flex-1 overflow-y-auto px-4 pt-1">
         <div className="flex flex-col gap-4">
           <DayStripPicker
             days={DAYS_MOCK}
@@ -214,6 +220,23 @@ export function StudentYaumiyahViewPage({
               <h2 className="text-base font-bold text-brand-navy">
                 Sunnah Lainnya
               </h2>
+            </div>
+            <div className="mt-3 divide-y divide-brand-line/40 flex justify-between">
+              {SUNNAH_LAINNYA_MOCK.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between gap-2 px-4 py-2"
+                >
+                  <span className="text-xs font-bold text-brand-navy">
+                    {item.name}
+                  </span>
+                  {item.done ? (
+                    <CheckCircle2 className="h-4 w-4 text-brand-cyan" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-gray-400" />
+                  )}
+                </div>
+              ))}
             </div>
           </section>
         </div>

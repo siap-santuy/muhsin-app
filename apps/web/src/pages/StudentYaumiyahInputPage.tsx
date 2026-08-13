@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, BookOpen, CalendarDays, Info } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Info, Sun, Moon } from "lucide-react";
 import {
   DayStripPicker,
   type DayItem,
@@ -17,6 +17,21 @@ const DAYS_MOCK: DayItem[] = [
 const SHOLAT_OPTIONS = ["BA", "MA", "BT", "MT", "H", "T"];
 const SHOLAT_LIST = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
 
+const RAWATIB_LIST = [
+  "Qabliyah Subuh",
+  "Qabliyah Dzuhur",
+  "Ba'diyah Dzuhur",
+  "Qabliyah Ashar",
+  "Ba'diyah Maghrib",
+  "Ba'diyah Isya",
+];
+
+const IBADAH_LAINNYA_LIST = [
+  "Tahajud",
+  "Dhuha",
+  "Puasa",
+];
+
 interface StudentYaumiyahInputPageProps {
   onBack?: () => void;
 }
@@ -31,6 +46,8 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
     Maghrib: "BA",
     Isya: "",
   });
+  const [rawatibState, setRawatibState] = useState<Record<string, boolean>>({});
+  const [ibadahState, setIbadahState] = useState<Record<string, boolean>>({});
 
   function handleBack() {
     if (onBack) {
@@ -64,7 +81,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
       </div>
 
       {/* Body */}
-      <main className="flex-1 overflow-y-auto px-4 pb-20 pt-1">
+      <main className="flex-1 overflow-y-auto px-4 pt-1">
         <div className="flex flex-col gap-4">
           <DayStripPicker
             days={DAYS_MOCK}
@@ -148,7 +165,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
                   type="checkbox"
                   checked={notTilawah}
                   onChange={(e) => setNotTilawah(e.target.checked)}
-                  className="h-5 w-5 accent-brand-cyan"
+                  className="h-5 w-5 check-cyan"
                 />
               </div>
             </div>
@@ -198,6 +215,74 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Card Sholat Sunnah Rawatib */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                <Sun className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-brand-navy">
+                Sunnah Rawatib
+              </h2>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {RAWATIB_LIST.map((item) => {
+                const active = !!rawatibState[item];
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() =>
+                      setRawatibState((prev) => ({ ...prev, [item]: !prev[item] }))
+                    }
+                    className={`rounded-xl border px-2.5 py-2 text-center text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-brand-cyan bg-brand-cyan text-white shadow-sm"
+                        : "bg-gray-100 text-brand-navy"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Card Ibadah Lainnya */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                <Moon className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-brand-navy">
+                Sunnah Lainnya
+              </h2>
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              {IBADAH_LAINNYA_LIST.map((item) => {
+                const active = !!ibadahState[item];
+                return (
+                  <label
+                    key={item}
+                    className="flex items-center gap-2 py-2 px-4"
+                  >
+                    <span className="text-xs font-bold text-brand-navy">
+                      {item}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() =>
+                        setIbadahState((prev) => ({ ...prev, [item]: !prev[item] }))
+                      }
+                   className="h-5 w-5 check-cyan"
+                    />
+                  </label>
+                );
+              })}
             </div>
           </section>
         </div>
