@@ -100,7 +100,6 @@ export function ParentDashboardPage() {
           />
           <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
           <DailyQuote text={QUOTE.text} source={QUOTE.source} />
-          {/* ponytail: Card 1 & 2 Figma text tidak ter-export (rate limit). Asumsi menu raport & yaumiyah. Perbaiki saat API. */}
           <MenuCard
             icon={BookOpen}
             iconClass="bg-emerald-500/15 text-emerald-600"

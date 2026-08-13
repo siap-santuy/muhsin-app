@@ -56,8 +56,6 @@ const MONTH_DAYS = [
   { day: 30, status: "setoran" },
 ].map((d) => ({ ...d, status: d.status as DayStatus["status"] }));
 
-// --- Mock data per tab ---
-
 const ZIYADAH_ACTIVITIES: ActivityCardProps[] = [
   {
     date: "Sen, 2 Nov 2025",
