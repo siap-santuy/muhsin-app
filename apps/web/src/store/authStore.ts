@@ -18,6 +18,39 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       login: async (email, password) => {
+        const cleanEmail = email.trim().toLowerCase();
+
+        // Demo Mock Fallbacks (bypasses backend API)
+        if (cleanEmail === "student@demo.com" || cleanEmail === "fulan@student.com") {
+          set({
+            accessToken: "mock-student-access-token",
+            refreshToken: "mock-student-refresh-token",
+            user: {
+              id: "mock-student-id",
+              name: "Fulan bin Fulan",
+              email: "student@demo.com",
+              role: "student",
+              schoolId: SCHOOL_ID,
+            },
+          });
+          return;
+        }
+
+        if (cleanEmail === "parent@demo.com") {
+          set({
+            accessToken: "mock-parent-access-token",
+            refreshToken: "mock-parent-refresh-token",
+            user: {
+              id: "mock-parent-id",
+              name: "Ummu Fulan",
+              email: "parent@demo.com",
+              role: "parent",
+              schoolId: SCHOOL_ID,
+            },
+          });
+          return;
+        }
+
         const input: LoginInput = { email, password, schoolId: SCHOOL_ID };
         const result = await post<LoginOutput>("/auth/login", input);
         set({

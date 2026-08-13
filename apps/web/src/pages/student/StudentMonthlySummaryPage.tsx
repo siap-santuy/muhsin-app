@@ -335,6 +335,7 @@ export function StudentMonthlySummaryPage() {
       <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
         <button
           type="button"
+          onClick={() => (window.location.hash = "#/dashboard")}
           aria-label="Kembali"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
         >

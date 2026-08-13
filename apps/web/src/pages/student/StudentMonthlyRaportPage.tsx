@@ -22,7 +22,7 @@ export function StudentMonthlyRaportPage({ onBack }: StudentMonthlyRaportPagePro
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = "#/student-raport";
+      window.location.hash = "#/raport";
     }
   }
 

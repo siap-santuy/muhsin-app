@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { CalendarCheck, FileText, Home, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -6,13 +6,27 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+export const DEFAULT_NAV_ITEMS: NavItem[] = [
+  { label: "Beranda", icon: Home },
+  { label: "Yaumiyah", icon: CalendarCheck },
+  { label: "Raport", icon: FileText },
+  { label: "Profil", icon: User },
+];
+
 interface BottomNavProps {
-  items: NavItem[];
+  items?: NavItem[];
   activeIndex: number;
   onSelect?: (index: number) => void;
 }
 
-export function BottomNav({ items, activeIndex, onSelect }: BottomNavProps) {
+const ROUTE_MAP: Record<number, string> = {
+  0: "#/dashboard",
+  1: "#/yaumiyah",
+  2: "#/raport",
+  3: "#/profile",
+};
+
+export function BottomNav({ items = DEFAULT_NAV_ITEMS, activeIndex, onSelect }: BottomNavProps) {
   return (
     <nav className="shrink-0 flex items-center justify-between border-t border-brand-line bg-white px-5 pt-2 pb-2 shadow-sm rounded-t-xl">
       {items.map((item, i) => {
@@ -25,11 +39,10 @@ export function BottomNav({ items, activeIndex, onSelect }: BottomNavProps) {
             onClick={() => {
               if (onSelect) {
                 onSelect(i);
-              } else {
-                if (item.label === "Beranda") window.location.hash = "#/student";
-                if (item.label === "Yaumiyah") window.location.hash = "#/student-yaumiyah";
-                if (item.label === "Raport") window.location.hash = "#/student-raport";
-                if (item.label === "Profil") window.location.hash = "#/student-profile";
+              }
+              const targetRoute = ROUTE_MAP[i];
+              if (targetRoute) {
+                window.location.hash = targetRoute;
               }
             }}
             aria-current={active ? "page" : undefined}

@@ -1,6 +1,6 @@
-import { FileText, Home, NotebookPen, PenLine, User } from "lucide-react";
+import { PenLine } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav, type NavItem } from "@/components/layout/BottomNav";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { DailyQuote } from "@/components/student/DailyQuote";
 import { ProgressGrid, type ProgressItem } from "@/components/student/ProgressGrid";
 import { StreakLevelBanner } from "@/components/student/StreakLevelBanner";
@@ -47,13 +47,6 @@ const PROGRESS: ProgressItem[] = [
   },
 ];
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Beranda", icon: Home },
-  { label: "Yaumiyah", icon: NotebookPen },
-  { label: "Raport", icon: FileText },
-  { label: "Profil", icon: User },
-];
-
 export function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const firstName = user?.name.split(" ")[0] ?? "Santri";
@@ -78,16 +71,19 @@ export function StudentDashboardPage() {
           </section>
           <DailyQuote text={QUOTE.text} source={QUOTE.source} />
           <StreakLevelBanner streak={5} level={3} />
-          <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
+          <div onClick={() => (window.location.hash = "#/tahfidz-summary")} className="cursor-pointer">
+            <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
+          </div>
           <Button
             type="button"
+            onClick={() => (window.location.hash = "#/yaumiyah-input")}
             className="h-[38px] w-full rounded-lg bg-brand-cyan text-white shadow-[0_1px_0_#159db5] hover:bg-brand-cyan-dark"
           >
             <PenLine /> Isi Ibadah Hari Ini
           </Button>
         </div>
       </main>
-      <BottomNav items={NAV_ITEMS} activeIndex={0} />
+      <BottomNav activeIndex={0} />
     </div>
   );
 }

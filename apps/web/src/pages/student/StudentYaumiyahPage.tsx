@@ -1,17 +1,13 @@
 import {
   BookOpen,
   CalendarDays,
-  FileText,
-  Home,
   Moon,
-  NotebookPen,
   PenLine,
   Sun,
   Utensils,
-  User,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav, type NavItem } from "@/components/layout/BottomNav";
+import { BottomNav } from "@/components/layout/BottomNav";
 import {
   MonthCalendar,
   type DayStatus,
@@ -24,13 +20,6 @@ import {
   type YaumiyahStatProps,
 } from "@/components/student/YaumiyahStatCard";
 import { Button } from "@/components/ui/button";
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Beranda", icon: Home },
-  { label: "Yaumiyah", icon: NotebookPen },
-  { label: "Raport", icon: FileText },
-  { label: "Profil", icon: User },
-];
 
 const MONTH_DAYS = [
   { day: 1, status: "empty" },
@@ -113,11 +102,11 @@ const LOGS = [
 
 export function StudentYaumiyahPage() {
   function handleGoToInput() {
-    window.location.hash = "#/student-yaumiyah-input";
+    window.location.hash = "#/yaumiyah-input";
   }
 
   function handleGoToView() {
-    window.location.hash = "#/student-yaumiyah-view";
+    window.location.hash = "#/yaumiyah-view";
   }
 
   return (
@@ -160,7 +149,7 @@ export function StudentYaumiyahPage() {
           </section>
         </div>
       </main>
-      <BottomNav items={NAV_ITEMS} activeIndex={1} />
+      <BottomNav activeIndex={1} />
     </div>
   );
 }

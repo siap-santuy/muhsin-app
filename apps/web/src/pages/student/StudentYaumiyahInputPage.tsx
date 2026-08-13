@@ -53,7 +53,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = "#/student-yaumiyah";
+      window.location.hash = "#/yaumiyah";
     }
   }
 

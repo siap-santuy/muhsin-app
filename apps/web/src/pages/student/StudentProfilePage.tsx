@@ -1,26 +1,15 @@
 import {
-  BookIcon,
-  CalendarCheck,
   ChevronRight,
   HelpCircle,
-  Home,
   Info,
   Lock,
   LogOut,
   ShieldCheck,
-  User,
   UserCog,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
-
-const NAV_ITEMS = [
-  { label: "Beranda", icon: Home },
-  { label: "Yaumiyah", icon: CalendarCheck },
-  { label: "Raport", icon: BookIcon },
-  { label: "Profil", icon: User },
-];
 
 interface StudentProfilePageProps {
   onLogout?: () => void;
@@ -28,13 +17,6 @@ interface StudentProfilePageProps {
 
 export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
   const logout = useAuthStore((s) => s.logout);
-
-  function handleNavSelect(idx: number) {
-    if (idx === 0) window.location.hash = "#/student";
-    if (idx === 1) window.location.hash = "#/student-yaumiyah";
-    if (idx === 2) window.location.hash = "#/student-raport";
-    if (idx === 3) window.location.hash = "#/student-profile";
-  }
 
   function handleLogout() {
     if (onLogout) {
@@ -180,7 +162,7 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
         </div>
       </main>
 
-      <BottomNav items={NAV_ITEMS} activeIndex={3} onSelect={handleNavSelect} />
+      <BottomNav activeIndex={3} />
     </div>
   );
 }

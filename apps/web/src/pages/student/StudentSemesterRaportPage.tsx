@@ -24,7 +24,7 @@ export function StudentSemesterRaportPage({ onBack }: StudentSemesterRaportPageP
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = "#/student-raport";
+      window.location.hash = "#/raport";
     }
   }
 

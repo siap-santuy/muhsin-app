@@ -78,7 +78,7 @@ export function StudentYaumiyahViewPage({
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = "#/student-yaumiyah";
+      window.location.hash = "#/yaumiyah";
     }
   }
 
@@ -86,7 +86,7 @@ export function StudentYaumiyahViewPage({
     if (onEdit) {
       onEdit();
     } else {
-      window.location.hash = "#/student-yaumiyah-input";
+      window.location.hash = "#/yaumiyah-input";
     }
   }
 

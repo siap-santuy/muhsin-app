@@ -7,12 +7,6 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
-import {
-  BookOpen as BookIcon,
-  CalendarCheck,
-  Home,
-  User,
-} from "lucide-react";
 
 interface MonthItem {
   name: string;
@@ -44,17 +38,10 @@ const STATUS_DOT: Record<MonthItem["status"], string> = {
 };
 
 const STATUS_BORDER: Record<MonthItem["status"], string> = {
-  completed: "border-brand-cyan text-brand-navy",
-  in_progress: "border-amber-500 text-brand-navy",
+  completed: "border-gray-200 text-brand-navy",
+  in_progress: "border-gray-200 text-brand-navy",
   upcoming: "border-gray-200 text-brand-navy",
 };
-
-const NAV_ITEMS = [
-  { label: "Beranda", icon: Home },
-  { label: "Yaumiyah", icon: CalendarCheck },
-  { label: "Raport", icon: BookIcon },
-  { label: "Profil", icon: User },
-];
 
 interface StudentRaportPageProps {
   onNavigateToMonthly?: () => void;
@@ -68,17 +55,11 @@ export function StudentRaportPage({
   const [selectedYear, setSelectedYear] = useState("2026/2027");
   const [selectedMonth, setSelectedMonth] = useState<string>("Agustus");
 
-  function handleNavSelect(idx: number) {
-    if (idx === 0) window.location.hash = "#/student";
-    if (idx === 1) window.location.hash = "#/student-yaumiyah";
-    if (idx === 2) window.location.hash = "#/student-raport";
-  }
-
   function handleMonthlyClick() {
     if (onNavigateToMonthly) {
       onNavigateToMonthly();
     } else {
-      window.location.hash = "#/student-monthly-raport";
+      window.location.hash = "#/monthly-raport";
     }
   }
 
@@ -86,7 +67,7 @@ export function StudentRaportPage({
     if (onNavigateToSemester) {
       onNavigateToSemester();
     } else {
-      window.location.hash = "#/student-semester-raport";
+      window.location.hash = "#/semester-raport";
     }
   }
 
@@ -222,7 +203,7 @@ export function StudentRaportPage({
         </div>
       </main>
 
-      <BottomNav items={NAV_ITEMS} activeIndex={2} onSelect={handleNavSelect} />
+      <BottomNav activeIndex={2} />
     </div>
   );
 }

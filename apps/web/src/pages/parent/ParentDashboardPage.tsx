@@ -1,15 +1,12 @@
 import {
   BookOpen,
-  FileText,
   HeartHandshake,
-  Home,
   Mic,
   NotebookPen,
   Repeat,
-  User,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav, type NavItem } from "@/components/layout/BottomNav";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { DailyQuote } from "@/components/student/DailyQuote";
 import { ProgressGrid, type ProgressItem } from "@/components/student/ProgressGrid";
 import { MascotTip } from "@/components/ui/MascotTip";
@@ -65,13 +62,6 @@ const PROGRESS: ProgressItem[] = [
   },
 ];
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Beranda", icon: Home },
-  { label: "Yaumiyah", icon: NotebookPen },
-  { label: "Raport", icon: FileText },
-  { label: "Profil", icon: User },
-];
-
 const MASCOT_MESSAGE =
   "\u201cMaa syaa Allah! Fulan sangat rajin hari ini. Jangan lupa berikan apresiasi ya, Ummi/Abi!\u201d";
 
@@ -115,7 +105,7 @@ export function ParentDashboardPage() {
           <MascotTip message={MASCOT_MESSAGE} />
         </div>
       </main>
-      <BottomNav items={NAV_ITEMS} activeIndex={0} />
+      <BottomNav activeIndex={0} />
     </div>
   );
 }
