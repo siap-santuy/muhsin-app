@@ -57,18 +57,36 @@ export function StudentRaportPage({
     defaultMonth.semester
   );
 
-  const isSemester1Available = currentOffset >= 5;
-  const isSemester2Available = currentOffset >= 11;
+  const isPastYear = selectedYear !== "2026/2027";
+
+  function getMonthStatus(offset: number) {
+    if (isPastYear) return { isAvailable: true, status: "done" };
+    if (offset < currentOffset) return { isAvailable: true, status: "done" };
+    if (offset === currentOffset) return { isAvailable: true, status: "ongoing" };
+    return { isAvailable: false, status: "none" };
+  }
+
+  function getSemesterStatus(sem: 1 | 2) {
+    if (isPastYear) return { isAvailable: true, status: "done" };
+    const targetEndOffset = sem === 1 ? 5 : 11;
+    if (currentOffset > targetEndOffset) return { isAvailable: true, status: "done" };
+    if (currentOffset === targetEndOffset) return { isAvailable: true, status: "ongoing" };
+    return { isAvailable: false, status: "none" };
+  }
+
+  const sem1 = getSemesterStatus(1);
+  const sem2 = getSemesterStatus(2);
 
   function handleSelectMonth(m: MonthDef) {
-    if (m.offset > currentOffset) return;
+    const { isAvailable } = getMonthStatus(m.offset);
+    if (!isAvailable) return;
     setSelectedMonth(m.name);
     setSelectedSemester(m.semester);
   }
 
-  function handleSelectSemester(sem: number) {
-    if (sem === 1 && !isSemester1Available) return;
-    if (sem === 2 && !isSemester2Available) return;
+  function handleSelectSemester(sem: 1 | 2) {
+    const { isAvailable } = getSemesterStatus(sem);
+    if (!isAvailable) return;
     setSelectedSemester(sem);
   }
 
@@ -118,9 +136,7 @@ export function StudentRaportPage({
             <div className="grid grid-cols-3 gap-2">
               {SEMESTER_1_MONTHS.map((m) => {
                 const isSelected = selectedMonth === m.name;
-                const isAvailable = m.offset <= currentOffset;
-                const isCurrent = m.offset === currentOffset;
-                const isCompleted = m.offset < currentOffset;
+                const { isAvailable, status } = getMonthStatus(m.offset);
 
                 return (
                   <button
@@ -139,9 +155,9 @@ export function StudentRaportPage({
                     <span className="text-xs font-bold">{m.name}</span>
                     <span
                       className={`mt-1 h-2 w-2 rounded-full ${
-                        isCompleted
-                          ? "bg-brand-cyan"
-                          : isCurrent
+                        status === "done"
+                          ? "bg-emerald-500"
+                          : status === "ongoing"
                           ? "bg-amber-500"
                           : "bg-gray-300"
                       }`}
@@ -154,20 +170,28 @@ export function StudentRaportPage({
             {/* Semester 1 Button / Divider */}
             <button
               type="button"
-              disabled={!isSemester1Available}
+              disabled={!sem1.isAvailable}
               onClick={() => handleSelectSemester(1)}
               className={`my-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 py-1.5 transition-all ${
-                !isSemester1Available
+                !sem1.isAvailable
                   ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
                   : selectedSemester === 1
-                  ? "border-amber-500 bg-amber-50 text-brand-navy shadow-sm"
-                  : "border-amber-300 text-brand-navy hover:border-amber-400"
+                  ? sem1.status === "ongoing"
+                    ? "border-amber-500 bg-amber-50 text-brand-navy shadow-sm"
+                    : "border-brand-cyan bg-brand-cyan/10 text-brand-navy shadow-sm"
+                  : sem1.status === "ongoing"
+                  ? "border-amber-300 text-brand-navy hover:border-amber-400"
+                  : "border-gray-200 text-brand-navy hover:border-brand-cyan/40"
               }`}
             >
               <span className="text-xs font-bold">Semester 1</span>
               <span
                 className={`h-2 w-2 rounded-full ${
-                  isSemester1Available ? "bg-amber-500" : "bg-gray-300"
+                  sem1.status === "done"
+                    ? "bg-emerald-500"
+                    : sem1.status === "ongoing"
+                    ? "bg-amber-500"
+                    : "bg-gray-300"
                 }`}
               />
             </button>
@@ -176,9 +200,7 @@ export function StudentRaportPage({
             <div className="grid grid-cols-3 gap-2">
               {SEMESTER_2_MONTHS.map((m) => {
                 const isSelected = selectedMonth === m.name;
-                const isAvailable = m.offset <= currentOffset;
-                const isCurrent = m.offset === currentOffset;
-                const isCompleted = m.offset < currentOffset;
+                const { isAvailable, status } = getMonthStatus(m.offset);
 
                 return (
                   <button
@@ -197,9 +219,9 @@ export function StudentRaportPage({
                     <span className="text-xs font-bold">{m.name}</span>
                     <span
                       className={`mt-1 h-2 w-2 rounded-full ${
-                        isCompleted
-                          ? "bg-brand-cyan"
-                          : isCurrent
+                        status === "done"
+                          ? "bg-emerald-500"
+                          : status === "ongoing"
                           ? "bg-amber-500"
                           : "bg-gray-300"
                       }`}
@@ -212,23 +234,47 @@ export function StudentRaportPage({
             {/* Semester 2 Button / Divider */}
             <button
               type="button"
-              disabled={!isSemester2Available}
+              disabled={!sem2.isAvailable}
               onClick={() => handleSelectSemester(2)}
               className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 py-1.5 transition-all ${
-                !isSemester2Available
+                !sem2.isAvailable
                   ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
                   : selectedSemester === 2
-                  ? "border-brand-cyan bg-brand-cyan/10 text-brand-navy shadow-sm"
-                  : "border-gray-200 text-brand-text-muted hover:border-brand-cyan/40"
+                  ? sem2.status === "ongoing"
+                    ? "border-amber-500 bg-amber-50 text-brand-navy shadow-sm"
+                    : "border-brand-cyan bg-brand-cyan/10 text-brand-navy shadow-sm"
+                  : sem2.status === "ongoing"
+                  ? "border-amber-300 text-brand-navy hover:border-amber-400"
+                  : "border-gray-200 text-brand-navy hover:border-brand-cyan/40"
               }`}
             >
               <span className="text-xs font-bold">Semester 2</span>
               <span
                 className={`h-2 w-2 rounded-full ${
-                  isSemester2Available ? "bg-brand-cyan" : "bg-gray-300"
+                  sem2.status === "done"
+                    ? "bg-emerald-500"
+                    : sem2.status === "ongoing"
+                    ? "bg-amber-500"
+                    : "bg-gray-300"
                 }`}
               />
             </button>
+
+            {/* Status Legend Notes */}
+            <div className="mt-4 flex items-center justify-center gap-4 border-t border-brand-line/50 pt-3 text-[11px] font-medium text-brand-text-muted">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>On going</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Done</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-gray-300" />
+                <span>None</span>
+              </div>
+            </div>
           </section>
 
           {/* Action Card: Raport Bulanan */}
