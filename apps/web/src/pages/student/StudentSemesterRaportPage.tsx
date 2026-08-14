@@ -17,9 +17,15 @@ import { Button } from "@/components/ui/button";
 
 interface StudentSemesterRaportPageProps {
   onBack?: () => void;
+  semester?: number;
+  year?: string;
 }
 
-export function StudentSemesterRaportPage({ onBack }: StudentSemesterRaportPageProps) {
+export function StudentSemesterRaportPage({
+  onBack,
+  semester = 1,
+  year = "2026/2027",
+}: StudentSemesterRaportPageProps) {
   function handleBack() {
     if (onBack) {
       onBack();
@@ -53,10 +59,10 @@ export function StudentSemesterRaportPage({ onBack }: StudentSemesterRaportPageP
               <BookOpen className="h-10 w-10 text-brand-cyan" />
             </div>
             <h2 className="mt-3 text-xl font-bold text-brand-navy">
-              Raport Semester 2
+              Raport Semester {semester}
             </h2>
             <h3 className="text-lg font-bold text-brand-navy">
-              Tahun Ajaran 2026/2027
+              Tahun Ajaran {year}
             </h3>
             <p className="mt-1 text-xs font-semibold text-brand-navy">
               Fulan bin Fulan (9991239201)

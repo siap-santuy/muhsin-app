@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen } from "@/components/SplashScreen";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ParentDashboardPage } from "@/pages/parent/ParentDashboardPage";
+import { ParentProfilePage } from "@/pages/parent/ParentProfilePage";
 import { StudentDashboardPage } from "@/pages/student/StudentDashboardPage";
 import { StudentMonthlyRaportPage } from "@/pages/student/StudentMonthlyRaportPage";
 import { StudentMonthlySummaryPage } from "@/pages/student/StudentMonthlySummaryPage";
@@ -48,11 +49,13 @@ function App() {
     return <LoginPage />;
   }
 
-  const cleanRoute = route.replace("#/", "").replace("#", "");
+  const rawHash = route.replace("#/", "").replace("#", "");
+  const [path, queryString] = rawHash.split("?");
+  const searchParams = new URLSearchParams(queryString || "");
 
   // Role: STUDENT
   if (user.role === "student") {
-    switch (cleanRoute) {
+    switch (path) {
       case "yaumiyah":
         return <StudentYaumiyahPage />;
       case "yaumiyah-input":
@@ -64,9 +67,23 @@ function App() {
       case "raport":
         return <StudentRaportPage />;
       case "monthly-raport":
-        return <StudentMonthlyRaportPage />;
+        return (
+          <StudentMonthlyRaportPage
+            month={searchParams.get("month") || undefined}
+            year={searchParams.get("year") || undefined}
+          />
+        );
       case "semester-raport":
-        return <StudentSemesterRaportPage />;
+        return (
+          <StudentSemesterRaportPage
+            semester={
+              searchParams.has("semester")
+                ? Number(searchParams.get("semester"))
+                : undefined
+            }
+            year={searchParams.get("year") || undefined}
+          />
+        );
       case "profile":
         return <StudentProfilePage />;
       case "dashboard":
@@ -77,7 +94,9 @@ function App() {
 
   // Role: PARENT
   if (user.role === "parent") {
-    switch (cleanRoute) {
+    switch (path) {
+      case "profile":
+        return <ParentProfilePage />;
       case "dashboard":
       default:
         return <ParentDashboardPage />;

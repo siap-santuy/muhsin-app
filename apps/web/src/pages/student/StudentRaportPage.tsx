@@ -8,66 +8,88 @@ import {
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-interface MonthItem {
+interface MonthDef {
   name: string;
-  status: "completed" | "in_progress" | "upcoming";
+  semester: 1 | 2;
+  offset: number; // 0=Juli, 1=Agustus, ..., 5=Desember, 6=Januari, ..., 11=Juni
 }
 
-const SEMESTER_1_MONTHS: MonthItem[] = [
-  { name: "Juli", status: "completed" },
-  { name: "Agustus", status: "in_progress" },
-  { name: "September", status: "upcoming" },
-  { name: "Oktober", status: "upcoming" },
-  { name: "November", status: "upcoming" },
-  { name: "Desember", status: "upcoming" },
+const ACADEMIC_MONTHS: MonthDef[] = [
+  { name: "Juli", semester: 1, offset: 0 },
+  { name: "Agustus", semester: 1, offset: 1 },
+  { name: "September", semester: 1, offset: 2 },
+  { name: "Oktober", semester: 1, offset: 3 },
+  { name: "November", semester: 1, offset: 4 },
+  { name: "Desember", semester: 1, offset: 5 },
+  { name: "Januari", semester: 2, offset: 6 },
+  { name: "Februari", semester: 2, offset: 7 },
+  { name: "Maret", semester: 2, offset: 8 },
+  { name: "April", semester: 2, offset: 9 },
+  { name: "Mei", semester: 2, offset: 10 },
+  { name: "Juni", semester: 2, offset: 11 },
 ];
 
-const SEMESTER_2_MONTHS: MonthItem[] = [
-  { name: "Januari", status: "upcoming" },
-  { name: "Februari", status: "upcoming" },
-  { name: "Maret", status: "upcoming" },
-  { name: "April", status: "upcoming" },
-  { name: "Mei", status: "upcoming" },
-  { name: "Juni", status: "upcoming" },
-];
+const SEMESTER_1_MONTHS = ACADEMIC_MONTHS.filter((m) => m.semester === 1);
+const SEMESTER_2_MONTHS = ACADEMIC_MONTHS.filter((m) => m.semester === 2);
 
-const STATUS_DOT: Record<MonthItem["status"], string> = {
-  completed: "bg-brand-cyan",
-  in_progress: "bg-amber-500",
-  upcoming: "bg-gray-300",
-};
-
-const STATUS_BORDER: Record<MonthItem["status"], string> = {
-  completed: "border-gray-200 text-brand-navy",
-  in_progress: "border-gray-200 text-brand-navy",
-  upcoming: "border-gray-200 text-brand-navy",
-};
+function getCurrentAcademicOffset(): number {
+  const now = new Date();
+  const month = now.getMonth(); // 0 = Jan, 1 = Feb, ..., 11 = Dec
+  return month >= 6 ? month - 6 : month + 6;
+}
 
 interface StudentRaportPageProps {
-  onNavigateToMonthly?: () => void;
-  onNavigateToSemester?: () => void;
+  onNavigateToMonthly?: (month?: string, year?: string) => void;
+  onNavigateToSemester?: (semester?: number, year?: string) => void;
 }
 
 export function StudentRaportPage({
   onNavigateToMonthly,
   onNavigateToSemester,
 }: StudentRaportPageProps) {
+  const currentOffset = getCurrentAcademicOffset();
+  const defaultMonthOffset = Math.max(0, currentOffset - 1);
+  const defaultMonth = ACADEMIC_MONTHS[defaultMonthOffset];
+
   const [selectedYear, setSelectedYear] = useState("2026/2027");
-  const [selectedMonth, setSelectedMonth] = useState<string>("Agustus");
+  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth.name);
+  const [selectedSemester, setSelectedSemester] = useState<number>(
+    defaultMonth.semester
+  );
+
+  const isSemester1Available = currentOffset >= 5;
+  const isSemester2Available = currentOffset >= 11;
+
+  function handleSelectMonth(m: MonthDef) {
+    if (m.offset > currentOffset) return;
+    setSelectedMonth(m.name);
+    setSelectedSemester(m.semester);
+  }
+
+  function handleSelectSemester(sem: number) {
+    if (sem === 1 && !isSemester1Available) return;
+    if (sem === 2 && !isSemester2Available) return;
+    setSelectedSemester(sem);
+  }
 
   function handleMonthlyClick() {
     if (onNavigateToMonthly) {
-      onNavigateToMonthly();
+      onNavigateToMonthly(selectedMonth, selectedYear);
     } else {
-      window.location.hash = "#/monthly-raport";
+      const params = new URLSearchParams({ month: selectedMonth, year: selectedYear });
+      window.location.hash = `#/monthly-raport?${params.toString()}`;
     }
   }
 
   function handleSemesterClick() {
     if (onNavigateToSemester) {
-      onNavigateToSemester();
+      onNavigateToSemester(selectedSemester, selectedYear);
     } else {
-      window.location.hash = "#/semester-raport";
+      const params = new URLSearchParams({
+        semester: String(selectedSemester),
+        year: selectedYear,
+      });
+      window.location.hash = `#/semester-raport?${params.toString()}`;
     }
   }
 
@@ -96,65 +118,117 @@ export function StudentRaportPage({
             <div className="grid grid-cols-3 gap-2">
               {SEMESTER_1_MONTHS.map((m) => {
                 const isSelected = selectedMonth === m.name;
+                const isAvailable = m.offset <= currentOffset;
+                const isCurrent = m.offset === currentOffset;
+                const isCompleted = m.offset < currentOffset;
+
                 return (
                   <button
                     key={m.name}
                     type="button"
-                    onClick={() => setSelectedMonth(m.name)}
+                    disabled={!isAvailable}
+                    onClick={() => handleSelectMonth(m)}
                     className={`flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all ${
-                      isSelected
-                        ? "border-brand-cyan bg-brand-cyan/5 shadow-sm"
-                        : STATUS_BORDER[m.status]
+                      !isAvailable
+                        ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+                        : isSelected
+                        ? "border-brand-cyan bg-brand-cyan/5 text-brand-navy shadow-sm"
+                        : "border-gray-200 text-brand-navy hover:border-brand-cyan/40"
                     }`}
                   >
                     <span className="text-xs font-bold">{m.name}</span>
                     <span
-                      className={`mt-1 h-2 w-2 rounded-full ${STATUS_DOT[m.status]}`}
+                      className={`mt-1 h-2 w-2 rounded-full ${
+                        isCompleted
+                          ? "bg-brand-cyan"
+                          : isCurrent
+                          ? "bg-amber-500"
+                          : "bg-gray-300"
+                      }`}
                     />
                   </button>
                 );
               })}
             </div>
 
-            {/* Semester 1 Divider/Bar */}
-            <div className="my-3 flex items-center justify-center gap-1.5 border-t border-b border-amber-400 py-1.5">
-              <span className="text-xs font-bold text-brand-navy">
-                Semester 1
-              </span>
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
-            </div>
+            {/* Semester 1 Button / Divider */}
+            <button
+              type="button"
+              disabled={!isSemester1Available}
+              onClick={() => handleSelectSemester(1)}
+              className={`my-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 py-1.5 transition-all ${
+                !isSemester1Available
+                  ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                  : selectedSemester === 1
+                  ? "border-amber-500 bg-amber-50 text-brand-navy shadow-sm"
+                  : "border-amber-300 text-brand-navy hover:border-amber-400"
+              }`}
+            >
+              <span className="text-xs font-bold">Semester 1</span>
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isSemester1Available ? "bg-amber-500" : "bg-gray-300"
+                }`}
+              />
+            </button>
 
             {/* Semester 2 Grid */}
             <div className="grid grid-cols-3 gap-2">
               {SEMESTER_2_MONTHS.map((m) => {
                 const isSelected = selectedMonth === m.name;
+                const isAvailable = m.offset <= currentOffset;
+                const isCurrent = m.offset === currentOffset;
+                const isCompleted = m.offset < currentOffset;
+
                 return (
                   <button
                     key={m.name}
                     type="button"
-                    onClick={() => setSelectedMonth(m.name)}
+                    disabled={!isAvailable}
+                    onClick={() => handleSelectMonth(m)}
                     className={`flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all ${
-                      isSelected
-                        ? "border-brand-cyan bg-brand-cyan/5 shadow-sm"
-                        : STATUS_BORDER[m.status]
+                      !isAvailable
+                        ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+                        : isSelected
+                        ? "border-brand-cyan bg-brand-cyan/5 text-brand-navy shadow-sm"
+                        : "border-gray-200 text-brand-navy hover:border-brand-cyan/40"
                     }`}
                   >
                     <span className="text-xs font-bold">{m.name}</span>
                     <span
-                      className={`mt-1 h-2 w-2 rounded-full ${STATUS_DOT[m.status]}`}
+                      className={`mt-1 h-2 w-2 rounded-full ${
+                        isCompleted
+                          ? "bg-brand-cyan"
+                          : isCurrent
+                          ? "bg-amber-500"
+                          : "bg-gray-300"
+                      }`}
                     />
                   </button>
                 );
               })}
             </div>
 
-            {/* Semester 2 Divider/Bar */}
-            <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-gray-200 pt-2">
-              <span className="text-xs font-semibold text-brand-text-muted">
-                Semester 2
-              </span>
-              <span className="h-2 w-2 rounded-full bg-gray-300" />
-            </div>
+            {/* Semester 2 Button / Divider */}
+            <button
+              type="button"
+              disabled={!isSemester2Available}
+              onClick={() => handleSelectSemester(2)}
+              className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 py-1.5 transition-all ${
+                !isSemester2Available
+                  ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                  : selectedSemester === 2
+                  ? "border-brand-cyan bg-brand-cyan/10 text-brand-navy shadow-sm"
+                  : "border-gray-200 text-brand-text-muted hover:border-brand-cyan/40"
+              }`}
+            >
+              <span className="text-xs font-bold">Semester 2</span>
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isSemester2Available ? "bg-brand-cyan" : "bg-gray-300"
+                }`}
+              />
+            </button>
           </section>
 
           {/* Action Card: Raport Bulanan */}
@@ -172,7 +246,7 @@ export function StudentRaportPage({
                   Lihat Raport Bulanan
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Rekapitulasi pencapaian bulanan
+                  Rekapitulasi pencapaian bulanan ({selectedMonth})
                 </p>
               </div>
             </div>
@@ -194,7 +268,7 @@ export function StudentRaportPage({
                   Lihat Raport Semester
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Dokumen hasil akhir semester
+                  Dokumen hasil akhir (Semester {selectedSemester})
                 </p>
               </div>
             </div>

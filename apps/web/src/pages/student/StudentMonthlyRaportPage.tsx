@@ -15,9 +15,15 @@ import { Button } from "@/components/ui/button";
 
 interface StudentMonthlyRaportPageProps {
   onBack?: () => void;
+  month?: string;
+  year?: string;
 }
 
-export function StudentMonthlyRaportPage({ onBack }: StudentMonthlyRaportPageProps) {
+export function StudentMonthlyRaportPage({
+  onBack,
+  month = "Juli",
+  year = "2026",
+}: StudentMonthlyRaportPageProps) {
   function handleBack() {
     if (onBack) {
       onBack();
@@ -25,6 +31,9 @@ export function StudentMonthlyRaportPage({ onBack }: StudentMonthlyRaportPagePro
       window.location.hash = "#/raport";
     }
   }
+
+  // If year is in format "2026/2027", extract the start year for monthly display
+  const displayYear = year.split("/")[0] || year;
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -51,7 +60,7 @@ export function StudentMonthlyRaportPage({ onBack }: StudentMonthlyRaportPagePro
               <BookOpen className="h-10 w-10 text-brand-cyan" />
             </div>
             <h2 className="mt-3 text-xl font-bold text-brand-navy">
-              Raport Bulan Juli 2026
+              Raport Bulan {month} {displayYear}
             </h2>
             <p className="mt-1 text-xs font-semibold text-brand-navy">
               Fulan bin Fulan (9991239201)

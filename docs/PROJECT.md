@@ -22,6 +22,7 @@ Muhsin App adalah aplikasi **multi-tenant SaaS** untuk manajemen program TTQ (Ta
 
 | Layer | Teknologi | Catatan |
 |---|---|---|
+| Design / Figma | **Figma** | [MuhsinApp Figma Design](https://www.figma.com/design/PviiQ6ghrh98RwHWQTPmNk/MuhsinApp?node-id=455-5761) |
 | Runtime & Backend Framework | **Bun** + **Hono** | Gunakan Hono middleware pattern untuk auth & tenant-scoping. |
 | ORM | **Drizzle ORM** | Schema-first, migrations via `drizzle-kit`. |
 | Database | PostgreSQL (rekomendasi) | Perlu dukungan JSONB untuk `score_fields`/`scores` yang dinamis. |
