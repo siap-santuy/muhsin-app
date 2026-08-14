@@ -7,15 +7,15 @@ export function AppHeader() {
       left={
         <>
           <img
-            src="/brand/logo_smp.png"
+            src="/brand/logo_combo.svg"
             alt="Logo SMP Islam Terpadu Al Fitrah"
-            className="h-10 w-10 rounded-lg object-contain"
+            className="w-26 rounded-lg object-contain"
           />
-          <div className="leading-tight">
-            <p className="text-base font-bold text-brand-navy">
+          <div className="">
+            <p className="text-lg font-bold text-brand-navy">
               SMP Islam Terpadu
             </p>
-            <p className="text-base font-bold text-brand-navy">AL FITRAH</p>
+            <p className="text-lg font-bold text-brand-navy">AL FITRAH</p>
           </div>
         </>
       }

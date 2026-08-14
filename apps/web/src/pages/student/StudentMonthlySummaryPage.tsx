@@ -6,7 +6,6 @@ import {
 } from "@/components/student/ActivityCard";
 import {
   MonthCalendar,
-  type DayStatus,
 } from "@/components/student/MonthCalendar";
 import { Pagination } from "@/components/ui/Pagination";
 import { TabBar } from "@/components/ui/TabBar";
@@ -22,39 +21,6 @@ const RIWAYAT_TITLE: Record<string, string> = {
   murojaah: "Riwayat Murojaah",
   tahsin: "Riwayat Tahsin",
 };
-
-const MONTH_DAYS = [
-  { day: 1, status: "empty" },
-  { day: 2, status: "empty" },
-  { day: 3, status: "setoran" },
-  { day: 4, status: "empty" },
-  { day: 5, status: "setoran" },
-  { day: 6, status: "sakit" },
-  { day: 7, status: "empty" },
-  { day: 8, status: "setoran" },
-  { day: 9, status: "setoran" },
-  { day: 10, status: "setoran" },
-  { day: 11, status: "alpa" },
-  { day: 12, status: "empty" },
-  { day: 13, status: "setoran" },
-  { day: 14, status: "empty" },
-  { day: 15, status: "setoran" },
-  { day: 16, status: "sakit" },
-  { day: 17, status: "setoran" },
-  { day: 18, status: "setoran" },
-  { day: 19, status: "empty" },
-  { day: 20, status: "setoran" },
-  { day: 21, status: "empty" },
-  { day: 22, status: "setoran" },
-  { day: 23, status: "setoran" },
-  { day: 24, status: "empty" },
-  { day: 25, status: "setoran" },
-  { day: 26, status: "alpa" },
-  { day: 27, status: "setoran" },
-  { day: 28, status: "setoran" },
-  { day: 29, status: "setoran" },
-  { day: 30, status: "setoran" },
-].map((d) => ({ ...d, status: d.status as DayStatus["status"] }));
 
 const ZIYADAH_ACTIVITIES: ActivityCardProps[] = [
   {
@@ -358,7 +324,7 @@ export function StudentMonthlySummaryPage() {
 
         {/* Calendar */}
         <div className="mt-3 px-4">
-          <MonthCalendar monthYear="November 2025" days={MONTH_DAYS} />
+          <MonthCalendar />
         </div>
 
         {/* Legend */}

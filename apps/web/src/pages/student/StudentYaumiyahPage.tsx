@@ -10,7 +10,6 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import {
   MonthCalendar,
-  type DayStatus,
 } from "@/components/student/MonthCalendar";
 import {
   YaumiyahLogCard,
@@ -20,40 +19,6 @@ import {
   type YaumiyahStatProps,
 } from "@/components/student/YaumiyahStatCard";
 import { Button } from "@/components/ui/button";
-
-const MONTH_DAYS = [
-  { day: 1, status: "empty" },
-  { day: 2, status: "setoran" },
-  { day: 3, status: "setoran" },
-  { day: 4, status: "setoran" },
-  { day: 5, status: "sakit" },
-  { day: 6, status: "empty" },
-  { day: 7, status: "empty" },
-  { day: 8, status: "empty" },
-  { day: 9, status: "setoran" },
-  { day: 10, status: "setoran" },
-  { day: 11, status: "setoran" },
-  { day: 12, status: "empty" },
-  { day: 13, status: "empty" },
-  { day: 14, status: "empty" },
-  { day: 15, status: "empty" },
-  { day: 16, status: "empty" },
-  { day: 17, status: "empty" },
-  { day: 18, status: "empty" },
-  { day: 19, status: "empty" },
-  { day: 20, status: "empty" },
-  { day: 21, status: "empty" },
-  { day: 22, status: "empty" },
-  { day: 23, status: "empty" },
-  { day: 24, status: "empty" },
-  { day: 25, status: "empty" },
-  { day: 26, status: "empty" },
-  { day: 27, status: "empty" },
-  { day: 28, status: "empty" },
-  { day: 29, status: "empty" },
-  { day: 30, status: "empty" },
-  { day: 31, status: "empty" },
-].map((d) => ({ ...d, status: d.status as DayStatus["status"] }));
 
 const STATS: YaumiyahStatProps[] = [
   {
@@ -114,7 +79,7 @@ export function StudentYaumiyahPage() {
       <AppHeader />
       <main className="flex-1 overflow-y-auto px-4 pt-1 pb-4">
         <div className="flex flex-col gap-4">
-          <MonthCalendar monthYear="Juli 2026" days={MONTH_DAYS} />
+          <MonthCalendar />
 
           <Button
             type="button"
