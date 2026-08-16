@@ -69,6 +69,14 @@ export function ParentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const name = user?.name ?? "Ummu Fulan";
 
+  function handleGoToRaport() {
+    window.location.hash = "#/raport";
+  }
+
+  function handleGoToYaumiyah() {
+    window.location.hash = "#/yaumiyah";
+  }
+
   return (
     <div className="flex h-screen flex-col bg-white">
       <AppHeader />
@@ -87,6 +95,7 @@ export function ParentDashboardPage() {
           <ReminderBanner
             text="Fulan belum mengisi ibadah hari ini"
             action="Ingatkan!"
+            onAction={() => (window.location.hash = "#/notifications")}
           />
           <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
           <DailyQuote text={QUOTE.text} source={QUOTE.source} />
@@ -95,12 +104,14 @@ export function ParentDashboardPage() {
             iconClass="bg-emerald-500/15 text-emerald-600"
             title="Raport & Pencapaian"
             description="Lihat rapor dan pencapaian Fulan"
+            onPress={handleGoToRaport}
           />
           <MenuCard
             icon={NotebookPen}
             iconClass="bg-brand-cyan/15 text-brand-cyan-dark"
             title="Ibadah Yaumiyah"
             description="Lihat catatan ibadah harian Fulan"
+            onPress={handleGoToYaumiyah}
           />
           <MascotTip message={MASCOT_MESSAGE} />
         </div>

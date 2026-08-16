@@ -12,17 +12,17 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 
-interface StudentSemesterRaportPageProps {
+interface ParentSemesterRaportPageProps {
   onBack?: () => void;
   semester?: number;
   year?: string;
 }
 
-export function StudentSemesterRaportPage({
+export function ParentSemesterRaportPage({
   onBack,
   semester = 1,
   year = "2026/2027",
-}: StudentSemesterRaportPageProps) {
+}: ParentSemesterRaportPageProps) {
   function handleBack() {
     if (onBack) {
       onBack();

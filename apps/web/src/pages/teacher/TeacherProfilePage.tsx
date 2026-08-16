@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ChevronRight,
   HelpCircle,
   Info,
@@ -6,16 +7,18 @@ import {
   LogOut,
   ShieldCheck,
   UserCog,
+  Users,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 
-interface StudentProfilePageProps {
+interface TeacherProfilePageProps {
   onLogout?: () => void;
 }
 
-export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
+export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
+  const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
   function handleLogout() {
@@ -26,6 +29,8 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
       window.location.hash = "";
     }
   }
+
+  const name = user?.name ?? "Ustadz Arai Kurnia";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -38,53 +43,57 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
             <div className="relative">
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
-                alt="Fulan bin Fulan"
+                alt={name}
                 className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm"
               />
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-amber px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                Lv. 12
-              </span>
             </div>
 
             <h2 className="mt-4 text-xl font-extrabold text-brand-navy">
-              Fulan bin Fulan
+              {name}
             </h2>
             <p className="mt-0.5 text-xs font-semibold text-brand-navy">
-              VII Abu Bakar Ash-Shiddiq
+              NIP: 199208152020121001
             </p>
-            <p className="text-xs text-brand-text-muted">Ikhwan</p>
+            <p className="text-xs text-brand-text-muted">Guru Pembimbing TTQ &amp; Yaumiyah</p>
 
-            <span className="mt-2.5 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-4 py-0.5 text-[10px] font-bold tracking-wider text-brand-cyan uppercase">
-              STUDENT
+            <span className="mt-2.5 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-0.5 text-[10px] font-bold tracking-wider text-emerald-600 uppercase">
+              GURU PEMBIMBING
             </span>
           </div>
 
-          {/* Status Pelajar Section */}
+          {/* Info Halaqah Section */}
           <section>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              STATUS PELAJAR
+              INFORMASI HALAQAH
             </h3>
-            <div className="flex items-center gap-3 rounded-2xl border border-brand-line bg-white p-3.5 shadow-sm">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                alt="Ust. Arai Kurnia Ramadhan"
-                className="h-12 w-12 rounded-xl object-cover"
-              />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-navy">
-                  GURU PEMBIMBING
-                </p>
-                <p className="text-sm font-bold text-brand-navy">
-                  Ust. Arai Kurnia Ramadhan
-                </p>
+            <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-brand-cyan" />
+                  <span className="text-xs font-bold text-brand-navy">Halaqah Kelas</span>
+                </div>
+                <span className="text-xs font-bold text-brand-cyan">VII Abu Bakar</span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-brand-navy" />
+                  <span className="text-xs font-bold text-brand-navy">Jumlah Siswa</span>
+                </div>
+                <span className="text-xs font-bold text-brand-navy">15 Siswa</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Tahun Ajaran</span>
+                <span className="text-xs font-semibold text-brand-text-muted">2026/2027</span>
               </div>
             </div>
           </section>
 
-          {/* Akun Section */}
+          {/* Pengaturan Akun */}
           <section>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              AKUN
+              PENGATURAN AKUN
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
               {[
@@ -113,14 +122,14 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
             </div>
           </section>
 
-          {/* Tentang Section */}
+          {/* Bantuan & Informasi */}
           <section>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              TENTANG
+              BANTUAN &amp; INFORMASI
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
               {[
-                { icon: HelpCircle, label: "Bantuan & Panduan", route: "#/help" },
+                { icon: HelpCircle, label: "Bantuan & Panduan Guru", route: "#/help" },
                 { icon: Info, label: "Tentang Muhsin", route: "#/about" },
               ].map((item) => {
                 const Icon = item.icon;
@@ -159,7 +168,7 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
             <p className="text-[11px] font-medium text-brand-text-muted">
               Powered by <span className="font-semibold text-brand-navy">MuhsinApp</span>
             </p>
-            <p className="text-[10px] text-brand-text-muted">v1.0.0</p>
+            <p className="text-[10px] text-brand-text-muted">v1.0.0 (Guru Edition)</p>
           </div>
         </div>
       </main>

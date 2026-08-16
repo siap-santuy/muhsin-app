@@ -1,8 +1,12 @@
+import { useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
+  Check,
   Download,
+  Edit3,
   RotateCcw,
+  Save,
   Star,
 } from "lucide-react";
 import { AbsensiSection } from "@/components/raport/AbsensiSection";
@@ -12,17 +16,25 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 
-interface StudentSemesterRaportPageProps {
+interface TeacherSemesterRaportPageProps {
   onBack?: () => void;
   semester?: number;
   year?: string;
+  student?: string;
 }
 
-export function StudentSemesterRaportPage({
+export function TeacherSemesterRaportPage({
   onBack,
   semester = 1,
   year = "2026/2027",
-}: StudentSemesterRaportPageProps) {
+  student = "Fulan bin Fulan",
+}: TeacherSemesterRaportPageProps) {
+  const [evalText, setEvalText] = useState(
+    "Ananda Fulan menunjukkan progress yang baik, harap orang tua membantu mengingatkan untuk mengulangi pelajaran dan murojaah di rumah."
+  );
+  const [isEditing, setIsEditing] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
+
   function handleBack() {
     if (onBack) {
       onBack();
@@ -43,20 +55,42 @@ export function StudentSemesterRaportPage({
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-brand-cyan">Raport Semester</h1>
+        <h1 className="text-xl font-bold text-brand-cyan">Kelola Raport Semester</h1>
         <div className="h-10 w-10" />
       </div>
 
-      {/* Body */}
       <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
         <div className="flex flex-col gap-5">
-          {/* Header Info Student */}
           <RaportStudentHeader
             title={`Raport Semester ${semester}`}
             subtitle={`Tahun Ajaran ${year}`}
+            studentName={student}
+            isVerified={isVerified}
           />
 
-          {/* Nilai TTQ Section */}
+          {/* Verification toggle for teacher */}
+          <div className="flex items-center justify-between rounded-xl border border-brand-line bg-white p-3 shadow-sm">
+            <span className="text-xs font-bold text-brand-navy">Status Verifikasi Raport</span>
+            <Button
+              type="button"
+              variant={isVerified ? "default" : "outline"}
+              onClick={() => setIsVerified(!isVerified)}
+              className={`h-8 text-xs font-bold ${
+                isVerified
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                  : "border-brand-cyan text-brand-cyan"
+              }`}
+            >
+              {isVerified ? (
+                <>
+                  <Check className="mr-1 h-3.5 w-3.5" /> Terverifikasi
+                </>
+              ) : (
+                "Verifikasi Sekarang"
+              )}
+            </Button>
+          </div>
+
           <NilaiTtqSection />
 
           {/* Hasil Asesmen Sumatif TTQ Section */}
@@ -81,16 +115,6 @@ export function StudentSemesterRaportPage({
                 <p className="mt-1 text-[9px] text-brand-text-muted">
                   Al Baqarah:12 - Al Imran:2
                 </p>
-                <div className="mt-2 grid w-full grid-cols-2 border-t border-brand-line/40 pt-2 text-[9px]">
-                  <div>
-                    <p className="text-brand-text-muted">Tajwid</p>
-                    <p className="font-bold text-brand-navy">86.2</p>
-                  </div>
-                  <div>
-                    <p className="text-brand-text-muted">Kelancaran</p>
-                    <p className="font-bold text-brand-navy">86.2</p>
-                  </div>
-                </div>
               </div>
 
               {/* Card Test Tilawah */}
@@ -109,20 +133,10 @@ export function StudentSemesterRaportPage({
                 <p className="mt-1 text-[9px] text-brand-text-muted">
                   Al Baqarah:1 - Al Imran:10
                 </p>
-                <div className="mt-2 grid w-full grid-cols-2 border-t border-brand-line/40 pt-2 text-[9px]">
-                  <div>
-                    <p className="text-brand-text-muted">Tajwid</p>
-                    <p className="font-bold text-brand-navy">86.2</p>
-                  </div>
-                  <div>
-                    <p className="text-brand-text-muted">Kelancaran</p>
-                    <p className="font-bold text-brand-navy">86.2</p>
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Card Test Tertulis (Centered) */}
+            {/* Card Test Tertulis */}
             <div className="mx-auto mt-3 max-w-[65%]">
               <div className="flex flex-col items-center rounded-2xl border border-brand-line bg-white p-3 shadow-sm text-center">
                 <div className="flex items-center gap-1 text-[11px] font-bold text-brand-navy">
@@ -136,41 +150,12 @@ export function StudentSemesterRaportPage({
                 <span className="mt-1 rounded-full bg-brand-cyan/10 px-2 py-0.5 text-[10px] font-bold text-brand-cyan">
                   جيد جدا
                 </span>
-                <p className="mt-1.5 text-[9px] text-brand-text-muted leading-tight">
-                  Pengetahuan Ilmu Tajwid Metode Sabiq
-                </p>
               </div>
             </div>
           </section>
 
-          {/* Mutaba'ah Yaumiyyah Section */}
           <MutabaahSection />
-
-          {/* Absensi Siswa Section */}
           <AbsensiSection />
-
-          {/* Range Nilai Section */}
-          <section>
-            <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-brand-navy">
-              RANGE NILAI
-            </h3>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { label: "Kurang (D)", range: "< 75", border: "border-red-200 bg-red-50/50 text-red-600" },
-                { label: "Cukup (C)", range: "75 - 83", border: "border-amber-200 bg-amber-50/50 text-amber-600" },
-                { label: "Baik (B)", range: "84 - 92", border: "border-brand-cyan/40 bg-brand-cyan/5 text-brand-cyan" },
-                { label: "Sangat Baik (A)", range: "93 - 100", border: "border-emerald-200 bg-emerald-50/50 text-emerald-600" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={`rounded-xl border px-1 py-2 text-center ${item.border}`}
-                >
-                  <p className="text-[9px] font-bold leading-tight">{item.label}</p>
-                  <p className="mt-0.5 text-[10px] font-extrabold">{item.range}</p>
-                </div>
-              ))}
-            </div>
-          </section>
 
           {/* Nilai Akhir Section */}
           <section className="text-center">
@@ -182,10 +167,43 @@ export function StudentSemesterRaportPage({
             </p>
           </section>
 
-          {/* Evaluasi Guru Pembimbing */}
-          <EvaluasiSection showSignatureLine />
+          {/* Teacher Editable Evaluasi Section */}
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold text-brand-navy">
+                Evaluasi Guru Pembimbing
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center gap-1 text-[11px] font-bold text-brand-cyan"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                {isEditing ? "Batal Edit" : "Edit Evaluasi"}
+              </button>
+            </div>
 
-          {/* Bottom Action Button */}
+            {isEditing ? (
+              <div className="space-y-2 rounded-2xl border border-brand-line bg-white p-3 shadow-sm">
+                <textarea
+                  rows={4}
+                  value={evalText}
+                  onChange={(e) => setEvalText(e.target.value)}
+                  className="w-full rounded-xl border border-brand-line p-2.5 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                />
+                <Button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="h-9 w-full rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm"
+                >
+                  <Save className="mr-1.5 h-3.5 w-3.5" /> Simpan Catatan Evaluasi
+                </Button>
+              </div>
+            ) : (
+              <EvaluasiSection evaluationText={evalText} showSignatureLine />
+            )}
+          </section>
+
           <div className="pt-2">
             <Button
               type="button"
@@ -193,8 +211,7 @@ export function StudentSemesterRaportPage({
               onClick={() => window.print()}
               className="h-11 w-full rounded-2xl border-2 border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10 print:hidden"
             >
-              <Download className="mr-2 h-4 w-4" />
-              UNDUH RAPORT
+              <Download className="mr-2 h-4 w-4" /> UNDUH RAPORT
             </Button>
           </div>
         </div>

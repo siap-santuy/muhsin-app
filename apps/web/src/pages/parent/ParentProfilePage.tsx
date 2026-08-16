@@ -91,15 +91,16 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
               {[
-                { icon: UserCog, label: "Ubah Profile" },
-                { icon: Lock, label: "Ubah Password" },
-                { icon: ShieldCheck, label: "Kebijakan Privasi" },
+                { icon: UserCog, label: "Ubah Profile", route: "#/edit-profile" },
+                { icon: Lock, label: "Ubah Password", route: "#/change-password" },
+                { icon: ShieldCheck, label: "Kebijakan Privasi", route: "#/privacy" },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.label}
                     type="button"
+                    onClick={() => (window.location.hash = item.route)}
                     className="flex w-full items-center justify-between py-3 text-left transition-opacity hover:opacity-75"
                   >
                     <div className="flex items-center gap-3">
@@ -122,14 +123,15 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
               {[
-                { icon: HelpCircle, label: "Bantuan & Panduan" },
-                { icon: Info, label: "Tentang Muhsin" },
+                { icon: HelpCircle, label: "Bantuan & Panduan", route: "#/help" },
+                { icon: Info, label: "Tentang Muhsin", route: "#/about" },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.label}
                     type="button"
+                    onClick={() => (window.location.hash = item.route)}
                     className="flex w-full items-center justify-between py-3 text-left transition-opacity hover:opacity-75"
                   >
                     <div className="flex items-center gap-3">

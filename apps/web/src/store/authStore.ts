@@ -51,6 +51,25 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        if (
+          cleanEmail === "teacher@demo.com" ||
+          cleanEmail === "ustadz@demo.com" ||
+          cleanEmail === "guru@demo.com"
+        ) {
+          set({
+            accessToken: "mock-teacher-access-token",
+            refreshToken: "mock-teacher-refresh-token",
+            user: {
+              id: "mock-teacher-id",
+              name: "Ust. Arai Kurnia Ramadhan",
+              email: "teacher@demo.com",
+              role: "teacher",
+              schoolId: SCHOOL_ID,
+            },
+          });
+          return;
+        }
+
         const input: LoginInput = { email, password, schoolId: SCHOOL_ID };
         const result = await post<LoginOutput>("/auth/login", input);
         set({

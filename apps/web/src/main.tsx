@@ -4,7 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen } from "@/components/SplashScreen";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ParentDashboardPage } from "@/pages/parent/ParentDashboardPage";
+import { ParentMonthlyRaportPage } from "@/pages/parent/ParentMonthlyRaportPage";
+import { ParentMonthlySummaryPage } from "@/pages/parent/ParentMonthlySummaryPage";
 import { ParentProfilePage } from "@/pages/parent/ParentProfilePage";
+import { ParentRaportPage } from "@/pages/parent/ParentRaportPage";
+import { ParentSemesterRaportPage } from "@/pages/parent/ParentSemesterRaportPage";
+import { ParentYaumiyahPage } from "@/pages/parent/ParentYaumiyahPage";
+import { ParentYaumiyahViewPage } from "@/pages/parent/ParentYaumiyahViewPage";
 import { StudentDashboardPage } from "@/pages/student/StudentDashboardPage";
 import { StudentMonthlyRaportPage } from "@/pages/student/StudentMonthlyRaportPage";
 import { StudentMonthlySummaryPage } from "@/pages/student/StudentMonthlySummaryPage";
@@ -14,6 +20,26 @@ import { StudentSemesterRaportPage } from "@/pages/student/StudentSemesterRaport
 import { StudentYaumiyahInputPage } from "@/pages/student/StudentYaumiyahInputPage";
 import { StudentYaumiyahPage } from "@/pages/student/StudentYaumiyahPage";
 import { StudentYaumiyahViewPage } from "@/pages/student/StudentYaumiyahViewPage";
+import { TeacherDashboardPage } from "@/pages/teacher/TeacherDashboardPage";
+import { TeacherMonthlyRaportPage } from "@/pages/teacher/TeacherMonthlyRaportPage";
+import { TeacherMurojaahInputPage } from "@/pages/teacher/TeacherMurojaahInputPage";
+import { TeacherMurojaahViewPage } from "@/pages/teacher/TeacherMurojaahViewPage";
+import { TeacherProfilePage } from "@/pages/teacher/TeacherProfilePage";
+import { TeacherRaportPage } from "@/pages/teacher/TeacherRaportPage";
+import { TeacherSabiqInputPage } from "@/pages/teacher/TeacherSabiqInputPage";
+import { TeacherSabiqViewPage } from "@/pages/teacher/TeacherSabiqViewPage";
+import { TeacherSemesterRaportPage } from "@/pages/teacher/TeacherSemesterRaportPage";
+import { TeacherStudentListPage } from "@/pages/teacher/TeacherStudentListPage";
+import { TeacherTalaqiInputPage } from "@/pages/teacher/TeacherTalaqiInputPage";
+import { TeacherTalaqiViewPage } from "@/pages/teacher/TeacherTalaqiViewPage";
+import { TeacherZiyadahInputPage } from "@/pages/teacher/TeacherZiyadahInputPage";
+import { TeacherZiyadahViewPage } from "@/pages/teacher/TeacherZiyadahViewPage";
+import { NotificationPage } from "@/pages/notification/NotificationPage";
+import { AboutPage } from "@/pages/settings/AboutPage";
+import { ChangePasswordPage } from "@/pages/settings/ChangePasswordPage";
+import { EditProfilePage } from "@/pages/settings/EditProfilePage";
+import { HelpPage } from "@/pages/settings/HelpPage";
+import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { useAuthStore } from "@/store/authStore";
 import "@/index.css";
 
@@ -52,6 +78,22 @@ function App() {
   const rawHash = route.replace("#/", "").replace("#", "");
   const [path, queryString] = rawHash.split("?");
   const searchParams = new URLSearchParams(queryString || "");
+
+  // Common App Shell & Settings Routes (All Roles)
+  switch (path) {
+    case "notifications":
+      return <NotificationPage />;
+    case "edit-profile":
+      return <EditProfilePage />;
+    case "change-password":
+      return <ChangePasswordPage />;
+    case "privacy":
+      return <PrivacyPage />;
+    case "help":
+      return <HelpPage />;
+    case "about":
+      return <AboutPage />;
+  }
 
   // Role: STUDENT
   if (user.role === "student") {
@@ -95,6 +137,32 @@ function App() {
   // Role: PARENT
   if (user.role === "parent") {
     switch (path) {
+      case "yaumiyah":
+        return <ParentYaumiyahPage />;
+      case "yaumiyah-view":
+        return <ParentYaumiyahViewPage />;
+      case "tahfidz-summary":
+        return <ParentMonthlySummaryPage />;
+      case "raport":
+        return <ParentRaportPage />;
+      case "monthly-raport":
+        return (
+          <ParentMonthlyRaportPage
+            month={searchParams.get("month") || undefined}
+            year={searchParams.get("year") || undefined}
+          />
+        );
+      case "semester-raport":
+        return (
+          <ParentSemesterRaportPage
+            semester={
+              searchParams.has("semester")
+                ? Number(searchParams.get("semester"))
+                : undefined
+            }
+            year={searchParams.get("year") || undefined}
+          />
+        );
       case "profile":
         return <ParentProfilePage />;
       case "dashboard":
@@ -103,7 +171,59 @@ function App() {
     }
   }
 
-  // Role: TEACHER / KOOR (Fallback baseline)
+  // Role: TEACHER
+  if (user.role === "teacher") {
+    switch (path) {
+      case "students":
+      case "yaumiyah":
+        return <TeacherStudentListPage />;
+      case "ziyadah-input":
+        return <TeacherZiyadahInputPage />;
+      case "ziyadah-view":
+        return <TeacherZiyadahViewPage />;
+      case "murojaah-input":
+        return <TeacherMurojaahInputPage />;
+      case "murojaah-view":
+        return <TeacherMurojaahViewPage />;
+      case "sabiq-input":
+        return <TeacherSabiqInputPage />;
+      case "sabiq-view":
+        return <TeacherSabiqViewPage />;
+      case "talaqi-input":
+        return <TeacherTalaqiInputPage />;
+      case "talaqi-view":
+        return <TeacherTalaqiViewPage />;
+      case "raport":
+        return <TeacherRaportPage />;
+      case "monthly-raport":
+        return (
+          <TeacherMonthlyRaportPage
+            month={searchParams.get("month") || undefined}
+            year={searchParams.get("year") || undefined}
+            student={searchParams.get("student") || undefined}
+          />
+        );
+      case "semester-raport":
+        return (
+          <TeacherSemesterRaportPage
+            semester={
+              searchParams.has("semester")
+                ? Number(searchParams.get("semester"))
+                : undefined
+            }
+            year={searchParams.get("year") || undefined}
+            student={searchParams.get("student") || undefined}
+          />
+        );
+      case "profile":
+        return <TeacherProfilePage />;
+      case "dashboard":
+      default:
+        return <TeacherDashboardPage />;
+    }
+  }
+
+  // Fallback / Other roles
   return (
     <div className="flex min-h-screen items-center justify-center bg-white">
       <div className="space-y-4 text-center">

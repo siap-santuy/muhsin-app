@@ -1,0 +1,53 @@
+import { ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
+import { BottomNav } from "@/components/layout/BottomNav";
+
+interface SettingsPageShellProps {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  onBack?: () => void;
+}
+
+export function SettingsPageShell({
+  title,
+  subtitle,
+  children,
+  onBack,
+}: SettingsPageShellProps) {
+  function handleBack() {
+    if (onBack) {
+      onBack();
+    } else {
+      window.location.hash = "#/profile";
+    }
+  }
+
+  return (
+    <div className="flex h-screen flex-col bg-brand-page">
+      {/* Header Bar */}
+      <div className="shrink-0 flex items-center justify-between border-b border-brand-line/60 bg-white px-4 py-3 shadow-xs">
+        <button
+          type="button"
+          onClick={handleBack}
+          aria-label="Kembali"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-cyan/10"
+        >
+          <ArrowLeft className="h-4 w-4 text-brand-cyan" />
+        </button>
+        <div className="text-center">
+          <h1 className="text-base font-bold text-brand-navy">{title}</h1>
+          {subtitle ? (
+            <p className="text-[10px] text-brand-text-muted">{subtitle}</p>
+          ) : null}
+        </div>
+        <div className="h-9 w-9" />
+      </div>
+
+      {/* Scrollable Content */}
+      <main className="flex-1 overflow-y-auto px-4 pb-20 pt-3">{children}</main>
+
+      <BottomNav activeIndex={3} />
+    </div>
+  );
+}

@@ -34,7 +34,7 @@ Muhsin App adalah aplikasi **multi-tenant SaaS** untuk manajemen program TTQ (Ta
 | Form Handling | **React Hook Form + Zod resolver** | Konsisten dengan validasi backend. |
 | State Ringan (client) | **Zustand** | Untuk state UI lokal (mis. wizard onboarding). |
 | Chart/Progress | **Recharts** | Untuk grafik progres EXP/nilai bulanan. |
-| PDF Export | `@react-pdf/renderer` atau server-side (Puppeteer/Playwright headless) | Evaluasi trade-off saat implementasi v1.2. |
+| PDF Export | Browser Print (`window.print()`) di MVP; `@react-pdf/renderer` atau server-side (Puppeteer/Playwright headless) di v1.2 | `window.print()` untuk instant MVP export tanpa dependency; evaluasi trade-off server-side di v1.2. |
 | Testing | **Vitest** (unit) + **Playwright** (e2e, opsional) | |
 | Package Manager | **Bun** (workspace monorepo) | |
 | Session/Token Store | **Redis** + `ioredis` | Refresh token store (TTL-based = expiry time). Bukan tabel PostgreSQL. |
@@ -116,11 +116,11 @@ muhsin-app/
 │   │   │   │   └── container.ts                     # composition root: wiring repository → use-case → routes, manual DI (factory function biasa, TIDAK perlu framework DI/decorator)
 │   │   │   └── index.ts                             # entrypoint Hono app, mount semua routes dari tiap modul
 │   │   └── package.json
-│   └── web/                           # React + Vite frontend (tetap feature-based, bukan Clean Architecture penuh — itu overkill untuk FE proyek ini)
+│   └── web/                           # React + Vite frontend
 │       ├── src/
-│       │   ├── routes/
-│       │   ├── components/
-│       │   ├── features/              # per domain: daily-ibadah, setoran, reports, gamification
+│       │   ├── pages/                 # Role-based pages (auth, student, parent, teacher, notification, settings)
+│       │   ├── components/            # Layout, ui, student, raport, settings components
+│       │   ├── store/                 # Zustand state management (authStore)
 │       │   ├── lib/
 │       │   └── main.tsx
 │       └── package.json

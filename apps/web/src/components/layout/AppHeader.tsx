@@ -23,7 +23,8 @@ export function AppHeader() {
         <button
           type="button"
           aria-label="Notifikasi"
-          className="flex h-10 w-10 items-center justify-center rounded-full"
+          onClick={() => (window.location.hash = "#/notifications")}
+          className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-80"
         >
           <Bell className="h-5 w-5 text-brand-amber" />
         </button>

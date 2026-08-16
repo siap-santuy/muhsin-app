@@ -6,17 +6,17 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 
-interface StudentMonthlyRaportPageProps {
+interface ParentMonthlyRaportPageProps {
   onBack?: () => void;
   month?: string;
   year?: string;
 }
 
-export function StudentMonthlyRaportPage({
+export function ParentMonthlyRaportPage({
   onBack,
   month = "Juli",
   year = "2026",
-}: StudentMonthlyRaportPageProps) {
+}: ParentMonthlyRaportPageProps) {
   function handleBack() {
     if (onBack) {
       onBack();
@@ -25,7 +25,6 @@ export function StudentMonthlyRaportPage({
     }
   }
 
-  // If year is in format "2026/2027", extract the start year for monthly display
   const displayYear = year.split("/")[0] || year;
 
   return (

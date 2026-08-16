@@ -44,8 +44,10 @@ Sekolah IT saat ini umumnya mencatat setoran hafalan, tahsin, hadist, dan ibadah
 | D2  | Manajemen akun                             | **Admin sekolah input manual/bulk** semua akun (siswa, guru, orang tua)                          | Cocok untuk konteks sekolah formal Indonesia; hindari kompleksitas self-register/verifikasi di MVP.            |
 | D3  | Fleksibilitas jenjang & kategori penilaian | **Skema dirancang dinamis** (kategori penilaian & skala nilai adalah data, bukan kolom hardcode) | Tiap sekolah/jenjang punya kategori & bobot berbeda (sesuai temuan wawancara: JSIT hanya kasih pedoman dasar). |
 | D4  | Model gamifikasi EXP                       | **Semua aktivitas (yaumiyah + setoran) + bonus streak konsistensi**                              | Mendorong kombinasi ibadah harian & prestasi hafalan, sekaligus reward untuk konsistensi harian.               |
+| D5  | Export PDF Laporan                         | **Browser Print API (`window.print()`) untuk MVP**                                               | Pendekatan tercepat tanpa dependensi tambahan; ekspor PDF server-side dengan Playwright/Puppeteer di v1.2.    |
+| D6  | Pusat Notifikasi (App Shell)               | **In-App Notification Hub dengan mock data per role di MVP**                                    | Memberikan visibilitas langsung dari AppHeader & ReminderBanner; integrasi WA/email tetap di v1.2.             |
 
-Keempat keputusan ini adalah **fondasi** yang memengaruhi seluruh desain data model & fitur aplikasi.
+Keenam keputusan ini adalah **fondasi** yang memengaruhi seluruh desain data model & fitur aplikasi.
 
 ---
 
@@ -336,6 +338,29 @@ Super Admin provisioning tenant → Koordinator TTQ login pertama kali
 → Setup profil sekolah & jenjang → Pilih/edit kategori penilaian (dari template atau custom)
 → Import data master (kelas, siswa, guru, mapping) → Sistem siap dipakai
 ```
+
+---
+
+### 4.8 App Shell — Notifikasi & Pengaturan Akun *(Baru — MVP)*
+
+Pengalaman pengguna yang utuh membutuhkan halaman app shell yang dapat diakses dari AppHeader, Dashboard, dan Profil:
+
+1. **Pusat Notifikasi (`#/notifications`)**:
+   - Dapat diakses via ikon lonceng pada `AppHeader` dan tombol "Ingatkan!" di `ParentDashboard`.
+   - Menampilkan notifikasi kontekstual berdasarkan role (Pengingat Setoran, Ibadah Yaumiyah, Pengumuman Sekolah).
+   - Mendukung filter status (Semua / Belum Dibaca) dan penandaan "Tandai semua dibaca".
+
+2. **Pengaturan Akun & Informasi (`#/edit-profile`, `#/change-password`, `#/privacy`, `#/help`, `#/about`)**:
+   - **Ubah Profile (`#/edit-profile`)**: Mengubah informasi profil (Nama, Email, No. Telepon, foto avatar).
+   - **Ubah Password (`#/change-password`)**: Mengubah kata sandi dengan verifikasi password lama & konfirmasi password baru.
+   - **Kebijakan Privasi (`#/privacy`)**: Informasi perlindungan data siswa, keluarga, dan standar keamanan sekolah IT.
+   - **Bantuan & Panduan (`#/help`)**: FAQ dan petunjuk penggunaan aplikasi (disesuaikan per role, misal "Bantuan & Panduan Guru").
+   - **Tentang Muhsin (`#/about`)**: Informasi versi aplikasi (v1.0.0), pengembang, dan visi platform Muhsin App.
+
+**Acceptance Criteria:**
+- Seluruh menu pada halaman Profil (Student, Parent, Teacher) dapat diklik dan mengarah ke rute yang sesuai.
+- Ikon lonceng di AppHeader dan tombol pengingat di dashboard dapat diklik dan membuka halaman pusat notifikasi.
+- Tombol "UNDUH RAPORT" di seluruh halaman raport memicu dialog cetak browser (`window.print()`).
 
 ---
 

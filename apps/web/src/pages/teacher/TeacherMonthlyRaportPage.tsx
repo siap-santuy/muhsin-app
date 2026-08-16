@@ -1,4 +1,5 @@
-import { ArrowLeft, Download } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Check, Download, Edit3, Save } from "lucide-react";
 import { AbsensiSection } from "@/components/raport/AbsensiSection";
 import { EvaluasiSection } from "@/components/raport/EvaluasiSection";
 import { MutabaahSection } from "@/components/raport/MutabaahSection";
@@ -6,17 +7,25 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 
-interface StudentMonthlyRaportPageProps {
+interface TeacherMonthlyRaportPageProps {
   onBack?: () => void;
   month?: string;
   year?: string;
+  student?: string;
 }
 
-export function StudentMonthlyRaportPage({
+export function TeacherMonthlyRaportPage({
   onBack,
   month = "Juli",
   year = "2026",
-}: StudentMonthlyRaportPageProps) {
+  student = "Fulan bin Fulan",
+}: TeacherMonthlyRaportPageProps) {
+  const [evalText, setEvalText] = useState(
+    "Ananda Fulan menunjukkan progress yang baik, harap orang tua membantu mengingatkan untuk mengulangi pelajaran dan murojaah di rumah."
+  );
+  const [isEditing, setIsEditing] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
+
   function handleBack() {
     if (onBack) {
       onBack();
@@ -25,7 +34,6 @@ export function StudentMonthlyRaportPage({
     }
   }
 
-  // If year is in format "2026/2027", extract the start year for monthly display
   const displayYear = year.split("/")[0] || year;
 
   return (
@@ -40,17 +48,41 @@ export function StudentMonthlyRaportPage({
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-brand-cyan">Raport Bulanan</h1>
+        <h1 className="text-xl font-bold text-brand-cyan">Kelola Raport Bulanan</h1>
         <div className="h-10 w-10" />
       </div>
 
-      {/* Body */}
       <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
         <div className="flex flex-col gap-5">
-          {/* Header Info Student */}
-          <RaportStudentHeader title={`Raport Bulan ${month} ${displayYear}`} />
+          <RaportStudentHeader
+            title={`Raport Bulan ${month} ${displayYear}`}
+            studentName={student}
+            isVerified={isVerified}
+          />
 
-          {/* Nilai TTQ Section */}
+          {/* Verification toggle for teacher */}
+          <div className="flex items-center justify-between rounded-xl border border-brand-line bg-white p-3 shadow-sm">
+            <span className="text-xs font-bold text-brand-navy">Status Verifikasi Raport</span>
+            <Button
+              type="button"
+              variant={isVerified ? "default" : "outline"}
+              onClick={() => setIsVerified(!isVerified)}
+              className={`h-8 text-xs font-bold ${
+                isVerified
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                  : "border-brand-cyan text-brand-cyan"
+              }`}
+            >
+              {isVerified ? (
+                <>
+                  <Check className="mr-1 h-3.5 w-3.5" /> Terverifikasi
+                </>
+              ) : (
+                "Verifikasi Sekarang"
+              )}
+            </Button>
+          </div>
+
           <NilaiTtqSection />
 
           {/* Detail Tahfidz Section */}
@@ -95,16 +127,46 @@ export function StudentMonthlyRaportPage({
             </div>
           </section>
 
-          {/* Mutaba'ah Yaumiyyah Section */}
           <MutabaahSection />
-
-          {/* Absensi Siswa Section */}
           <AbsensiSection />
 
-          {/* Evaluasi Guru Pembimbing */}
-          <EvaluasiSection />
+          {/* Teacher Editable Evaluasi Section */}
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold text-brand-navy">
+                Evaluasi Guru Pembimbing
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center gap-1 text-[11px] font-bold text-brand-cyan"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                {isEditing ? "Batal Edit" : "Edit Evaluasi"}
+              </button>
+            </div>
 
-          {/* Bottom Action Button */}
+            {isEditing ? (
+              <div className="space-y-2 rounded-2xl border border-brand-line bg-white p-3 shadow-sm">
+                <textarea
+                  rows={4}
+                  value={evalText}
+                  onChange={(e) => setEvalText(e.target.value)}
+                  className="w-full rounded-xl border border-brand-line p-2.5 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                />
+                <Button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="h-9 w-full rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm"
+                >
+                  <Save className="mr-1.5 h-3.5 w-3.5" /> Simpan Catatan Evaluasi
+                </Button>
+              </div>
+            ) : (
+              <EvaluasiSection evaluationText={evalText} />
+            )}
+          </section>
+
           <div className="pt-2">
             <Button
               type="button"
@@ -112,8 +174,7 @@ export function StudentMonthlyRaportPage({
               onClick={() => window.print()}
               className="h-11 w-full rounded-2xl border-2 border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10 print:hidden"
             >
-              <Download className="mr-2 h-4 w-4" />
-              UNDUH RAPORT
+              <Download className="mr-2 h-4 w-4" /> UNDUH RAPORT
             </Button>
           </div>
         </div>

@@ -142,6 +142,16 @@ export function LoginPage() {
             >
               Demo Parent
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("teacher@demo.com");
+                setPassword("demo123");
+              }}
+              className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600 hover:bg-emerald-100"
+            >
+              Demo Guru
+            </button>
           </div>
         </div>
 
