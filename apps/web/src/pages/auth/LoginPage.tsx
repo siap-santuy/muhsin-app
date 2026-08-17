@@ -152,6 +152,16 @@ export function LoginPage() {
             >
               Demo Guru
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("koordinator@demo.com");
+                setPassword("demo123");
+              }}
+              className="rounded-lg bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-100"
+            >
+              Demo Koor
+            </button>
           </div>
         </div>
 

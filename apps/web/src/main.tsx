@@ -34,6 +34,11 @@ import { TeacherTalaqiInputPage } from "@/pages/teacher/TeacherTalaqiInputPage";
 import { TeacherTalaqiViewPage } from "@/pages/teacher/TeacherTalaqiViewPage";
 import { TeacherZiyadahInputPage } from "@/pages/teacher/TeacherZiyadahInputPage";
 import { TeacherZiyadahViewPage } from "@/pages/teacher/TeacherZiyadahViewPage";
+import { KoorDashboardPage } from "@/pages/koordinator/KoorDashboardPage";
+import { KoorStudentPage } from "@/pages/koordinator/KoorStudentPage";
+import { KoorTeacherPage } from "@/pages/koordinator/KoorTeacherPage";
+import { KoorKurikulumPage } from "@/pages/koordinator/KoorKurikulumPage";
+import { KoorMunaqosahPage } from "@/pages/koordinator/KoorMunaqosahPage";
 import { NotificationPage } from "@/pages/notification/NotificationPage";
 import { AboutPage } from "@/pages/settings/AboutPage";
 import { ChangePasswordPage } from "@/pages/settings/ChangePasswordPage";
@@ -220,6 +225,23 @@ function App() {
       case "dashboard":
       default:
         return <TeacherDashboardPage />;
+    }
+  }
+
+  // Role: KOORDINATOR TTQ
+  if (user.role === "koordinator_ttq") {
+    switch (path) {
+      case "students":
+        return <KoorStudentPage />;
+      case "teachers":
+        return <KoorTeacherPage />;
+      case "kurikulum":
+        return <KoorKurikulumPage />;
+      case "munaqosah":
+        return <KoorMunaqosahPage />;
+      case "dashboard":
+      default:
+        return <KoorDashboardPage />;
     }
   }
 

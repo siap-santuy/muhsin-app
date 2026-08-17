@@ -70,6 +70,25 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        if (
+          cleanEmail === "koordinator@demo.com" ||
+          cleanEmail === "koordinator@alfitrah.demo" ||
+          cleanEmail === "admin@demo.com"
+        ) {
+          set({
+            accessToken: "mock-koordinator-access-token",
+            refreshToken: "mock-koordinator-refresh-token",
+            user: {
+              id: "mock-koordinator-id",
+              name: "Ust. Abdullah S.Pd.I",
+              email: "koordinator@demo.com",
+              role: "koordinator_ttq",
+              schoolId: SCHOOL_ID,
+            },
+          });
+          return;
+        }
+
         const input: LoginInput = { email, password, schoolId: SCHOOL_ID };
         const result = await post<LoginOutput>("/auth/login", input);
         set({
