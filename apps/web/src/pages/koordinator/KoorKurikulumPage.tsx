@@ -7,6 +7,7 @@ import {
   Plus,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
+import { Pagination } from "@/components/ui/Pagination";
 
 interface ScoreField {
   key: string;
@@ -103,6 +104,14 @@ const GRADING_SCALE = [
 export function KoorKurikulumPage() {
   const [activeTab, setActiveTab] = useState<"kategori" | "grading" | "versioning">("kategori");
   const [categories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [gradingPage, setGradingPage] = useState(1);
+
+  const GRADING_PAGE_SIZE = 4;
+  const totalGradingPages = Math.max(1, Math.ceil(GRADING_SCALE.length / GRADING_PAGE_SIZE));
+  const paginatedGrading = GRADING_SCALE.slice(
+    (gradingPage - 1) * GRADING_PAGE_SIZE,
+    gradingPage * GRADING_PAGE_SIZE
+  );
 
   return (
     <KoorShell
@@ -338,7 +347,7 @@ export function KoorKurikulumPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-line/40 font-medium">
-                  {GRADING_SCALE.map((gr) => (
+                  {paginatedGrading.map((gr) => (
                     <tr key={gr.letter} className="hover:bg-brand-page/50">
                       <td className="px-4 py-3 font-bold">
                         {gr.min} &ndash; {gr.max}
@@ -359,6 +368,11 @@ export function KoorKurikulumPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-brand-line/40 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
+              <span>Menampilkan <span className="font-bold text-brand-navy">{paginatedGrading.length}</span> dari <span className="font-bold text-brand-navy">{GRADING_SCALE.length}</span> skala nilai</span>
+              <Pagination page={gradingPage} totalPages={totalGradingPages} onPageChange={setGradingPage} />
             </div>
           </div>
         )}

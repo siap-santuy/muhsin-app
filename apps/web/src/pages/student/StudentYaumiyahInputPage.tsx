@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ArrowLeft, BookOpen, CalendarDays, Info, Sun, Moon } from "lucide-react";
 import {
   DayStripPicker,
   type DayItem,
 } from "@/components/student/DayStripPicker";
 import { Button } from "@/components/ui/button";
+import { Toast } from "@/components/ui/Toast";
 
 const DAYS_MOCK: DayItem[] = [
   { dayName: "Sen", dayNum: 9, fullDate: "Senin, 9 Oktober 2023", status: "empty" },
@@ -48,6 +49,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
   });
   const [rawatibState, setRawatibState] = useState<Record<string, boolean>>({});
   const [ibadahState, setIbadahState] = useState<Record<string, boolean>>({});
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
 
   function handleBack() {
     if (onBack) {
@@ -55,6 +57,19 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
     } else {
       window.location.hash = "#/yaumiyah";
     }
+  }
+
+  const handleCloseToast = useCallback(() => setToast(null), []);
+
+  function handleSaveDraft() {
+    // ponytail: mock save — replace with API call when backend ready
+    setToast({ message: "Draft ibadah berhasil disimpan", variant: "warning" });
+  }
+
+  function handleSubmit() {
+    // ponytail: mock submit — replace with API call + EXP calculation when backend ready
+    setToast({ message: "Ibadah yaumiyah berhasil dikirim!", variant: "success" });
+    setTimeout(handleBack, 1800);
   }
 
   function handleSelectOption(sholat: string, opt: string) {
@@ -293,19 +308,21 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
         <Button
           type="button"
           variant="outline"
-          onClick={handleBack}
+          onClick={handleSaveDraft}
           className="h-10 flex-1 rounded-xl border-brand-amber text-xs font-bold text-brand-amber hover:bg-brand-amber/10"
         >
           SIMPAN
         </Button>
         <Button
           type="button"
-          onClick={handleBack}
+          onClick={handleSubmit}
           className="h-10 flex-1 rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
         >
           KIRIM
         </Button>
       </div>
+
+      {toast && <Toast message={toast.message} variant={toast.variant} onClose={handleCloseToast} />}
     </div>
   );
 }

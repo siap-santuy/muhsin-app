@@ -115,17 +115,33 @@ export function KoorShell({
       <a
         href="#/edit-profile"
         onClick={() => setMobileOpen(false)}
-        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-brand-navy hover:bg-brand-navy/5 transition-all"
+        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-all ${
+          activePath === "settings"
+            ? "bg-brand-navy text-white shadow-sm"
+            : "text-brand-navy hover:bg-brand-navy/5"
+        }`}
       >
-        <Settings className="h-4 w-4 text-brand-navy/60" />
+        <Settings
+          className={`h-4 w-4 ${
+            activePath === "settings" ? "text-brand-cyan" : "text-brand-navy/60"
+          }`}
+        />
         <span>Pengaturan Akun</span>
       </a>
       <a
         href="#/notifications"
         onClick={() => setMobileOpen(false)}
-        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-brand-navy hover:bg-brand-navy/5 transition-all"
+        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-all ${
+          activePath === "notifications"
+            ? "bg-brand-navy text-white shadow-sm"
+            : "text-brand-navy hover:bg-brand-navy/5"
+        }`}
       >
-        <Bell className="h-4 w-4 text-brand-navy/60" />
+        <Bell
+          className={`h-4 w-4 ${
+            activePath === "notifications" ? "text-brand-cyan" : "text-brand-navy/60"
+          }`}
+        />
         <span>Notifikasi Hub</span>
       </a>
     </nav>

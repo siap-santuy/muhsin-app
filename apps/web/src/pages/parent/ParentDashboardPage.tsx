@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BookOpenCheck,
   HeartHandshake,
   Mic,
   NotebookPen,
@@ -65,6 +66,9 @@ const PROGRESS: ProgressItem[] = [
 const MASCOT_MESSAGE =
   "\u201cMaa syaa Allah! Fulan sangat rajin hari ini. Jangan lupa berikan apresiasi ya, Ummi/Abi!\u201d";
 
+// ponytail: mock target ziyadah — replace with API (PRD 4.3b)
+const MOCK_TARGET = { from: "Al-Baqarah: 1", to: "Al-Baqarah: 75", progress: "Ayat 48" };
+
 export function ParentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const name = user?.name ?? "Ummu Fulan";
@@ -97,7 +101,22 @@ export function ParentDashboardPage() {
             action="Ingatkan!"
             onAction={() => (window.location.hash = "#/notifications")}
           />
-          <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
+          <div onClick={() => (window.location.hash = "#/tahfidz-summary")} className="cursor-pointer">
+            <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
+          </div>
+          {/* Target Ziyadah Ananda (PRD 4.3b) */}
+          <div className="flex items-center gap-3 rounded-2xl border border-brand-cyan/30 bg-brand-cyan/5 px-4 py-3">
+            <BookOpenCheck className="h-6 w-6 shrink-0 text-brand-cyan" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold text-brand-navy">Target Ziyadah Ananda</p>
+              <p className="text-xs text-brand-text-muted truncate">
+                {MOCK_TARGET.from} — {MOCK_TARGET.to}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-lg bg-brand-cyan/15 px-2 py-1 text-[10px] font-bold text-brand-cyan-dark">
+              {MOCK_TARGET.progress}
+            </span>
+          </div>
           <DailyQuote text={QUOTE.text} source={QUOTE.source} />
           <MenuCard
             icon={BookOpen}

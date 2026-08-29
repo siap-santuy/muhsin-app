@@ -9,6 +9,7 @@ import {
   Info,
 } from "lucide-react";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { KoorShell } from "@/components/layout/KoorShell";
 import { useAuthStore } from "@/store/authStore";
 
 export interface NotificationItem {
@@ -82,9 +83,12 @@ export function NotificationPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role ?? "student";
 
-  const roleFiltered = MOCK_NOTIFICATIONS.filter((n) =>
-    !n.targetRole || n.targetRole.includes(role as "student" | "parent" | "teacher")
-  );
+  const roleFiltered = MOCK_NOTIFICATIONS.filter((n) => {
+    if (role === "koordinator_ttq") {
+      return !n.targetRole || n.targetRole.includes("teacher") || n.type === "system";
+    }
+    return !n.targetRole || n.targetRole.includes(role as "student" | "parent" | "teacher");
+  });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(roleFiltered);
   const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -131,7 +135,118 @@ export function NotificationPage() {
   }
 
   function handleBack() {
-    window.location.hash = "#/dashboard";
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.hash = "#/dashboard";
+    }
+  }
+  if (role === "koordinator_ttq") {
+    return (
+      <KoorShell
+        activePath="notifications"
+        title="Pusat Notifikasi"
+        subtitle={unreadCount > 0 ? `${unreadCount} belum dibaca` : "Semua notifikasi sudah dibaca"}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 rounded-xl bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  filter === "all"
+                    ? "bg-white text-brand-navy shadow-xs"
+                    : "text-brand-text-muted hover:text-brand-navy"
+                }`}
+              >
+                Semua ({notifications.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("unread")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  filter === "unread"
+                    ? "bg-white text-brand-navy shadow-xs"
+                    : "text-brand-text-muted hover:text-brand-navy"
+                }`}
+              >
+                Belum Dibaca ({unreadCount})
+              </button>
+            </div>
+
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
+                className="flex items-center gap-1.5 rounded-xl border border-brand-line bg-white px-3 py-1.5 text-xs font-bold text-brand-navy hover:border-brand-cyan shadow-sm"
+              >
+                <CheckCheck className="h-4 w-4 text-brand-cyan" />
+                <span>Tandai Semua Dibaca</span>
+              </button>
+            )}
+          </div>
+
+          {displayed.length === 0 ? (
+            <div className="mt-12 flex flex-col items-center justify-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-cyan/10 text-brand-cyan">
+                <Bell className="h-8 w-8" />
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-brand-navy">Tidak ada notifikasi</h3>
+              <p className="mt-1 text-xs text-brand-text-muted">
+                {filter === "unread"
+                  ? "Semua notifikasi sudah dibaca."
+                  : "Belum ada notifikasi baru untuk Anda saat ini."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {displayed.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleToggleRead(item.id)}
+                  className={`flex cursor-pointer gap-3 rounded-2xl border p-4 shadow-sm transition-all ${
+                    !item.read
+                      ? "border-brand-cyan/40 bg-brand-cyan/5 hover:border-brand-cyan"
+                      : "border-brand-line/60 bg-white opacity-90 hover:border-brand-line"
+                  }`}
+                >
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${getIconBg(
+                      item.type
+                    )}`}
+                  >
+                    {getIcon(item.type)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4
+                        className={`text-xs font-bold ${
+                          !item.read ? "text-brand-navy" : "text-gray-600"
+                        }`}
+                      >
+                        {item.title}
+                      </h4>
+                      {!item.read ? (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-brand-cyan" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-brand-navy/90 leading-snug">
+                      {item.message}
+                    </p>
+                    <span className="mt-1.5 block text-[10px] text-brand-text-muted">
+                      {item.time}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </KoorShell>
+    );
   }
 
   return (

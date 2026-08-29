@@ -116,38 +116,53 @@ export function KoorTeacherPage() {
         {/* 3 Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="flex items-start justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
                 <GraduationCap className="h-5 w-5" />
               </div>
-              <div>
-                <span className="text-xl font-black text-brand-navy">8 Guru</span>
-                <p className="text-xs font-bold text-brand-navy">Pembimbing Aktif</p>
-              </div>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-600">
+                +2
+              </span>
+            </div>
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
+                Total Guru Aktif
+              </p>
+              <span className="text-2xl font-black text-brand-navy">13</span>
             </div>
           </div>
 
           <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-brand-cyan-dark">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-xl font-black text-brand-navy">93.4%</span>
-                <p className="text-xs font-bold text-brand-navy">Keaktifan Input</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+            <div className="flex items-start justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
                 <Users className="h-5 w-5" />
               </div>
-              <div>
-                <span className="text-xl font-black text-brand-navy">15.5</span>
-                <p className="text-xs font-bold text-brand-navy">Siswa / Halaqah</p>
+              <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                Izin/Cuti
+              </span>
+            </div>
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
+                Total Guru Off
+              </p>
+              <span className="text-2xl font-black text-brand-navy">2</span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-brand-cyan-dark">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
+              <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-brand-cyan-dark">
+                Aktif
+              </span>
+            </div>
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
+                Total Kelas Aktif
+              </p>
+              <span className="text-2xl font-black text-brand-navy">8</span>
             </div>
           </div>
         </div>

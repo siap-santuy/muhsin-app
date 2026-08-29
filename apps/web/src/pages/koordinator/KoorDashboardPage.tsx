@@ -18,32 +18,36 @@ import { useAuthStore } from "@/store/authStore";
 
 const STATS = [
   {
-    label: "Total Siswa Active",
-    value: "124",
-    subtext: "6 Kelas (VII, VIII, IX)",
-    icon: Users,
-    color: "bg-cyan-50 text-brand-cyan-dark border-cyan-100",
-  },
-  {
-    label: "Guru Pembimbing",
-    value: "8",
-    subtext: "8 Halaqah Bimbingan",
+    label: "TOTAL SISWA",
+    value: "1,248",
+    subtext: "+12% MoM",
+    subtextColor: "text-brand-cyan-dark font-bold",
     icon: GraduationCap,
-    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    iconBg: "bg-cyan-100 text-brand-cyan-dark",
   },
   {
-    label: "Setoran Bulan Ini",
-    value: "492",
-    subtext: "94% Kelancaran Rata-rata",
+    label: "RATA-RATA PROGRES",
+    value: "82.4%",
+    subtext: "Target: 85%",
+    subtextColor: "text-emerald-600 font-bold",
     icon: BookOpen,
-    color: "bg-purple-50 text-purple-600 border-purple-100",
+    iconBg: "bg-emerald-100 text-emerald-600",
   },
   {
-    label: "Pengajuan Munaqosah",
-    value: "2",
-    subtext: "Perlu Persetujuan",
+    label: "KEHADIRAN HARI INI",
+    value: "96.8%",
+    subtext: "1,208 Siswa hadir",
+    subtextColor: "text-brand-text-muted",
+    icon: Users,
+    iconBg: "bg-slate-100 text-brand-navy",
+  },
+  {
+    label: "SETORAN TERTUNDA",
+    value: "42",
+    subtext: "Butuh verifikasi segera",
+    subtextColor: "text-orange-600 font-bold",
     icon: Award,
-    color: "bg-amber-50 text-amber-600 border-amber-200",
+    iconBg: "bg-orange-100 text-orange-600",
     badge: "Pending",
   },
 ];
@@ -154,26 +158,31 @@ export function KoorDashboardPage() {
             return (
               <div
                 key={st.label}
-                className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-md ${st.color}`}
+                className="relative flex flex-col justify-between rounded-2xl border border-brand-line/60 bg-white p-5 shadow-sm transition-all hover:border-brand-cyan hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
-                  <div className="rounded-xl p-2 bg-white/80 shadow-xs">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-cyan-dark">
+                      {st.label}
+                    </p>
+                    <span className="mt-1 block text-2xl font-black text-brand-navy">
+                      {st.value}
+                    </span>
+                  </div>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${st.iconBg}`}>
                     <Icon className="h-5 w-5" />
                   </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <p className={`text-[10px] ${st.subtextColor}`}>
+                    {st.subtext}
+                  </p>
                   {st.badge ? (
                     <span className="rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-extrabold text-brand-navy shadow-xs">
                       {st.badge}
                     </span>
                   ) : null}
-                </div>
-                <div className="mt-4">
-                  <span className="text-2xl font-black text-brand-navy">
-                    {st.value}
-                  </span>
-                  <p className="text-xs font-bold text-brand-navy">{st.label}</p>
-                  <p className="mt-0.5 text-[10px] text-brand-text-muted">
-                    {st.subtext}
-                  </p>
                 </div>
               </div>
             );

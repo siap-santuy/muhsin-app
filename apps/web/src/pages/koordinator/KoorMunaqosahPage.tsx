@@ -4,6 +4,7 @@ import {
   X,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
+import { Pagination } from "@/components/ui/Pagination";
 
 interface MunaqosahRequest {
   id: string;
@@ -72,10 +73,19 @@ export function KoorMunaqosahPage() {
   const [selectedExaminer, setSelectedExaminer] = useState(EXAMINERS_POOL[0].name);
   const [examDate, setExamDate] = useState("2026-08-25T09:00");
   const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history">("pending");
+  const [scheduledPage, setScheduledPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
 
   const pendingList = requests.filter((r) => r.status === "diajukan");
   const scheduledList = requests.filter((r) => r.status === "dijadwalkan" || r.status === "disetujui");
   const historyList = requests.filter((r) => r.status === "lulus" || r.status === "ditolak");
+
+  const PAGE_SIZE = 3;
+  const scheduledTotalPages = Math.max(1, Math.ceil(scheduledList.length / PAGE_SIZE));
+  const scheduledPaginated = scheduledList.slice((scheduledPage - 1) * PAGE_SIZE, scheduledPage * PAGE_SIZE);
+
+  const historyTotalPages = Math.max(1, Math.ceil(historyList.length / PAGE_SIZE));
+  const historyPaginated = historyList.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
 
   function handleApproveSubmit() {
     if (!selectedReq) return;
@@ -265,84 +275,98 @@ export function KoorMunaqosahPage() {
 
         {/* Tab Content: Scheduled */}
         {activeTab === "scheduled" && (
-          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm overflow-x-auto">
-            <table className="w-full text-left text-xs text-brand-navy">
-              <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
-                <tr>
-                  <th className="px-4 py-3">Nama Siswa &amp; Kelas</th>
-                  <th className="px-4 py-3">Target Juz</th>
-                  <th className="px-4 py-3">Guru Pembimbing</th>
-                  <th className="px-4 py-3">Guru Penguji Assigned</th>
-                  <th className="px-4 py-3">Jadwal Ujian</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-line/40 font-medium">
-                {scheduledList.map((req) => (
-                  <tr key={req.id}>
-                    <td className="px-4 py-3 font-bold">{req.studentName} ({req.class})</td>
-                    <td className="px-4 py-3 font-extrabold text-amber-800">Juz {req.juz}</td>
-                    <td className="px-4 py-3">{req.teacherName}</td>
-                    <td className="px-4 py-3 font-bold text-brand-cyan-dark">
-                      {req.assignedExaminer ?? "-"}
-                    </td>
-                    <td className="px-4 py-3 text-brand-navy">{req.examDate ?? "-"}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-brand-cyan-dark">
-                        Dijadwalkan
-                      </span>
-                    </td>
+          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm space-y-3">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-brand-navy">
+                <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
+                  <tr>
+                    <th className="px-4 py-3">Nama Siswa &amp; Kelas</th>
+                    <th className="px-4 py-3">Target Juz</th>
+                    <th className="px-4 py-3">Guru Pembimbing</th>
+                    <th className="px-4 py-3">Guru Penguji Assigned</th>
+                    <th className="px-4 py-3">Jadwal Ujian</th>
+                    <th className="px-4 py-3">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-brand-line/40 font-medium">
+                  {scheduledPaginated.map((req) => (
+                    <tr key={req.id}>
+                      <td className="px-4 py-3 font-bold">{req.studentName} ({req.class})</td>
+                      <td className="px-4 py-3 font-extrabold text-amber-800">Juz {req.juz}</td>
+                      <td className="px-4 py-3">{req.teacherName}</td>
+                      <td className="px-4 py-3 font-bold text-brand-cyan-dark">
+                        {req.assignedExaminer ?? "-"}
+                      </td>
+                      <td className="px-4 py-3 text-brand-navy">{req.examDate ?? "-"}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-brand-cyan-dark">
+                          Dijadwalkan
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-brand-line/40 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
+              <span>Total <span className="font-bold text-brand-navy">{scheduledList.length}</span> ujian dijadwalkan</span>
+              <Pagination page={scheduledPage} totalPages={scheduledTotalPages} onPageChange={setScheduledPage} />
+            </div>
           </div>
         )}
 
         {/* Tab Content: History */}
         {activeTab === "history" && (
-          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm overflow-x-auto">
-            <table className="w-full text-left text-xs text-brand-navy">
-              <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
-                <tr>
-                  <th className="px-4 py-3">Nama Siswa</th>
-                  <th className="px-4 py-3">Juz Ujian</th>
-                  <th className="px-4 py-3">Guru Penguji</th>
-                  <th className="px-4 py-3">Hasil Akhir</th>
-                  <th className="px-4 py-3">Achievement Awarded</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-line/40 font-medium">
-                {historyList.map((req) => (
-                  <tr key={req.id}>
-                    <td className="px-4 py-3 font-bold">{req.studentName}</td>
-                    <td className="px-4 py-3 font-bold">Juz {req.juz}</td>
-                    <td className="px-4 py-3">{req.assignedExaminer}</td>
-                    <td className="px-4 py-3">
-                      {req.status === "lulus" ? (
-                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800">
-                          LULUS
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-extrabold text-red-800">
-                          DITOLAK
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {req.status === "lulus" ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-200">
-                          <Award className="h-3 w-3 text-amber-600" />
-                          Badge Juz {req.juz} Awarded
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm space-y-3">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-brand-navy">
+                <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
+                  <tr>
+                    <th className="px-4 py-3">Nama Siswa</th>
+                    <th className="px-4 py-3">Juz Ujian</th>
+                    <th className="px-4 py-3">Guru Penguji</th>
+                    <th className="px-4 py-3">Hasil Akhir</th>
+                    <th className="px-4 py-3">Achievement Awarded</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-brand-line/40 font-medium">
+                  {historyPaginated.map((req) => (
+                    <tr key={req.id}>
+                      <td className="px-4 py-3 font-bold">{req.studentName}</td>
+                      <td className="px-4 py-3 font-bold">Juz {req.juz}</td>
+                      <td className="px-4 py-3">{req.assignedExaminer}</td>
+                      <td className="px-4 py-3">
+                        {req.status === "lulus" ? (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800">
+                            LULUS
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-extrabold text-red-800">
+                            DITOLAK
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {req.status === "lulus" ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-200">
+                            <Award className="h-3 w-3 text-amber-600" />
+                            Badge Juz {req.juz} Awarded
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-brand-line/40 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
+              <span>Total <span className="font-bold text-brand-navy">{historyList.length}</span> riwayat ujian</span>
+              <Pagination page={historyPage} totalPages={historyTotalPages} onPageChange={setHistoryPage} />
+            </div>
           </div>
         )}
 

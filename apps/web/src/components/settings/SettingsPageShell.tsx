@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { KoorShell } from "@/components/layout/KoorShell";
+import { useAuthStore } from "@/store/authStore";
 
 interface SettingsPageShellProps {
   title: string;
@@ -15,12 +17,41 @@ export function SettingsPageShell({
   children,
   onBack,
 }: SettingsPageShellProps) {
+  const user = useAuthStore((s) => s.user);
+
   function handleBack() {
     if (onBack) {
       onBack();
+    } else if (window.history.length > 1) {
+      window.history.back();
     } else {
       window.location.hash = "#/profile";
     }
+  }
+
+  if (user?.role === "koordinator_ttq") {
+    return (
+      <KoorShell activePath="settings" title={title} subtitle={subtitle}>
+        <div className="mx-auto max-w-3xl space-y-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-line/60 bg-white text-brand-navy shadow-sm hover:border-brand-cyan"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <h2 className="text-base font-bold text-brand-navy">{title}</h2>
+              {subtitle ? (
+                <p className="text-xs text-brand-text-muted">{subtitle}</p>
+              ) : null}
+            </div>
+          </div>
+          {children}
+        </div>
+      </KoorShell>
+    );
   }
 
   return (
