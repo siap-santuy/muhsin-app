@@ -6,7 +6,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 
 interface MonthDef {
   name: string;
@@ -276,7 +276,7 @@ export function TeacherRaportPage() {
         </div>
       </main>
 
-      <BottomNav activeIndex={2} />
+      <BottomNav items={TEACHER_NAV_ITEMS} activeIndex={2} />
     </div>
   );
 }

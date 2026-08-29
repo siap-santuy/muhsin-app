@@ -1,4 +1,4 @@
-import { CalendarCheck, FileText, Home, User, type LucideIcon } from "lucide-react";
+import { CalendarCheck, FileText, Home, User, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -9,6 +9,13 @@ export interface NavItem {
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { label: "Beranda", icon: Home },
   { label: "Yaumiyah", icon: CalendarCheck },
+  { label: "Raport", icon: FileText },
+  { label: "Profil", icon: User },
+];
+
+export const TEACHER_NAV_ITEMS: NavItem[] = [
+  { label: "Beranda", icon: Home },
+  { label: "Siswa", icon: Users },
   { label: "Raport", icon: FileText },
   { label: "Profil", icon: User },
 ];

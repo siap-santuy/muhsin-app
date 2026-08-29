@@ -6,8 +6,7 @@ import {
   Search,
   UserCheck,
 } from "lucide-react";
-import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 
 interface StudentItem {
   id: string;
@@ -71,9 +70,7 @@ export function TeacherStudentListPage() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-brand-page">
-      <AppHeader />
-
+    <div className="flex h-screen flex-col bg-brand-page pt-3">
       <main className="flex-1 overflow-y-auto px-4 pb-20 pt-1">
         <div className="flex flex-col gap-4">
           {/* Top Bar Header */}
@@ -159,7 +156,7 @@ export function TeacherStudentListPage() {
         </div>
       </main>
 
-      <BottomNav activeIndex={1} />
+      <BottomNav items={TEACHER_NAV_ITEMS} activeIndex={1} />
     </div>
   );
 }

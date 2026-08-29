@@ -1,4 +1,4 @@
-import { pgTable, uuid } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { schools, users, classes } from "./tenancy";
 import { academicPeriods } from "./periods";
 
@@ -49,6 +49,21 @@ export const parentStudentMapping = pgTable("parent_student_mapping", {
     .references(() => schools.id),
 });
 
+export const teacherClasses = pgTable("teacher_classes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  schoolId: uuid("school_id")
+    .notNull()
+    .references(() => schools.id),
+  teacherId: uuid("teacher_id")
+    .notNull()
+    .references(() => users.id),
+  classId: uuid("class_id")
+    .notNull()
+    .references(() => classes.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type StudentClassEnrollment = typeof studentClassEnrollment.$inferSelect;
 export type StudentTeacherMapping = typeof studentTeacherMapping.$inferSelect;
 export type ParentStudentMapping = typeof parentStudentMapping.$inferSelect;
+export type TeacherClasses = typeof teacherClasses.$inferSelect;

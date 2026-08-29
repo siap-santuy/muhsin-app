@@ -15,7 +15,7 @@ const QUOTE = {
 
 const PROGRESS: ProgressItem[] = [
   {
-    label: "Tahfidz",
+    label: "Ziyadah",
     value: "75%",
     caption: "12 dari 16 target",
     percent: 75,

@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 
 interface TeacherProfilePageProps {
@@ -173,7 +173,7 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
         </div>
       </main>
 
-      <BottomNav activeIndex={3} />
+      <BottomNav items={TEACHER_NAV_ITEMS} activeIndex={3} />
     </div>
   );
 }

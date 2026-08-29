@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { DailyQuote } from "@/components/student/DailyQuote";
 import { MascotTip } from "@/components/ui/MascotTip";
 import { MenuCard } from "@/components/ui/MenuCard";
@@ -146,7 +146,7 @@ export function TeacherDashboardPage() {
           <MascotTip message="Barakallahu fiik Ustadz! Semoga senantiasa diberikan kelancaran dalam membimbing hafalan para siswa." />
         </div>
       </main>
-      <BottomNav activeIndex={0} />
+      <BottomNav items={TEACHER_NAV_ITEMS} activeIndex={0} />
     </div>
   );
 }

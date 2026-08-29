@@ -42,11 +42,11 @@ export function TeacherZiyadahInputPage() {
             <label className="text-xs font-bold uppercase tracking-wider text-brand-navy">
               SISWA
             </label>
-            <select
-              value={student}
-              onChange={(e) => setStudent(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-bold text-brand-navy outline-none"
-            >
+              <select
+                value={student}
+                onChange={(e) => setStudent(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer"
+              >
               <option value="Fulan bin Fulan">Fulan bin Fulan (9991239201)</option>
               <option value="Ahmad Abdullah">Ahmad Abdullah (9991239202)</option>
               <option value="Muhammad Ali">Muhammad Ali (9991239203)</option>

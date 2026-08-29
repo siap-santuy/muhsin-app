@@ -123,7 +123,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
                   </label>
                   <select
                     disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none disabled:opacity-50"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer disabled:opacity-50"
                   >
                     <option value="">Pilih Surah</option>
                     <option value="1">1. Al-Fatihah</option>
@@ -150,7 +150,7 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
                   </label>
                   <select
                     disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none disabled:opacity-50"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer disabled:opacity-50"
                   >
                     <option value="">Pilih Surah</option>
                     <option value="1">1. Al-Fatihah</option>
