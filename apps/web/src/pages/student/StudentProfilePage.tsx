@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ChevronRight,
   HelpCircle,
@@ -10,13 +11,29 @@ import {
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/lib/api";
+import type { UserProfile } from "@muhsin/shared";
 
 interface StudentProfilePageProps {
   onLogout?: () => void;
 }
 
 export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
+  const storeUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.getMyProfile();
+        setProfile(data);
+      } catch {
+        // Fallback to store
+      }
+    }
+    load();
+  }, []);
 
   function handleLogout() {
     if (onLogout) {
@@ -26,6 +43,9 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
       window.location.hash = "";
     }
   }
+
+  const name = profile?.name ?? storeUser?.name ?? "Siswa";
+  const email = profile?.email ?? storeUser?.email ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -38,48 +58,25 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
             <div className="relative">
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
-                alt="Fulan bin Fulan"
+                alt={name}
                 className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm"
               />
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-amber px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                Lv. 12
+                Lv. 1
               </span>
             </div>
 
             <h2 className="mt-4 text-xl font-extrabold text-brand-navy">
-              Fulan bin Fulan
+              {name}
             </h2>
-            <p className="mt-0.5 text-xs font-semibold text-brand-navy">
-              VII Abu Bakar Ash-Shiddiq
-            </p>
-            <p className="text-xs text-brand-text-muted">Ikhwan</p>
+            {email ? (
+              <p className="mt-0.5 text-xs text-brand-text-muted">{email}</p>
+            ) : null}
 
             <span className="mt-2.5 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-4 py-0.5 text-[10px] font-bold tracking-wider text-brand-cyan uppercase">
               STUDENT
             </span>
           </div>
-
-          {/* Status Pelajar Section */}
-          <section>
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              STATUS PELAJAR
-            </h3>
-            <div className="flex items-center gap-3 rounded-2xl border border-brand-line bg-white p-3.5 shadow-sm">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                alt="Ust. Arai Kurnia Ramadhan"
-                className="h-12 w-12 rounded-xl object-cover"
-              />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-navy">
-                  GURU PEMBIMBING
-                </p>
-                <p className="text-sm font-bold text-brand-navy">
-                  Ust. Arai Kurnia Ramadhan
-                </p>
-              </div>
-            </div>
-          </section>
 
           {/* Akun Section */}
           <section>

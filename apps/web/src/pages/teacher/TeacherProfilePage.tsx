@@ -1,5 +1,5 @@
+import { useState, useEffect } from "react";
 import {
-  BookOpen,
   ChevronRight,
   HelpCircle,
   Info,
@@ -7,19 +7,33 @@ import {
   LogOut,
   ShieldCheck,
   UserCog,
-  Users,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/lib/api";
+import type { UserProfile } from "@muhsin/shared";
 
 interface TeacherProfilePageProps {
   onLogout?: () => void;
 }
 
 export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
-  const user = useAuthStore((s) => s.user);
+  const storeUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.getMyProfile();
+        setProfile(data);
+      } catch {
+        // Fallback
+      }
+    }
+    load();
+  }, []);
 
   function handleLogout() {
     if (onLogout) {
@@ -30,7 +44,8 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
     }
   }
 
-  const name = user?.name ?? "Ustadz Arai Kurnia";
+  const name = profile?.name ?? storeUser?.name ?? "Guru Pembimbing";
+  const email = profile?.email ?? storeUser?.email ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -51,44 +66,15 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
             <h2 className="mt-4 text-xl font-extrabold text-brand-navy">
               {name}
             </h2>
-            <p className="mt-0.5 text-xs font-semibold text-brand-navy">
-              NIP: 199208152020121001
-            </p>
+            {email ? (
+              <p className="mt-0.5 text-xs text-brand-text-muted">{email}</p>
+            ) : null}
             <p className="text-xs text-brand-text-muted">Guru Pembimbing TTQ &amp; Yaumiyah</p>
 
             <span className="mt-2.5 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-0.5 text-[10px] font-bold tracking-wider text-emerald-600 uppercase">
               GURU PEMBIMBING
             </span>
           </div>
-
-          {/* Info Halaqah Section */}
-          <section>
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              INFORMASI HALAQAH
-            </h3>
-            <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-brand-cyan" />
-                  <span className="text-xs font-bold text-brand-navy">Halaqah Kelas</span>
-                </div>
-                <span className="text-xs font-bold text-brand-cyan">VII Abu Bakar</span>
-              </div>
-
-              <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-brand-navy" />
-                  <span className="text-xs font-bold text-brand-navy">Jumlah Siswa</span>
-                </div>
-                <span className="text-xs font-bold text-brand-navy">15 Siswa</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">Tahun Ajaran</span>
-                <span className="text-xs font-semibold text-brand-text-muted">2026/2027</span>
-              </div>
-            </div>
-          </section>
 
           {/* Pengaturan Akun */}
           <section>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ChevronRight,
   HelpCircle,
@@ -10,14 +11,29 @@ import {
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/lib/api";
+import type { UserProfile } from "@muhsin/shared";
 
 interface ParentProfilePageProps {
   onLogout?: () => void;
 }
 
 export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
-  const user = useAuthStore((s) => s.user);
+  const storeUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.getMyProfile();
+        setProfile(data);
+      } catch {
+        // Fallback
+      }
+    }
+    load();
+  }, []);
 
   function handleLogout() {
     if (onLogout) {
@@ -28,7 +44,8 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
     }
   }
 
-  const name = user?.name ?? "Ummu Fulan";
+  const name = profile?.name ?? storeUser?.name ?? "Orang Tua / Wali";
+  const email = profile?.email ?? storeUser?.email ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -49,40 +66,15 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
             <h2 className="mt-4 text-xl font-extrabold text-brand-navy">
               {name}
             </h2>
-            <p className="mt-0.5 text-xs font-semibold text-brand-navy">
-              Wali dari Fulan bin Fulan
-            </p>
+            {email ? (
+              <p className="mt-0.5 text-xs text-brand-text-muted">{email}</p>
+            ) : null}
             <p className="text-xs text-brand-text-muted">Orang Tua / Wali Siswa</p>
 
             <span className="mt-2.5 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-4 py-0.5 text-[10px] font-bold tracking-wider text-brand-cyan uppercase">
               ORANG TUA
             </span>
           </div>
-
-          {/* Data Anak Section */}
-          <section>
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
-              DATA ANAK
-            </h3>
-            <div className="flex items-center gap-3 rounded-2xl border border-brand-line bg-white p-3.5 shadow-sm">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                alt="Fulan bin Fulan"
-                className="h-12 w-12 rounded-xl object-cover border border-brand-cyan/30"
-              />
-              <div className="flex-1">
-                <p className="text-sm font-bold text-brand-navy">
-                  Fulan bin Fulan
-                </p>
-                <p className="text-xs font-semibold text-brand-navy/80">
-                  VII Abu Bakar Ash-Shiddiq
-                </p>
-                <p className="text-[10px] text-brand-text-muted">
-                  Pembimbing: Ust. Arai Kurnia Ramadhan
-                </p>
-              </div>
-            </div>
-          </section>
 
           {/* Akun Section */}
           <section>
