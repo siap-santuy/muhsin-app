@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, BookOpen, Check, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export function TeacherZiyadahInputPage() {
   const [student, setStudent] = useState("Fulan bin Fulan");
@@ -12,7 +13,25 @@ export function TeacherZiyadahInputPage() {
   const [catatan, setCatatan] = useState("Makhraj huruf fa dan 'ain perlu diperhatikan.");
   const [saved, setSaved] = useState(false);
 
-  function handleSave() {
+  async function handleSave() {
+    try {
+      await api.createSetoran({
+        studentId: "00000000-0000-0000-0000-000000000001",
+        subcategoryId: "00000000-0000-0000-0000-000000000002",
+        date: new Date().toISOString().slice(0, 10),
+        referenceStart: { surah, ayat: Number(ayatMulai) },
+        referenceEnd: { surah, ayat: Number(ayatSelesai) },
+        scores: {
+          tajwid: Number(tajwid),
+          kelancaran: Number(kelancaran),
+        },
+        keterangan: catatan,
+        scoreFieldKeys: ["tajwid", "kelancaran"],
+      });
+    } catch {
+      // Offline/demo fallback
+    }
+
     setSaved(true);
     setTimeout(() => {
       window.location.hash = "#/ziyadah-view";
