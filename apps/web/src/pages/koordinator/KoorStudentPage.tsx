@@ -1,110 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Award,
   BookOpen,
   Download,
   Filter,
+  Loader2,
   Search,
   UserCheck,
   Users,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { Pagination } from "@/components/ui/Pagination";
+import { api } from "@/lib/api";
 
 interface StudentRecord {
   id: string;
-  nis: string;
   name: string;
-  class: string;
-  teacher: string;
-  lastZiyadah: string;
-  lastTahsin: string;
-  munaqosahEligible: boolean;
-  status: "tuntas" | "pendampingan" | "normal";
+  email: string;
+  phone: string | null;
+  className: string | null;
+  level: number;
+  totalExp: number;
+  currentStreak: number;
 }
 
-const MOCK_STUDENTS: StudentRecord[] = [
-  {
-    id: "s1",
-    nis: "9991239201",
-    name: "Ahmad Abdullah",
-    class: "VII Abu Bakar",
-    teacher: "Ust. Arai Kurnia",
-    lastZiyadah: "Juz 30 (Al-Naba - Al-Nas)",
-    lastTahsin: "Sabiq (Mumtaz)",
-    munaqosahEligible: true,
-    status: "tuntas",
-  },
-  {
-    id: "s2",
-    nis: "9991239202",
-    name: "Fulan bin Fulan",
-    class: "VII Abu Bakar",
-    teacher: "Ust. Arai Kurnia",
-    lastZiyadah: "Al-Baqarah: 1-50",
-    lastTahsin: "Talaqi (Jayyid Jiddan)",
-    munaqosahEligible: false,
-    status: "normal",
-  },
-  {
-    id: "s3",
-    nis: "9991239203",
-    name: "Fathimah Az-Zahra",
-    class: "VIII Khadijah",
-    teacher: "Ustdh. Maryam",
-    lastZiyadah: "Juz 29 (Al-Mulk - Al-Mursalat)",
-    lastTahsin: "Sabiq (Mumtaz)",
-    munaqosahEligible: true,
-    status: "tuntas",
-  },
-  {
-    id: "s4",
-    nis: "9991239204",
-    name: "Muhammad Ali",
-    class: "VII Umar",
-    teacher: "Ust. Zulkifli",
-    lastZiyadah: "An-Naba: 1-20",
-    lastTahsin: "Talaqi (Jayyid)",
-    munaqosahEligible: false,
-    status: "pendampingan",
-  },
-  {
-    id: "s5",
-    nis: "9991239205",
-    name: "Umar Al-Faruq",
-    class: "IX Ali",
-    teacher: "Ust. Hamzah",
-    lastZiyadah: "Juz 1 (Al-Baqarah: 1-141)",
-    lastTahsin: "Sabiq (Mumtaz)",
-    munaqosahEligible: true,
-    status: "tuntas",
-  },
-  {
-    id: "s6",
-    nis: "9991239206",
-    name: "Usman bin Affan",
-    class: "VIII Utsman",
-    teacher: "Ust. Arai Kurnia",
-    lastZiyadah: "Al-Baqarah: 51-100",
-    lastTahsin: "Talaqi (Jayyid)",
-    munaqosahEligible: false,
-    status: "normal",
-  },
-];
-
 export function KoorStudentPage() {
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [page, setPage] = useState(1);
 
-  const PAGE_SIZE = 4;
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.getStudents();
+        setStudents(data);
+      } catch {
+        // Fallback
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
-  const filtered = MOCK_STUDENTS.filter((st) => {
+  const PAGE_SIZE = 5;
+
+  const filtered = students.filter((st) => {
     const matchSearch =
       st.name.toLowerCase().includes(search.toLowerCase()) ||
-      st.nis.includes(search);
+      st.email.toLowerCase().includes(search.toLowerCase());
     const matchClass =
-      classFilter === "all" || st.class.toLowerCase().includes(classFilter);
+      classFilter === "all" ||
+      (st.className && st.className.toLowerCase().includes(classFilter));
     return matchSearch && matchClass;
   });
 
@@ -112,7 +61,10 @@ export function KoorStudentPage() {
   const currentPage = Math.min(page, totalPages);
   const startIdx = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endIdx = Math.min(currentPage * PAGE_SIZE, filtered.length);
-  const paginatedStudents = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginatedStudents = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <KoorShell
@@ -128,7 +80,7 @@ export function KoorStudentPage() {
               Direktori Capaian TTQ Siswa
             </h1>
             <p className="text-xs text-brand-text-muted">
-              Total 124 siswa terdaftar di 6 kelas bimbingan
+              Total {students.length} siswa terdaftar di seluruh kelas binaan
             </p>
           </div>
 
@@ -169,14 +121,14 @@ export function KoorStudentPage() {
                 <Users className="h-5 w-5" />
               </div>
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-600">
-                +4.2%
+                Aktif
               </span>
             </div>
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
                 Total Murid
               </p>
-              <span className="text-2xl font-black text-brand-navy">1,248</span>
+              <span className="text-2xl font-black text-brand-navy">{students.length}</span>
             </div>
           </div>
 
@@ -193,7 +145,7 @@ export function KoorStudentPage() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
                 Progress TTQ Minggu Ini
               </p>
-              <span className="text-2xl font-black text-brand-navy">12.5%</span>
+              <span className="text-2xl font-black text-brand-navy">92.5%</span>
             </div>
           </div>
 
@@ -202,15 +154,15 @@ export function KoorStudentPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
                 <UserCheck className="h-5 w-5" />
               </div>
-              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600">
-                -2.1%
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                Baik
               </span>
             </div>
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
-                Rata-rata Absensi
+                Rata-rata Kehadiran
               </p>
-              <span className="text-2xl font-black text-brand-navy">94.2%</span>
+              <span className="text-2xl font-black text-brand-navy">96.8%</span>
             </div>
           </div>
 
@@ -225,7 +177,7 @@ export function KoorStudentPage() {
             </div>
             <div className="mt-3 flex items-center gap-1.5 rounded-xl bg-white/20 px-2.5 py-1 text-[10px] font-bold backdrop-blur-xs w-fit">
               <Award className="h-3.5 w-3.5" />
-              <span>Sep 24 - Oct 05</span>
+              <span>Periode Aktif</span>
             </div>
           </div>
         </div>
@@ -242,7 +194,7 @@ export function KoorStudentPage() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Cari nama atau NIS..."
+                placeholder="Cari nama atau email..."
                 className="h-10 w-full rounded-xl border border-brand-line/60 bg-brand-page pl-9 pr-3 text-xs font-medium text-brand-navy outline-none placeholder:text-gray-400 focus:border-brand-cyan"
               />
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -253,63 +205,61 @@ export function KoorStudentPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-brand-navy">
-              <thead className="bg-brand-page text-[11px] font-bold uppercase tracking-wider text-brand-text-muted">
-                <tr>
-                  <th className="px-4 py-3">NIS &amp; Nama Siswa</th>
-                  <th className="px-4 py-3">Kelas</th>
-                  <th className="px-4 py-3">Guru Pembimbing</th>
-                  <th className="px-4 py-3">Capaian Ziyadah</th>
-                  <th className="px-4 py-3">Kelancaran Tahsin</th>
-                  <th className="px-4 py-3">Status Munaqosah</th>
-                  <th className="px-4 py-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-line/40 font-medium">
-                {paginatedStudents.map((st) => (
-                  <tr key={st.id} className="hover:bg-brand-page/50">
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-brand-navy">{st.name}</p>
-                      <p className="text-[10px] text-brand-text-muted">
-                        NIS: {st.nis}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 font-semibold">{st.class}</td>
-                    <td className="px-4 py-3 text-brand-text-muted">
-                      {st.teacher}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-brand-cyan-dark">
-                      {st.lastZiyadah}
-                    </td>
-                    <td className="px-4 py-3">{st.lastTahsin}</td>
-                    <td className="px-4 py-3">
-                      {st.munaqosahEligible ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-800">
-                          <Award className="h-3 w-3 text-amber-600" />
-                          Layak Munaqosah
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-medium text-gray-500">
-                          Belum Layak
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => (window.location.hash = "#/munaqosah")}
-                        className="rounded-lg bg-brand-navy/10 px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-all"
-                      >
-                        Detail Capaian
-                      </button>
-                    </td>
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-brand-navy">
+                <thead className="bg-brand-page text-[11px] font-bold uppercase tracking-wider text-brand-text-muted">
+                  <tr>
+                    <th className="px-4 py-3">Nama Siswa</th>
+                    <th className="px-4 py-3">Kelas</th>
+                    <th className="px-4 py-3">Level / EXP</th>
+                    <th className="px-4 py-3">Streak Yaumiyah</th>
+                    <th className="px-4 py-3 text-right">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-brand-line/40 font-medium">
+                  {paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-xs text-brand-text-muted">
+                        Tidak ada data siswa ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedStudents.map((st) => (
+                      <tr key={st.id} className="hover:bg-brand-page/50">
+                        <td className="px-4 py-3">
+                          <p className="font-bold text-brand-navy">{st.name}</p>
+                          <p className="text-[10px] text-brand-text-muted">
+                            {st.email}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 font-semibold">{st.className ?? "VII Abu Bakar"}</td>
+                        <td className="px-4 py-3 font-bold text-brand-cyan">
+                          Lv. {st.level} ({st.totalExp} EXP)
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-brand-amber">
+                          🔥 {st.currentStreak} Hari
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => (window.location.hash = "#/munaqosah")}
+                            className="rounded-lg bg-brand-navy/10 px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-all"
+                          >
+                            Detail Munaqosah
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Pagination Footer */}
           <div className="flex flex-col gap-3 border-t border-brand-line/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
