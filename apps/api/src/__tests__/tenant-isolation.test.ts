@@ -29,6 +29,7 @@ const app = createApp({
   dailyIbadahRepo: {} as never,
   submitDailyIbadahUseCase: {} as never,
   saveDraftDailyIbadahUseCase: {} as never,
+  getDailyIbadahStatsUseCase: {} as never,
   getGamificationSummaryUseCase: {} as never,
   createSetoranUseCase: {} as never,
   getStudentsUseCase: {} as never,

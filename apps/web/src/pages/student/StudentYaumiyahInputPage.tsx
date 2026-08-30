@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { ArrowLeft, BookOpen, CalendarDays, Info, Sun, Moon } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { ArrowLeft, BookOpen, CalendarDays, Info, Loader2, Sun, Moon } from "lucide-react";
 import {
   DayStripPicker,
   type DayItem,
@@ -9,13 +9,26 @@ import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import type { SholatFardhu } from "@muhsin/shared";
 
-const DAYS_MOCK: DayItem[] = [
-  { dayName: "Sen", dayNum: 9, fullDate: "Senin, 9 Oktober 2023", status: "empty" },
-  { dayName: "Sel", dayNum: 10, fullDate: "Selasa, 10 Oktober 2023", status: "setoran" },
-  { dayName: "Rab", dayNum: 11, fullDate: "Rabu, 11 Oktober 2023", status: "sakit" },
-  { dayName: "Kam", dayNum: 12, fullDate: "Kamis, 12 Oktober 2023", status: "empty" },
-  { dayName: "Jum", dayNum: 13, fullDate: "Jumat, 13 Oktober 2023", status: "empty" },
-];
+function generateDays(): DayItem[] {
+  const days: DayItem[] = [];
+  const today = new Date();
+  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dayName = dayNames[d.getDay()];
+    const dayNum = d.getDate();
+    const fullDate = d.toISOString().slice(0, 10);
+    days.push({
+      dayName,
+      dayNum,
+      fullDate,
+      status: "empty",
+    });
+  }
+  return days;
+}
 
 const SHOLAT_OPTIONS = ["BA", "MA", "BT", "MT", "H", "T"];
 const SHOLAT_LIST = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
@@ -40,18 +53,68 @@ interface StudentYaumiyahInputPageProps {
 }
 
 export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPageProps) {
-  const [selectedDayIdx, setSelectedDayIdx] = useState(2);
+  const days = generateDays();
+  const [selectedDayIdx, setSelectedDayIdx] = useState(4); // Today
+  const [surahStart, setSurahStart] = useState("1");
+  const [ayatStart, setAyatStart] = useState("1");
+  const [surahEnd, setSurahEnd] = useState("1");
+  const [ayatEnd, setAyatEnd] = useState("7");
   const [notTilawah, setNotTilawah] = useState(false);
   const [sholatState, setSholatState] = useState<Record<string, string>>({
     Subuh: "BA",
     Dzuhur: "BA",
     Ashar: "BA",
     Maghrib: "BA",
-    Isya: "",
+    Isya: "BA",
   });
   const [rawatibState, setRawatibState] = useState<Record<string, boolean>>({});
   const [ibadahState, setIbadahState] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
+
+  const selectedDate = days[selectedDayIdx]?.fullDate ?? new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    // Load existing data if available for this date
+    async function loadDateData() {
+      try {
+        const existing = await api.getDailyIbadah(selectedDate);
+        if (existing) {
+          if (existing.sholatFardhu) {
+            setSholatState({
+              Subuh: existing.sholatFardhu.subuh || "BA",
+              Dzuhur: existing.sholatFardhu.dzuhur || "BA",
+              Ashar: existing.sholatFardhu.ashar || "BA",
+              Maghrib: existing.sholatFardhu.maghrib || "BA",
+              Isya: existing.sholatFardhu.isya || "BA",
+            });
+          }
+          if (Array.isArray(existing.sholatRawatib)) {
+            const rawMap: Record<string, boolean> = {};
+            existing.sholatRawatib.forEach((r: string) => {
+              rawMap[r] = true;
+            });
+            setRawatibState(rawMap);
+          }
+          setIbadahState({
+            Tahajud: !!existing.tahajud,
+            Dhuha: !!existing.dhuha,
+            Puasa: !!existing.puasaSunnah,
+          });
+          if (existing.tilawah) {
+            setSurahStart(String(existing.tilawah.surahStart || 1));
+            setAyatStart(String(existing.tilawah.ayatStart || 1));
+            setSurahEnd(String(existing.tilawah.surahEnd || 1));
+            setAyatEnd(String(existing.tilawah.ayatEnd || 7));
+            setNotTilawah(false);
+          }
+        }
+      } catch {
+        // No data yet, clean form
+      }
+    }
+    loadDateData();
+  }, [selectedDate]);
 
   function handleBack() {
     if (onBack) {
@@ -63,49 +126,78 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
 
   const handleCloseToast = useCallback(() => setToast(null), []);
 
+  function getRawatibArray(): string[] {
+    return Object.keys(rawatibState).filter((k) => rawatibState[k]);
+  }
+
   async function handleSaveDraft() {
+    setLoading(true);
     try {
       const sholatFardhu: Partial<SholatFardhu> = {
-        subuh: sholatState["Subuh"] as any,
-        dzuhur: sholatState["Dzuhur"] as any,
-        ashar: sholatState["Ashar"] as any,
-        maghrib: sholatState["Maghrib"] as any,
-        isya: sholatState["Isya"] as any,
+        subuh: (sholatState["Subuh"] || "BA") as any,
+        dzuhur: (sholatState["Dzuhur"] || "BA") as any,
+        ashar: (sholatState["Ashar"] || "BA") as any,
+        maghrib: (sholatState["Maghrib"] || "BA") as any,
+        isya: (sholatState["Isya"] || "BA") as any,
       };
 
       await api.saveDailyIbadahDraft({
-        date: new Date().toISOString().slice(0, 10),
+        date: selectedDate,
         sholatFardhu: sholatFardhu as SholatFardhu,
+        sholatRawatib: getRawatibArray(),
         tahajud: !!ibadahState["Tahajud"],
         dhuha: !!ibadahState["Dhuha"],
+        puasaSunnah: ibadahState["Puasa"] ? "senin" : null,
+        tilawah: notTilawah
+          ? null
+          : {
+              surahStart: Number(surahStart),
+              ayatStart: Number(ayatStart),
+              surahEnd: Number(surahEnd),
+              ayatEnd: Number(ayatEnd),
+            },
       });
       setToast({ message: "Draft ibadah berhasil disimpan", variant: "warning" });
-    } catch {
-      setToast({ message: "Draft tersimpan secara lokal", variant: "warning" });
+    } catch (err: any) {
+      setToast({ message: err.message || "Gagal menyimpan draft", variant: "warning" });
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleSubmit() {
+    setLoading(true);
     try {
       const sholatFardhu: Partial<SholatFardhu> = {
-        subuh: sholatState["Subuh"] as any || "BA",
-        dzuhur: sholatState["Dzuhur"] as any || "BA",
-        ashar: sholatState["Ashar"] as any || "BA",
-        maghrib: sholatState["Maghrib"] as any || "BA",
-        isya: sholatState["Isya"] as any || "BA",
+        subuh: (sholatState["Subuh"] || "BA") as any,
+        dzuhur: (sholatState["Dzuhur"] || "BA") as any,
+        ashar: (sholatState["Ashar"] || "BA") as any,
+        maghrib: (sholatState["Maghrib"] || "BA") as any,
+        isya: (sholatState["Isya"] || "BA") as any,
       };
 
       await api.submitDailyIbadah({
-        date: new Date().toISOString().slice(0, 10),
+        date: selectedDate,
         sholatFardhu: sholatFardhu as SholatFardhu,
+        sholatRawatib: getRawatibArray(),
         tahajud: !!ibadahState["Tahajud"],
         dhuha: !!ibadahState["Dhuha"],
+        puasaSunnah: ibadahState["Puasa"] ? "senin" : null,
+        tilawah: notTilawah
+          ? null
+          : {
+              surahStart: Number(surahStart),
+              ayatStart: Number(ayatStart),
+              surahEnd: Number(surahEnd),
+              ayatEnd: Number(ayatEnd),
+            },
       });
       setToast({ message: "Ibadah yaumiyah berhasil dikirim!", variant: "success" });
-      setTimeout(handleBack, 1800);
-    } catch {
-      setToast({ message: "Ibadah yaumiyah berhasil dikirim (mode offline/demo)", variant: "success" });
-      setTimeout(handleBack, 1800);
+      setTimeout(handleBack, 1200);
+    } catch (err: any) {
+      setToast({ message: err.message || "Gagal mengirim ibadah", variant: "warning" });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -133,208 +225,172 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
       </div>
 
       {/* Body */}
-      <main className="flex-1 overflow-y-auto px-4 pt-1">
+      <main className="flex-1 overflow-y-auto px-4 pt-1 pb-4">
         <div className="flex flex-col gap-4">
           <DayStripPicker
-            days={DAYS_MOCK}
+            days={days}
             selectedIndex={selectedDayIdx}
             onSelectDay={setSelectedDayIdx}
           />
 
-          {/* Card Tilawah Qur'an */}
+          {/* Tilawah Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-cyan/10 text-brand-cyan">
                 <BookOpen className="h-4 w-4" />
               </span>
-              <h2 className="text-base font-bold text-brand-navy">
-                Tilawah Qur&apos;an
-              </h2>
+              <h2 className="text-base font-bold text-brand-navy">Tilawah Qur&apos;an</h2>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-brand-navy uppercase">
-                    AWAL SURAH
-                  </label>
-                  <select
-                    disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="">Pilih Surah</option>
-                    <option value="1">1. Al-Fatihah</option>
-                    <option value="2">2. Al-Baqarah</option>
-                  </select>
-                </div>
-                <div className="w-20">
-                  <label className="text-[10px] font-bold text-brand-navy uppercase">
-                    AYAT
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={1}
-                    disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-center text-xs font-semibold text-brand-navy outline-none disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-brand-navy uppercase">
-                    AKHIR SURAH
-                  </label>
-                  <select
-                    disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-xs font-semibold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="">Pilih Surah</option>
-                    <option value="1">1. Al-Fatihah</option>
-                    <option value="2">2. Al-Baqarah</option>
-                  </select>
-                </div>
-                <div className="w-20">
-                  <label className="text-[10px] font-bold text-brand-navy uppercase">
-                    AYAT
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={254}
-                    disabled={notTilawah}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-center text-xs font-semibold text-brand-navy outline-none disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div className="my-2 border-t border-dashed border-brand-line/60" />
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">
-                  Tidak tilawah hari ini
-                </span>
-                <input
-                  type="checkbox"
-                  checked={notTilawah}
-                  onChange={(e) => setNotTilawah(e.target.checked)}
-                  className="h-5 w-5 check-cyan"
-                />
-              </div>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="notTilawah"
+                checked={notTilawah}
+                onChange={(e) => setNotTilawah(e.target.checked)}
+                className="h-4 w-4 rounded text-brand-cyan focus:ring-brand-cyan"
+              />
+              <label htmlFor="notTilawah" className="text-xs font-semibold text-brand-navy">
+                Tidak tilawah hari ini
+              </label>
             </div>
+
+            {!notTilawah ? (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-brand-navy">Surah Ke (1-114)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="114"
+                    value={surahStart}
+                    onChange={(e) => {
+                      setSurahStart(e.target.value);
+                      setSurahEnd(e.target.value);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-brand-navy">Ayat Mulai - Selesai</label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <input
+                      type="number"
+                      min="1"
+                      value={ayatStart}
+                      onChange={(e) => setAyatStart(e.target.value)}
+                      className="w-full rounded-xl border border-brand-line bg-gray-50 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                    <span>-</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={ayatEnd}
+                      onChange={(e) => setAyatEnd(e.target.value)}
+                      className="w-full rounded-xl border border-brand-line bg-gray-50 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </section>
 
-          {/* Card Sholat Fardhu */}
+          {/* Sholat Fardhu Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                   <CalendarDays className="h-4 w-4" />
                 </span>
-                <h2 className="text-base font-bold text-brand-navy">
-                  Sholat Fardhu
-                </h2>
+                <h2 className="text-base font-bold text-brand-navy">Sholat Fardhu</h2>
               </div>
               <Info className="h-4 w-4 text-brand-text-muted" />
             </div>
 
-            <div className="mt-4 divide-y divide-brand-line/40">
+            <div className="mt-3 divide-y divide-brand-line/40">
               {SHOLAT_LIST.map((sholat) => (
-                <div
-                  key={sholat}
-                  className="flex items-center justify-between py-2.5"
-                >
-                  <span className="text-xs font-bold text-brand-navy">
-                    {sholat}
-                  </span>
-                  <div className="flex gap-1.5">
-                    {SHOLAT_OPTIONS.map((opt) => {
-                      const active = sholatState[sholat] === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => handleSelectOption(sholat, opt)}
-                          className={`flex h-7 w-7 items-center justify-center rounded-md text-[10px] font-bold transition-all ${
-                            active
-                              ? "bg-brand-cyan text-white shadow-sm"
-                              : "bg-gray-100 text-brand-navy hover:bg-gray-200"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
+                <div key={sholat} className="py-2.5">
+                  <span className="text-xs font-bold text-brand-navy">{sholat}</span>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {SHOLAT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleSelectOption(sholat, opt)}
+                        className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
+                          sholatState[sholat] === opt
+                            ? "bg-brand-cyan text-white shadow-sm"
+                            : "bg-gray-100 text-brand-navy hover:bg-gray-200"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Card Sholat Sunnah Rawatib */}
+          {/* Rawatib Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
                 <Sun className="h-4 w-4" />
               </span>
-              <h2 className="text-base font-bold text-brand-navy">
-                Sunnah Rawatib
-              </h2>
+              <h2 className="text-base font-bold text-brand-navy">Sunnah Rawatib</h2>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {RAWATIB_LIST.map((item) => {
-                const active = !!rawatibState[item];
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() =>
-                      setRawatibState((prev) => ({ ...prev, [item]: !prev[item] }))
-                    }
-                    className={`rounded-xl border px-2.5 py-2 text-center text-xs font-semibold transition-colors ${
-                      active
-                        ? "border-brand-cyan bg-brand-cyan text-white shadow-sm"
-                        : "bg-gray-100 text-brand-navy"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
+              {RAWATIB_LIST.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() =>
+                    setRawatibState((prev) => ({
+                      ...prev,
+                      [item]: !prev[item],
+                    }))
+                  }
+                  className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                    rawatibState[item]
+                      ? "border-brand-cyan bg-brand-cyan text-white font-bold"
+                      : "border-brand-line bg-white text-brand-navy hover:border-brand-cyan/40"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
           </section>
 
-          {/* Card Ibadah Lainnya */}
+          {/* Sunnah Lainnya Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
                 <Moon className="h-4 w-4" />
               </span>
-              <h2 className="text-base font-bold text-brand-navy">
-                Sunnah Lainnya
-              </h2>
+              <h2 className="text-base font-bold text-brand-navy">Sunnah Lainnya</h2>
             </div>
-            <div className="mt-3 flex items-center justify-between">
-              {IBADAH_LAINNYA_LIST.map((item) => {
-                const active = !!ibadahState[item];
-                return (
-                  <label
-                    key={item}
-                    className="flex items-center gap-2 py-2 px-4"
-                  >
-                    <span className="text-xs font-bold text-brand-navy">
-                      {item}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={active}
-                      onChange={() =>
-                        setIbadahState((prev) => ({ ...prev, [item]: !prev[item] }))
-                      }
-                   className="h-5 w-5 check-cyan"
-                    />
-                  </label>
-                );
-              })}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {IBADAH_LAINNYA_LIST.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() =>
+                    setIbadahState((prev) => ({
+                      ...prev,
+                      [item]: !prev[item],
+                    }))
+                  }
+                  className={`rounded-xl border p-2.5 text-center text-xs font-semibold transition-all ${
+                    ibadahState[item]
+                      ? "border-indigo-600 bg-indigo-600 text-white font-bold"
+                      : "border-brand-line bg-white text-brand-navy hover:border-indigo-300"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
           </section>
         </div>
@@ -346,20 +402,28 @@ export function StudentYaumiyahInputPage({ onBack }: StudentYaumiyahInputPagePro
           type="button"
           variant="outline"
           onClick={handleSaveDraft}
-          className="h-10 flex-1 rounded-xl border-brand-amber text-xs font-bold text-brand-amber hover:bg-brand-amber/10"
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl border-brand-amber font-bold text-brand-amber hover:bg-brand-amber/10"
         >
-          SIMPAN
+          SIMPAN DRAFT
         </Button>
         <Button
           type="button"
           onClick={handleSubmit}
-          className="h-10 flex-1 rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
         >
-          KIRIM
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "KIRIM SEKARANG"}
         </Button>
       </div>
 
-      {toast && <Toast message={toast.message} variant={toast.variant} onClose={handleCloseToast} />}
+      {toast ? (
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onClose={handleCloseToast}
+        />
+      ) : null}
     </div>
   );
 }

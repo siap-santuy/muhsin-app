@@ -4,6 +4,7 @@ import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { SubmitDailyIbadahUseCase } from "../application/use-cases/SubmitDailyIbadahUseCase";
 import type { SaveDraftDailyIbadahUseCase } from "../application/use-cases/SaveDraftDailyIbadahUseCase";
+import type { GetDailyIbadahStatsUseCase } from "../application/use-cases/GetDailyIbadahStatsUseCase";
 import type { IDailyIbadahRepository } from "../domain/repositories/IDailyIbadahRepository";
 
 const sholatFardhuSchema = z.object({
@@ -31,26 +32,72 @@ const dailyIbadahBodySchema = z.object({
   tilawah: tilawahSchema.optional().nullable(),
 });
 
-export function createDailyIbadahRoutes(
-  repo: IDailyIbadahRepository,
-  submitUseCase: SubmitDailyIbadahUseCase,
-  saveDraftUseCase: SaveDraftDailyIbadahUseCase
-) {
+export interface DailyIbadahRoutesDeps {
+  repo: IDailyIbadahRepository;
+  submitUseCase: SubmitDailyIbadahUseCase;
+  saveDraftUseCase: SaveDraftDailyIbadahUseCase;
+  getStatsUseCase: GetDailyIbadahStatsUseCase;
+}
+
+export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
   const app = new Hono<{ Variables: AuthVariables }>();
 
-  // GET /api/daily-ibadah?date=YYYY-MM-DD
-  app.get("/", requireRole("student"), async (c) => {
-    const user = c.get("user");
-    const date = c.req.query("date") ?? new Date().toISOString().slice(0, 10);
+  // GET /api/daily-ibadah?date=YYYY-MM-DD&studentId=
+  app.get(
+    "/",
+    requireRole("student", "parent", "teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const date = c.req.query("date") ?? new Date().toISOString().slice(0, 10);
 
-    const ibadah = await repo.findByStudentAndDate(
-      user.userId,
-      date,
-      user.schoolId
-    );
+      const ibadah = await deps.repo.findByStudentAndDate(
+        targetStudentId,
+        date,
+        user.schoolId
+      );
 
-    return c.json({ data: ibadah, error: null, meta: null }, 200);
-  });
+      return c.json({ data: ibadah, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /api/daily-ibadah/history?studentId=&month=YYYY-MM
+  app.get(
+    "/history",
+    requireRole("student", "parent", "teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const month = c.req.query("month") ?? new Date().toISOString().slice(0, 7);
+
+      const history = await deps.repo.findByMonth(
+        targetStudentId,
+        month,
+        user.schoolId
+      );
+
+      return c.json({ data: history, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /api/daily-ibadah/stats?studentId=&month=YYYY-MM
+  app.get(
+    "/stats",
+    requireRole("student", "parent", "teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const month = c.req.query("month") ?? new Date().toISOString().slice(0, 7);
+
+      const stats = await deps.getStatsUseCase.execute({
+        studentId: targetStudentId,
+        month,
+        schoolId: user.schoolId,
+      });
+
+      return c.json({ data: stats, error: null, meta: null }, 200);
+    }
+  );
 
   // POST /api/daily-ibadah/draft
   app.post("/draft", requireRole("student"), async (c) => {
@@ -66,7 +113,7 @@ export function createDailyIbadahRoutes(
     }
 
     try {
-      const entity = await saveDraftUseCase.execute({
+      const entity = await deps.saveDraftUseCase.execute({
         schoolId: user.schoolId,
         studentId: user.userId,
         ...parsed.data,
@@ -94,7 +141,7 @@ export function createDailyIbadahRoutes(
     }
 
     try {
-      const result = await submitUseCase.execute({
+      const result = await deps.submitUseCase.execute({
         schoolId: user.schoolId,
         studentId: user.userId,
         ...parsed.data,

@@ -74,13 +74,44 @@ class ApiClient {
     return json.data;
   }
 
-  async getDailyIbadah(date: string) {
-    const res = await fetch(`${API_BASE}/daily-ibadah?date=${date}`, {
+  async getDailyIbadah(date: string, studentId?: string) {
+    const url = studentId
+      ? `${API_BASE}/daily-ibadah?date=${date}&studentId=${studentId}`
+      : `${API_BASE}/daily-ibadah?date=${date}`;
+    const res = await fetch(url, {
       method: "GET",
       headers: this.getHeaders(),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data ibadah");
+    return json.data;
+  }
+
+  async getDailyIbadahHistory(params: { studentId?: string; month?: string } = {}) {
+    const query = new URLSearchParams();
+    if (params.studentId) query.set("studentId", params.studentId);
+    if (params.month) query.set("month", params.month);
+
+    const res = await fetch(`${API_BASE}/daily-ibadah/history?${query.toString()}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil riwayat ibadah");
+    return json.data;
+  }
+
+  async getDailyIbadahStats(params: { studentId?: string; month?: string } = {}) {
+    const query = new URLSearchParams();
+    if (params.studentId) query.set("studentId", params.studentId);
+    if (params.month) query.set("month", params.month);
+
+    const res = await fetch(`${API_BASE}/daily-ibadah/stats?${query.toString()}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil statistik ibadah");
     return json.data;
   }
 

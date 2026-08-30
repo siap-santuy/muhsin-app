@@ -18,6 +18,7 @@ import { buildAuthRoutes, buildAuthProtectedRoutes } from "../modules/auth/prese
 import { DrizzleDailyIbadahRepository } from "../modules/daily-ibadah/infrastructure/DrizzleDailyIbadahRepository";
 import { SaveDraftDailyIbadahUseCase } from "../modules/daily-ibadah/application/use-cases/SaveDraftDailyIbadahUseCase";
 import { SubmitDailyIbadahUseCase } from "../modules/daily-ibadah/application/use-cases/SubmitDailyIbadahUseCase";
+import { GetDailyIbadahStatsUseCase } from "../modules/daily-ibadah/application/use-cases/GetDailyIbadahStatsUseCase";
 import { createDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/routes";
 
 // Gamification module
@@ -63,6 +64,7 @@ export interface ContainerDeps {
   dailyIbadahRepo: DrizzleDailyIbadahRepository;
   submitDailyIbadahUseCase: SubmitDailyIbadahUseCase;
   saveDraftDailyIbadahUseCase: SaveDraftDailyIbadahUseCase;
+  getDailyIbadahStatsUseCase: GetDailyIbadahStatsUseCase;
   // Gamification
   getGamificationSummaryUseCase: GetGamificationSummaryUseCase;
   // Setoran
@@ -93,11 +95,12 @@ export function createApp(deps: ContainerDeps): Hono {
   app.route("/users", protectedUsers);
 
   // Daily Ibadah
-  const dailyIbadahRoutes = createDailyIbadahRoutes(
-    deps.dailyIbadahRepo,
-    deps.submitDailyIbadahUseCase,
-    deps.saveDraftDailyIbadahUseCase
-  );
+  const dailyIbadahRoutes = createDailyIbadahRoutes({
+    repo: deps.dailyIbadahRepo,
+    submitUseCase: deps.submitDailyIbadahUseCase,
+    saveDraftUseCase: deps.saveDraftDailyIbadahUseCase,
+    getStatsUseCase: deps.getDailyIbadahStatsUseCase,
+  });
   app.use("/daily-ibadah/*", protectedAuth, tenantScopeMiddleware);
   app.use("/daily-ibadah", protectedAuth, tenantScopeMiddleware);
   app.route("/daily-ibadah", dailyIbadahRoutes);
@@ -189,6 +192,7 @@ export function buildContainer() {
     addExpUseCase,
     updateStreakUseCase
   );
+  const getDailyIbadahStatsUseCase = new GetDailyIbadahStatsUseCase(dailyIbadahRepo);
 
   // UseCases — Setoran
   const createSetoranUseCase = new CreateSetoranUseCase(setoranRepo, addExpUseCase);
@@ -212,6 +216,7 @@ export function buildContainer() {
       dailyIbadahRepo,
       submitDailyIbadahUseCase,
       saveDraftDailyIbadahUseCase,
+      getDailyIbadahStatsUseCase,
       getGamificationSummaryUseCase,
       createSetoranUseCase,
       getSetoranHistoryUseCase,
