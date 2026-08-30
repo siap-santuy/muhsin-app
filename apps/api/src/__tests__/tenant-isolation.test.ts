@@ -46,6 +46,10 @@ const app = createApp({
   updateMunaqosahStatusUseCase: {} as never,
   scheduleMunaqosahUseCase: {} as never,
   submitMunaqosahResultUseCase: {} as never,
+  getKurikulumCategoriesUseCase: {} as never,
+  createCategoryUseCase: {} as never,
+  createSubcategoryUseCase: {} as never,
+  kurikulumRepo: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {

@@ -68,6 +68,13 @@ import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-c
 import { SubmitMunaqosahResultUseCase } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
 import { createMunaqosahRoutes } from "../modules/munaqosah/presentation/routes";
 
+// Kurikulum module
+import { DrizzleKurikulumRepository } from "../modules/kurikulum/infrastructure/DrizzleKurikulumRepository";
+import { GetKurikulumCategoriesUseCase } from "../modules/kurikulum/application/use-cases/GetKurikulumCategoriesUseCase";
+import { CreateCategoryUseCase } from "../modules/kurikulum/application/use-cases/CreateCategoryUseCase";
+import { CreateSubcategoryUseCase } from "../modules/kurikulum/application/use-cases/CreateSubcategoryUseCase";
+import { createKurikulumRoutes } from "../modules/kurikulum/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -108,6 +115,11 @@ export interface ContainerDeps {
   updateMunaqosahStatusUseCase: UpdateMunaqosahStatusUseCase;
   scheduleMunaqosahUseCase: ScheduleMunaqosahUseCase;
   submitMunaqosahResultUseCase: SubmitMunaqosahResultUseCase;
+  // Kurikulum
+  getKurikulumCategoriesUseCase: GetKurikulumCategoriesUseCase;
+  createCategoryUseCase: CreateCategoryUseCase;
+  createSubcategoryUseCase: CreateSubcategoryUseCase;
+  kurikulumRepo: DrizzleKurikulumRepository;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -197,6 +209,17 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/munaqosah", protectedAuth, tenantScopeMiddleware);
   app.route("/munaqosah", munaqosahRoutes);
 
+  // Kurikulum
+  const kurikulumRoutes = createKurikulumRoutes({
+    getCategoriesUseCase: deps.getKurikulumCategoriesUseCase,
+    createCategoryUseCase: deps.createCategoryUseCase,
+    createSubcategoryUseCase: deps.createSubcategoryUseCase,
+    repo: deps.kurikulumRepo,
+  });
+  app.use("/kurikulum/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/kurikulum", protectedAuth, tenantScopeMiddleware);
+  app.route("/kurikulum", kurikulumRoutes);
+
   return app;
 }
 
@@ -216,6 +239,7 @@ export function buildContainer() {
   const raportRepo = new DrizzleRaportRepository(db);
   const dashboardRepo = new DrizzleDashboardRepository(db);
   const munaqosahRepo = new DrizzleMunaqosahRepository(db);
+  const kurikulumRepo = new DrizzleKurikulumRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -280,6 +304,11 @@ export function buildContainer() {
   const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo);
   const submitMunaqosahResultUseCase = new SubmitMunaqosahResultUseCase(munaqosahRepo, addExpUseCase);
 
+  // UseCases — Kurikulum
+  const getKurikulumCategoriesUseCase = new GetKurikulumCategoriesUseCase(kurikulumRepo);
+  const createCategoryUseCase = new CreateCategoryUseCase(kurikulumRepo);
+  const createSubcategoryUseCase = new CreateSubcategoryUseCase(kurikulumRepo);
+
   return {
     app: createApp({
       loginUseCase,
@@ -308,6 +337,10 @@ export function buildContainer() {
       updateMunaqosahStatusUseCase,
       scheduleMunaqosahUseCase,
       submitMunaqosahResultUseCase,
+      getKurikulumCategoriesUseCase,
+      createCategoryUseCase,
+      createSubcategoryUseCase,
+      kurikulumRepo,
     }),
     redis,
   };

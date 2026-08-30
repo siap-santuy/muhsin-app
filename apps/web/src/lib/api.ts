@@ -310,6 +310,54 @@ class ApiClient {
     return json.data;
   }
 
+  async getKurikulumCategories() {
+    const res = await fetch(`${API_BASE}/kurikulum/categories`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil kurikulum kategori");
+    return json.data;
+  }
+
+  async getGradingScale() {
+    const res = await fetch(`${API_BASE}/kurikulum/grading-scale`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil grading scale");
+    return json.data;
+  }
+
+  async createKurikulumCategory(input: { code: string; name: string }) {
+    const res = await fetch(`${API_BASE}/kurikulum/categories`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(input),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat kategori");
+    return json.data;
+  }
+
+  async createKurikulumSubcategory(input: {
+    categoryId: string;
+    code: string;
+    name: string;
+    scoreFields: Array<{ key: string; label: string; min: number; max: number }>;
+    includeInRanking?: boolean;
+  }) {
+    const res = await fetch(`${API_BASE}/kurikulum/subcategories`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(input),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat subkategori");
+    return json.data;
+  }
+
   async getMyProfile(): Promise<UserProfile> {
     const res = await fetch(`${API_BASE}/users/me`, {
       method: "GET",
