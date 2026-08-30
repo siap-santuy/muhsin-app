@@ -116,55 +116,6 @@ export function LoginPage() {
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "LOGIN"}
         </Button>
 
-        {/* Quick Demo Logins */}
-        <div className="pt-2 border-t border-slate-100 text-center">
-          <p className="text-[11px] font-semibold text-slate-400 mb-1.5">
-            Demo Login Cepat:
-          </p>
-          <div className="flex gap-2 justify-center">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("student@demo.com");
-                setPassword("demo123");
-              }}
-              className="rounded-lg bg-cyan-50 px-2.5 py-1 text-[11px] font-bold text-brand-cyan hover:bg-cyan-100"
-            >
-              Demo Student
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("parent@demo.com");
-                setPassword("demo123");
-              }}
-              className="rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-600 hover:bg-purple-100"
-            >
-              Demo Parent
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("teacher@demo.com");
-                setPassword("demo123");
-              }}
-              className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600 hover:bg-emerald-100"
-            >
-              Demo Guru
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("koordinator@demo.com");
-                setPassword("demo123");
-              }}
-              className="rounded-lg bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-100"
-            >
-              Demo Koor
-            </button>
-          </div>
-        </div>
-
         <p className="pt-1 text-center text-xs text-slate-500">
           Lupa password?{" "}
           <a href="#" className="font-semibold text-[#1CB8CE] hover:underline">

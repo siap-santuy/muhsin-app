@@ -4,5 +4,24 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "dev": "bun --filter \"@muhsin/*\" dev",
+    "dev:api": "bun --filter @muhsin/api dev",
+    "dev:web": "bun --filter @muhsin/web dev",
+    "build": "bun --filter \"@muhsin/*\" build",
+    "build:api": "bun --filter @muhsin/api build",
+    "build:web": "bun --filter @muhsin/web build",
+    "start": "bun --filter \"@muhsin/*\" start",
+    "start:api": "bun --filter @muhsin/api start",
+    "start:web": "bun --filter @muhsin/web start",
+    "preview": "bun --filter @muhsin/web preview",
+    "test": "bun --filter \"@muhsin/*\" test",
+    "typecheck": "bun --filter \"@muhsin/*\" typecheck",
+    "db:create": "bun --filter @muhsin/api db:create",
+    "db:generate": "bun --filter @muhsin/api db:generate",
+    "db:migrate": "bun --filter @muhsin/api db:migrate",
+    "db:seed": "bun --filter @muhsin/api db:seed",
+    "db:reset": "bun --filter @muhsin/api db:reset"
+  }
 }

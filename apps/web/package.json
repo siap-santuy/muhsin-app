@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview --port 4173 --host",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@muhsin/shared": "workspace:*",

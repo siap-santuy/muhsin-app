@@ -1,184 +1,181 @@
 # Muhsin App
 
-Aplikasi manajemen TTQ (Tahsin Tahfizh Qur'an) & ibadah yaumiyah siswa.
+Aplikasi manajemen TTQ (Tahsin Tahfizh Qur'an) & ibadah yaumiyah siswa berbasis Clean Architecture & Multi-Tenant.
 
-Monorepo management menggunakan **npm workspaces** (Bun sebagai package manager & runtime).
+Monorepo management menggunakan **Bun workspaces**.
 
-## Struktur Proyek
+---
 
-```
+## 📁 Struktur Proyek
+
+```text
 .
-├── package.json              # Definisi workspaces (apps/*, packages/*)
-├── bun.lock                  # Lockfile (Bun)
+├── package.json              # Monorepo workspaces (apps/*, packages/*) & root scripts
+├── docker-compose.yml        # Multi-container local/production setup
+├── Jenkinsfile               # CI/CD Pipeline configuration
 ├── apps/
-│   ├── api/                  # Backend (Hono + Bun)
+│   ├── api/                  # Backend (Bun + Hono + Clean Architecture)
+│   │   ├── Dockerfile        # Container build untuk API
 │   │   └── src/
-│   │       ├── index.ts      # Entry point (port 3001)
-│   │       ├── bootstrap/    # Dependency injection container
-│   │       ├── db/           # Drizzle client, schema, migrations, seed
-│   │       ├── modules/      # Auth module (clean architecture)
-│   │       └── middleware/   # Auth & tenant-scope middleware
-│   ├── web/                  # Frontend (React + Vite)
-│   │   └── src/              # Komponen UI, styling
-│   └── shared/               # (folder kosong penampung)
+│   │       ├── db/           # Drizzle schema, migrations, seed
+│   │       ├── modules/      # Modul domain (auth, daily-ibadah, gamification, setoran, etc.)
+│   │       └── middleware/   # RBAC & tenant scoping guards
+│   ├── web/                  # Frontend (React + Vite + Tailwind CSS)
+│   │   ├── Dockerfile        # Nginx multi-stage build untuk Web
+│   │   ├── nginx.conf        # Reverse proxy & SPA routing config
+│   │   └── src/              # Pages, components, store, api client
 ├── packages/
-│   └── shared/               # Package `@muhsin/shared` (zod schema dsb.)
-├── design/                   # Aset desain (icon, UI-UX)
-└── docs/
-│   ├── PRD.md                # Dokumentasi produk & teknis
-│   ├── PROJECT.md            # Dokumentasi produk & teknis
-└── dump.rdb                  # Artefak runtime Redis (jangan di-commit)
+│   └── shared/               # `@muhsin/shared` (Zod schemas, types source of truth)
+└── docs/                     # Dokumentasi arsitektur, PRD & requirements
 ```
 
-## Prasyarat
+---
 
-| Tool | Versi | Keterangan |
-|------|-------|------------|
-| [Bun](https://bun.sh/) | >= 1.1 | Runtime & package manager (wajib) |
-| [Node.js](https://nodejs.org/) | >= 18 | Dibutuhkan Vite/TSC untuk web |
-| **PostgreSQL** | >= 14 | Database utama |
-| **Redis** | >= 6 | Refresh-token storage & session |
+## ⚙️ Prasyarat
 
-> `apps/api` dijalankan dengan Bun (`bun run --hot`), sehingga **Bun wajib terinstal**.
-> Instalasi Bun: `curl -fsSL https://bun.sh/install | bash` (Unix) atau via PowerShell.
+| Tool | Versi Rekomendasi | Keterangan |
+|------|-------------------|------------|
+| **Bun** | >= 1.1.x | Runtime & Package manager utama |
+| **PostgreSQL** | >= 16.x | Database utama |
+| **Redis** | >= 7.x | Token caching & session store |
+| **Docker & Docker Compose** | Latest | Containerization & local stack |
 
-## Instalasi
+---
 
-Rekursif dari root (workspaces otomatis dibedakan per folder):
+## 🚀 Panduan Setup & Menjalankan
 
+### 1. Instalasi Dependensi
+Jalankan dari root direktori:
 ```bash
 bun install
 ```
 
-Lebih cepat memakai Bun dibanding `npm install`. Lockfile `bun.lock` dipakai Bun.
-
-## Persiapan Environment
-
-### 1. API
-
-Berdasarkan folder `apps/api`, file contoh `.env.example`:
-
+### 2. Konfigurasi Environment Variable
+Salin file `.env.example` pada `apps/api` dan `apps/web`:
 ```bash
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 ```
 
-Isi `.env` dengan nilai sebenarnya:
-
+Contoh konfigurasi `apps/api/.env`:
 ```env
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/muhsin_app
+PORT=3000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/muhsin_db
 REDIS_URL=redis://localhost:6379
-JWT_SECRET=change-me-access-secret-min-32-chars
-JWT_REFRESH_SECRET=change-me-refresh-secret-min-32-chars
+JWT_SECRET=super-secret-jwt-key-min-32-characters
+JWT_REFRESH_SECRET=super-secret-refresh-jwt-key-min-32-characters
 ACCESS_TOKEN_TTL=900
 REFRESH_TOKEN_TTL=604800
 ```
 
-> Ganti semua secret dengan nilai acak (>= 32 karakter). Jangan commit `.env`
-> (sudah ada di `.gitignore`).
+---
 
-### 2. Web
+## 💻 Menjalankan Aplikasi (Root Scripts)
 
-Web saat ini belum membaca env tambahan (memakai port default Vite `5173`).
-Jika nanti memanggil API, perlu proxy/environment terpisah — belum disiapkan.
+Semua perintah dapat langsung dijalankan dari root direktori:
 
-## Menjalankan Postgres & Redis
-
-Fuel docker-compose (jika sudah punya, sesuaikan, contoh kecil):
-
+### Mode Development
 ```bash
-docker run -d --name muhsin-postgres \
-  -p 5432:5432 \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=muhsin_app \
-  postgres:16
-
-docker run -d --name muhsin-redis -p 6379:6379 redis:7
-```
-
-Tanpa Docker: install **PostgreSQL** + **Redis** lokal, buat DB `muhsin_app`, lalu sesuaikan `DATABASE_URL`.
-
-## Database Migration & Seed
-
-> Jalankan dari folder `apps/api`.
-
-```bash
-bun run db:create     # buat database (pertama kali, jika belum ada)
-bun run db:generate   # (opsional, bila schema berubah) generate SQL migration
-bun run db:migrate     # apply migration ke DB
-bun run db:seed       # seed data awal (bila tersedia)
-```
-
-> Alternatif sekali jalan untuk setup bersih: `bun run db:reset` (drop, buat ulang, migrate).
-
-> Drizzle membaca `DATABASE_URL` dari `.env` (lihat `drizzle.config.ts`).
-
-## Menjalankan Aplikasi
-
-Dua terminal, satu untuk tiap app.
-
-### API (port 3001)
-
-```bash
-cd apps/api
+# Jalankan API & Frontend bersamaan
 bun run dev
+
+# Jalankan masing-masing service
+bun run dev:api    # API saja (http://localhost:3000)
+bun run dev:web    # Web saja (http://localhost:5173)
 ```
 
-- Run hot-reload `bun ./src/index.ts`.
-- Endpoint utama `/auth`, `/auth/me`.
-- URL: <http://localhost:3001>
+### Mode Production
+```bash
+# 1. Build semua package & app
+bun run build
 
-### Web (port 5173)
+# Atau build per app
+bun run build:api
+bun run build:web
+
+# 2. Jalankan mode production
+bun run start        # Jalankan API & Web production
+bun run start:api    # API production
+bun run start:web    # Web preview server
+bun run preview      # Web preview
+```
+
+---
+
+## 🗄️ Database Management (Drizzle ORM)
+
+Dapat dijalankan langsung dari root:
 
 ```bash
-cd apps/web
-bun run dev
+# Buat database jika belum ada
+bun run db:create
+
+# Generate migration dari skema Drizzle
+bun run db:generate
+
+# Jalankan migrasi ke PostgreSQL
+bun run db:migrate
+
+# Seed data awal (Tenant demo, Admin, Config TTQ)
+bun run db:seed
+
+# Reset database bersih (drop + migrate ulang)
+bun run db:reset
 ```
 
-- Vite dev server + hot reload.
-- URL: <http://localhost:5173>
+---
 
-## Script yang Tersedia
+## 🧪 Testing & Typecheck
 
-### API (`apps/api`)
+```bash
+# Typecheck semua workspace
+bun run typecheck
 
-| Command | Fungsi |
-|---|---|
-| `bun run dev` | Jalankan dev server (hot reload) |
-| `bun run test` | Jalankan unit test (Vitest) |
-| `bun run typecheck` | Type-check TypeScript |
-| `bun run db:generate` | Generate migration Drizzle |
-| `bun run db:migrate` | Apply migration |
-| `bun run db:create` | Buat database (jika belum ada) |
-| `bun run db:reset` | Hapus database, buat ulang, lalu migrate |
-| `bun run db:seed` | Seed database |
+# Jalankan seluruh unit test (Vitest)
+bun run test
+```
 
-### Web (`apps/web`)
+---
 
-| Command | Fungsi |
-|---|---|
-| `bun run dev` | Dev server |
-| `bun run build` | Type-check + build production |
-| `bun run preview` | Preview hasil build |
+## 🐳 Deployment Menggunakan Docker & Docker Compose
 
-## Verifikasi Instalasi
+Jalankan seluruh stack (PostgreSQL, Redis, API, dan Nginx Web) dengan satu perintah:
 
-1. Pastikan `bun install` sukses tanpa error.
-2. Cek `apps/api/node_modules` & `apps/web/node_modules` ada (deps khusus per app terinstal).
-3. Jalankan API: buka <http://localhost:3001/auth> — jika `404` berarti server hidup.
-4. Jalankan Web: buka <http://localhost:5173> — tampil halaman "Muhsin App".
+```bash
+# Build dan jalankan semua service di background
+docker compose up -d --build
 
-## Troubleshooting
+# Cek logs service
+docker compose logs -f
 
-| Masalah | Solusi |
-|---|---|
-| `bun: command not found` | Install Bun (lihat Prasyarat) |
-| `bun install` gagal | Bun versi < 1.1, atau hapus `bun.lock` lama lalu ulangi |
-| DB connection error | Pastikan Postgres jalan & `DATABASE_URL` benar |
-| Redis connection refused | Pastikan Redis jalan di `REDIS_URL` |
-| Migration tidak ada | Jalankan `bun run db:generate` dulu, lalu `db:migrate` |
-| Dependency di folder `node_modules` terpisah | Normal — npm workspaces hoist deps umum ke root & naruh deps spesifik di tiap workspace |
+# Matikan service
+docker compose down
+```
 
-## License
+Akses aplikasi melalui:
+- **Frontend & Reverse Proxy API**: `http://localhost`
+- **Backend API Direct**: `http://localhost:3000`
+- **PostgreSQL**: `localhost:5432`
+- **Redis**: `localhost:6379`
 
-Lihat `LICENSE`.
+---
+
+## 🔄 CI/CD Pipeline (Jenkins)
+
+Pipeline otomatis terdefinisi di `Jenkinsfile`:
+
+1. **Install Dependencies**: `bun install --frozen-lockfile`
+2. **Lint & Format Check**: Memeriksa standardisasi kode.
+3. **Type Check**: Menjalankan TypeScript Compiler `bun run typecheck`.
+4. **Run Unit Tests**: Menjalankan test suite via `bun run test`.
+5. **Docker Build**: Membangun Docker Image multi-stage untuk `api` dan `web`.
+6. **Deploy**: Menerapkan update container ke environment staging/production.
+
+---
+
+## 🔒 Aturan Keamanan & Desain Sistem
+
+1. **Tenant Scoping**: Setiap query wajib memfilter berdasarkan `school_id`.
+2. **RBAC Guard**: Hak akses endpoint diverifikasi di backend melalui middleware (HTTP 403).
+3. **Clean Architecture**: Domain layer murni dan independen tanpa ketergantungan langsung ke framework HTTP atau ORM.
+4. **Data-Driven TTQ**: Skema field penilaian (`score_fields`) dan konversi huruf disimpan secara dinamis per sekolah via database.
