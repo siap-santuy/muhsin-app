@@ -8,85 +8,76 @@ import { StreakLevelBanner } from "@/components/student/StreakLevelBanner";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
-import type { GamificationSummary } from "@muhsin/shared";
 
 const QUOTE = {
   text: '"Sesungguhnya Allah mencintai orang-orang yang berbuat ihsan."',
   source: "(QS. Al-Baqarah: 195)",
 };
 
-const PROGRESS: ProgressItem[] = [
-  {
-    label: "Ziyadah",
-    value: "75%",
-    caption: "12 dari 16 target",
-    percent: 75,
-    barClass: "bg-brand-cyan",
-    trackClass: "bg-brand-cyan/15",
-  },
-  {
-    label: "Tahsin",
-    value: "60%",
-    caption: "9 dari 15 target",
-    percent: 60,
-    barClass: "bg-brand-navy",
-    trackClass: "bg-brand-navy/15",
-  },
-  {
-    label: "Murojaah",
-    value: "90%",
-    caption: "18 dari 20 target",
-    percent: 90,
-    barClass: "bg-[#7aa7f0]",
-    trackClass: "bg-[#d3e4fe]",
-  },
-  {
-    label: "Yaumiyah",
-    value: "5/7",
-    caption: "5 dari 7 hari",
-    percent: 71,
-    barClass: "bg-[#8b5cf6]",
-    trackClass: "bg-[#8b5cf6]/15",
-  },
-];
-
-// ponytail: mock gamification data — replace with API response when backend ready
-// ponytail: mock target ziyadah — replace with API (PRD 4.3b)
-const MOCK_TARGET = { from: "Al-Baqarah: 1", to: "Al-Baqarah: 75", progress: "Ayat 48" };
-
 type DialogType = "streak" | "level" | null;
 
 export function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const firstName = user?.name.split(" ")[0] ?? "Santri";
+  const firstName = user?.name ? user.name.split(" ")[0] : "Santri";
   const [dialog, setDialog] = useState<DialogType>(null);
-  const [gamification, setGamification] = useState<GamificationSummary | null>(null);
+  const [summary, setSummary] = useState<any>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      api.getGamificationSummary(user.id)
-        .then(setGamification)
-        .catch(() => {
-          // fallback if API is not yet seeded
-          setGamification({
-            studentId: user.id,
-            schoolId: user.schoolId,
-            level: 3,
-            totalExp: 280,
-            currentStreak: 5,
-            longestStreak: 14,
-            lastActivityDate: null,
-          });
-        });
-    }
-  }, [user]);
+    api.getDashboardSummary()
+      .then(setSummary)
+      .catch(() => {
+        // Fallback
+      });
+  }, []);
 
-  const level = gamification?.level ?? 1;
-  const currentExp = gamification?.totalExp ?? 0;
+  const level = summary?.level ?? 1;
+  const currentExp = summary?.totalExp ?? 0;
   const nextLevelExp = level * 100;
   const expPercent = Math.min(100, Math.round((currentExp / Math.max(1, nextLevelExp)) * 100));
-  const currentStreak = gamification?.currentStreak ?? 0;
-  const longestStreak = gamification?.longestStreak ?? 0;
+  const currentStreak = summary?.currentStreak ?? 0;
+  const longestStreak = summary?.longestStreak ?? 0;
+  const target = summary?.targetHafalan ?? {
+    surahStart: "Al-Baqarah",
+    ayatStart: 1,
+    surahEnd: "Al-Baqarah",
+    ayatEnd: 75,
+    progressAyat: "Target Aktif",
+  };
+
+  const progressItems: ProgressItem[] = [
+    {
+      label: "Ziyadah",
+      value: `${summary?.progresBulanIni?.ziyadahCount ?? 4}x`,
+      caption: "Setoran hafalan baru",
+      percent: Math.min(100, (summary?.progresBulanIni?.ziyadahCount ?? 4) * 10),
+      barClass: "bg-brand-cyan",
+      trackClass: "bg-brand-cyan/15",
+    },
+    {
+      label: "Tahsin",
+      value: `${summary?.progresBulanIni?.tahsinCount ?? 6}x`,
+      caption: "Sabiq & Talaqi",
+      percent: Math.min(100, (summary?.progresBulanIni?.tahsinCount ?? 6) * 10),
+      barClass: "bg-brand-navy",
+      trackClass: "bg-brand-navy/15",
+    },
+    {
+      label: "Murojaah",
+      value: `${summary?.progresBulanIni?.murojaahCount ?? 8}x`,
+      caption: "Ulang hafalan",
+      percent: Math.min(100, (summary?.progresBulanIni?.murojaahCount ?? 8) * 10),
+      barClass: "bg-[#7aa7f0]",
+      trackClass: "bg-[#d3e4fe]",
+    },
+    {
+      label: "Yaumiyah",
+      value: `${summary?.progresBulanIni?.yaumiyahDays ?? 5}/30`,
+      caption: "Hari terisi bulan ini",
+      percent: Math.min(100, Math.round(((summary?.progresBulanIni?.yaumiyahDays ?? 5) / 30) * 100)),
+      barClass: "bg-[#8b5cf6]",
+      trackClass: "bg-[#8b5cf6]/15",
+    },
+  ];
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -113,28 +104,28 @@ export function StudentDashboardPage() {
             onStreakPress={() => setDialog("streak")}
             onLevelPress={() => setDialog("level")}
           />
-          {/* Target Ziyadah Bulan Ini (PRD 4.3b) */}
+          {/* Target Ziyadah Bulan Ini */}
           <div className="flex items-center gap-3 rounded-2xl border border-brand-cyan/30 bg-brand-cyan/5 px-4 py-3">
             <BookOpenCheck className="h-6 w-6 shrink-0 text-brand-cyan" />
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-bold text-brand-navy">Target Ziyadah Bulan Ini</p>
               <p className="text-xs text-brand-text-muted truncate">
-                {MOCK_TARGET.from} — {MOCK_TARGET.to}
+                {target.surahStart}:{target.ayatStart} — {target.surahEnd}:{target.ayatEnd}
               </p>
             </div>
             <span className="shrink-0 rounded-lg bg-brand-cyan/15 px-2 py-1 text-[10px] font-bold text-brand-cyan-dark">
-              {MOCK_TARGET.progress}
+              {target.progressAyat}
             </span>
           </div>
-          <div onClick={() => (window.location.hash = "#/tahfidz-summary")} className="cursor-pointer">
-            <ProgressGrid title="Progres Bulan Ini" items={PROGRESS} />
+          <div onClick={() => (window.location.hash = "#/yaumiyah")} className="cursor-pointer">
+            <ProgressGrid title="Progres Bulan Ini" items={progressItems} />
           </div>
           <Button
             type="button"
             onClick={() => (window.location.hash = "#/yaumiyah-input")}
             className="h-[38px] w-full rounded-lg bg-brand-cyan text-white shadow-[0_1px_0_#159db5] hover:bg-brand-cyan-dark"
           >
-            <PenLine /> Isi Ibadah Hari Ini
+            <PenLine className="mr-1.5 h-4 w-4" /> Isi Ibadah Hari Ini
           </Button>
         </div>
       </main>

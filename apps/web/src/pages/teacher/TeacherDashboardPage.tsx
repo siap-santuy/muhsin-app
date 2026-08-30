@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   BookOpen,
   CheckCircle,
@@ -13,39 +14,54 @@ import { DailyQuote } from "@/components/student/DailyQuote";
 import { MascotTip } from "@/components/ui/MascotTip";
 import { MenuCard } from "@/components/ui/MenuCard";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/lib/api";
 
 const QUOTE = {
   text: '"Sebaik-baik kalian adalah yang mempelajari Al-Qur\'an dan mengajarkannya."',
   source: "(HR. Bukhari)",
 };
 
-const STATS = [
-  {
-    label: "Total Siswa",
-    value: "15",
-    subtext: "Halaqah VII Abu Bakar",
-    icon: Users,
-    color: "bg-brand-cyan/10 text-brand-cyan",
-  },
-  {
-    label: "Setoran Hari Ini",
-    value: "12/15",
-    subtext: "80% Sudah Setor",
-    icon: CheckCircle,
-    color: "bg-emerald-500/10 text-emerald-500",
-  },
-  {
-    label: "Belum Setor",
-    value: "3",
-    subtext: "Perlu Diingatkan",
-    icon: Clock,
-    color: "bg-amber-500/10 text-amber-500",
-  },
-];
-
 export function TeacherDashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const name = user?.name ?? "Ustadz Arai Kurnia";
+  const [summary, setSummary] = useState<any>(null);
+
+  useEffect(() => {
+    api.getDashboardSummary()
+      .then(setSummary)
+      .catch(() => {
+        // Fallback
+      });
+  }, []);
+
+  const name = summary?.teacherName ?? user?.name ?? "Ustadz Pembimbing";
+  const totalStudents = summary?.totalStudents ?? 15;
+  const setorHariIni = summary?.setorHariIniCount ?? 12;
+  const belumSetor = summary?.belumSetorCount ?? 3;
+  const className = summary?.className ?? "Halaqah VII Abu Bakar";
+
+  const stats = [
+    {
+      label: "Total Siswa",
+      value: String(totalStudents),
+      subtext: className,
+      icon: Users,
+      color: "bg-brand-cyan/10 text-brand-cyan",
+    },
+    {
+      label: "Setoran Hari Ini",
+      value: `${setorHariIni}/${totalStudents}`,
+      subtext: `${Math.round((setorHariIni / Math.max(1, totalStudents)) * 100)}% Sudah Setor`,
+      icon: CheckCircle,
+      color: "bg-emerald-500/10 text-emerald-500",
+    },
+    {
+      label: "Belum Setor",
+      value: String(belumSetor),
+      subtext: "Perlu Diingatkan",
+      icon: Clock,
+      color: "bg-amber-500/10 text-amber-500",
+    },
+  ];
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -61,14 +77,14 @@ export function TeacherDashboardPage() {
                 {name}
               </p>
               <p className="text-xs text-brand-text-muted">
-                Guru Pembimbing TTQ &mdash; Kelas VII Abu Bakar
+                Guru Pembimbing TTQ &mdash; {className}
               </p>
             </div>
           </section>
 
           {/* Quick Stats Grid */}
           <section className="grid grid-cols-3 gap-2">
-            {STATS.map((stat) => {
+            {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div

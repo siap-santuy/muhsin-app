@@ -54,6 +54,11 @@ import { GetMonthlyRaportUseCase } from "../modules/reports/application/use-case
 import { GetSemesterRaportUseCase } from "../modules/reports/application/use-cases/GetSemesterRaportUseCase";
 import { createRaportRoutes } from "../modules/reports/presentation/routes";
 
+// Dashboard module
+import { DrizzleDashboardRepository } from "../modules/dashboard/infrastructure/DrizzleDashboardRepository";
+import { GetDashboardSummaryUseCase } from "../modules/dashboard/application/use-cases/GetDashboardSummaryUseCase";
+import { createDashboardRoutes } from "../modules/dashboard/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -86,6 +91,8 @@ export interface ContainerDeps {
   // Reports
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
+  // Dashboard
+  getDashboardSummaryUseCase: GetDashboardSummaryUseCase;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -157,6 +164,12 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/raport", protectedAuth, tenantScopeMiddleware);
   app.route("/raport", raportRoutes);
 
+  // Dashboard
+  const dashboardRoutes = createDashboardRoutes(deps.getDashboardSummaryUseCase);
+  app.use("/dashboard/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/dashboard", protectedAuth, tenantScopeMiddleware);
+  app.route("/dashboard", dashboardRoutes);
+
   return app;
 }
 
@@ -174,6 +187,7 @@ export function buildContainer() {
   const studentRepo = new DrizzleStudentRepository(db);
   const teacherRepo = new DrizzleTeacherRepository(db);
   const raportRepo = new DrizzleRaportRepository(db);
+  const dashboardRepo = new DrizzleDashboardRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -228,6 +242,9 @@ export function buildContainer() {
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
   const getSemesterRaportUseCase = new GetSemesterRaportUseCase(raportRepo);
 
+  // UseCases — Dashboard
+  const getDashboardSummaryUseCase = new GetDashboardSummaryUseCase(dashboardRepo);
+
   return {
     app: createApp({
       loginUseCase,
@@ -250,6 +267,7 @@ export function buildContainer() {
       getTeachersUseCase,
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
+      getDashboardSummaryUseCase,
     }),
     redis,
   };

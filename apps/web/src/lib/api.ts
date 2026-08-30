@@ -225,6 +225,16 @@ class ApiClient {
     return json.data;
   }
 
+  async getDashboardSummary<T = any>(): Promise<T> {
+    const res = await fetch(`${API_BASE}/dashboard/summary`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data dashboard");
+    return json.data;
+  }
+
   async getMyProfile(): Promise<UserProfile> {
     const res = await fetch(`${API_BASE}/users/me`, {
       method: "GET",
