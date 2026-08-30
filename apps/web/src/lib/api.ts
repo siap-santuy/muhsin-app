@@ -148,6 +148,56 @@ class ApiClient {
     if (!res.ok) throw new Error(json.error?.message || "Gagal mengubah password");
     return json.data;
   }
+
+  async getStudents(teacherId?: string): Promise<Array<{
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    className: string | null;
+    classId: string | null;
+    level: number;
+    totalExp: number;
+    currentStreak: number;
+  }>> {
+    const url = teacherId
+      ? `${API_BASE}/students?teacherId=${teacherId}`
+      : `${API_BASE}/students`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil daftar siswa");
+    return json.data;
+  }
+
+  async getStudentById(id: string) {
+    const res = await fetch(`${API_BASE}/students/${id}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data siswa");
+    return json.data;
+  }
+
+  async getTeachers(): Promise<Array<{
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    classes: Array<{ id: string; name: string }>;
+    studentCount: number;
+  }>> {
+    const res = await fetch(`${API_BASE}/teachers`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil daftar guru");
+    return json.data;
+  }
 }
 
 export const api = new ApiClient();

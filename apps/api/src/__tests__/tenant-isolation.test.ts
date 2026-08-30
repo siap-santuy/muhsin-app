@@ -26,6 +26,14 @@ const app = createApp({
   updateProfileUseCase: {} as never,
   changePasswordUseCase: {} as never,
   tokenService,
+  dailyIbadahRepo: {} as never,
+  submitDailyIbadahUseCase: {} as never,
+  saveDraftDailyIbadahUseCase: {} as never,
+  getGamificationSummaryUseCase: {} as never,
+  createSetoranUseCase: {} as never,
+  getStudentsUseCase: {} as never,
+  getStudentByIdUseCase: {} as never,
+  getTeachersUseCase: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {
