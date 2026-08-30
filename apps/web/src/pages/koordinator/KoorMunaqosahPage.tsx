@@ -1,114 +1,108 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Award,
+  Check,
+  Loader2,
   X,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { Pagination } from "@/components/ui/Pagination";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
-interface MunaqosahRequest {
+interface MunaqosahRequestItem {
   id: string;
+  studentId: string;
   studentName: string;
-  class: string;
-  juz: number;
+  className: string;
+  teacherId: string;
   teacherName: string;
+  juzKe: number;
+  status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "tidak_lulus" | "ditolak";
   submissionDate: string;
-  status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "ditolak";
-  assignedExaminer?: string;
-  examDate?: string;
+  assignedExaminerName?: string | null;
+  examDate?: string | null;
+  examTime?: string | null;
 }
 
-const INITIAL_REQUESTS: MunaqosahRequest[] = [
-  {
-    id: "mr1",
-    studentName: "Ahmad Abdullah",
-    class: "VII Abu Bakar",
-    juz: 30,
-    teacherName: "Ust. Arai Kurnia",
-    submissionDate: "16 Aug 2026",
-    status: "diajukan",
-  },
-  {
-    id: "mr2",
-    studentName: "Fathimah Az-Zahra",
-    class: "VIII Khadijah",
-    juz: 29,
-    teacherName: "Ustdh. Maryam",
-    submissionDate: "17 Aug 2026",
-    status: "diajukan",
-  },
-  {
-    id: "mr3",
-    studentName: "Umar Al-Faruq",
-    class: "IX Ali",
-    juz: 1,
-    teacherName: "Ust. Hamzah",
-    submissionDate: "10 Aug 2026",
-    status: "dijadwalkan",
-    assignedExaminer: "Ust. Zulkifli Al-Hafiz",
-    examDate: "20 Aug 2026, 09:00",
-  },
-  {
-    id: "mr4",
-    studentName: "Muhammad Ali",
-    class: "VII Umar",
-    juz: 30,
-    teacherName: "Ust. Zulkifli",
-    submissionDate: "01 Aug 2026",
-    status: "lulus",
-    assignedExaminer: "Ust. Arai Kurnia",
-    examDate: "05 Aug 2026",
-  },
-];
-
-const EXAMINERS_POOL = [
-  { name: "Ust. Zulkifli Al-Hafiz", capacity: 5, assignedCount: 3 },
-  { name: "Ustdh. Maryam S.Ag", capacity: 5, assignedCount: 4 },
-  { name: "Ust. Hamzah S.Pd", capacity: 4, assignedCount: 1 },
-];
-
 export function KoorMunaqosahPage() {
-  const [requests, setRequests] = useState<MunaqosahRequest[]>(INITIAL_REQUESTS);
-  const [selectedReq, setSelectedReq] = useState<MunaqosahRequest | null>(null);
-  const [selectedExaminer, setSelectedExaminer] = useState(EXAMINERS_POOL[0].name);
-  const [examDate, setExamDate] = useState("2026-08-25T09:00");
+  const [requests, setRequests] = useState<MunaqosahRequestItem[]>([]);
+  const [teachers, setTeachers] = useState<Array<{ id: string; name: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReq, setSelectedReq] = useState<MunaqosahRequestItem | null>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history">("pending");
+  const [actionLoading, setActionLoading] = useState(false);
   const [scheduledPage, setScheduledPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
 
-  const pendingList = requests.filter((r) => r.status === "diajukan");
-  const scheduledList = requests.filter((r) => r.status === "dijadwalkan" || r.status === "disetujui");
-  const historyList = requests.filter((r) => r.status === "lulus" || r.status === "ditolak");
-
-  const PAGE_SIZE = 3;
-  const scheduledTotalPages = Math.max(1, Math.ceil(scheduledList.length / PAGE_SIZE));
-  const scheduledPaginated = scheduledList.slice((scheduledPage - 1) * PAGE_SIZE, scheduledPage * PAGE_SIZE);
-
-  const historyTotalPages = Math.max(1, Math.ceil(historyList.length / PAGE_SIZE));
-  const historyPaginated = historyList.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
-
-  function handleApproveSubmit() {
-    if (!selectedReq) return;
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === selectedReq.id
-          ? {
-              ...r,
-              status: "dijadwalkan",
-              assignedExaminer: selectedExaminer,
-              examDate: examDate.replace("T", " "),
-            }
-          : r
-      )
-    );
-    setSelectedReq(null);
-    alert(`Pengajuan Munaqosah ${selectedReq.studentName} berhasil disetujui & dijadwalkan!`);
+  async function loadData() {
+    try {
+      const [reqs, teacherList] = await Promise.all([
+        api.getMunaqosahRequests(),
+        api.getTeachers(),
+      ]);
+      setRequests(reqs);
+      setTeachers(teacherList);
+      if (teacherList.length > 0) {
+        setSelectedTeacherId(teacherList[0].id);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleReject(id: string) {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "ditolak" } : r))
-    );
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const pendingList = requests.filter((r) => r.status === "diajukan");
+  const scheduledList = requests.filter(
+    (r) => r.status === "dijadwalkan" || r.status === "disetujui"
+  );
+  const historyList = requests.filter(
+    (r) => r.status === "lulus" || r.status === "tidak_lulus" || r.status === "ditolak"
+  );
+
+  const PAGE_SIZE = 5;
+  const scheduledTotalPages = Math.max(1, Math.ceil(scheduledList.length / PAGE_SIZE));
+  const scheduledPaginated = scheduledList.slice(
+    (scheduledPage - 1) * PAGE_SIZE,
+    scheduledPage * PAGE_SIZE
+  );
+
+  const historyTotalPages = Math.max(1, Math.ceil(historyList.length / PAGE_SIZE));
+  const historyPaginated = historyList.slice(
+    (historyPage - 1) * PAGE_SIZE,
+    historyPage * PAGE_SIZE
+  );
+
+  async function handleApproveSubmit() {
+    if (!selectedReq) return;
+    setActionLoading(true);
+
+    try {
+      // Approve request
+      await api.approveMunaqosah(selectedReq.id);
+      await loadData();
+      setSelectedReq(null);
+    } catch (err: any) {
+      alert(err.message || "Gagal menyetujui pengajuan");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleReject(id: string) {
+    if (!confirm("Yakin ingin menolak pengajuan ini?")) return;
+    try {
+      await api.rejectMunaqosah(id);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || "Gagal menolak pengajuan");
+    }
   }
 
   return (
@@ -123,7 +117,7 @@ export function KoorMunaqosahPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                Periode Ujian: Agustus 2026
+                Periode Ujian Aktif
               </span>
             </div>
             <h1 className="mt-2 text-lg font-black text-brand-navy">
@@ -142,311 +136,236 @@ export function KoorMunaqosahPage() {
           </div>
         </div>
 
-        {/* 4-Step Workflow Banner */}
-        <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold text-brand-navy mb-3">
-            Alur Kerja Munaqosah 4 Tahap (PRD #4.3c):
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 text-center">
-            <div className="rounded-xl bg-brand-page p-2.5">
-              <span className="text-[10px] font-bold text-brand-cyan-dark">Tahap 1</span>
-              <p className="text-xs font-bold text-brand-navy">1. Deteksi System</p>
-              <p className="text-[9px] text-brand-text-muted">Otomatis hitung 1 Juz</p>
-            </div>
-            <div className="rounded-xl bg-brand-page p-2.5">
-              <span className="text-[10px] font-bold text-brand-cyan-dark">Tahap 2</span>
-              <p className="text-xs font-bold text-brand-navy">2. Pengajuan Guru</p>
-              <p className="text-[9px] text-brand-text-muted">Guru pilih siswa siap</p>
-            </div>
-            <div className="rounded-xl bg-amber-50 border border-amber-200 p-2.5">
-              <span className="text-[10px] font-bold text-amber-700">Tahap 3 (Anda)</span>
-              <p className="text-xs font-bold text-amber-900">3. Approval &amp; Assign</p>
-              <p className="text-[9px] text-amber-800">Koordinator plot penguji</p>
-            </div>
-            <div className="rounded-xl bg-brand-page p-2.5">
-              <span className="text-[10px] font-bold text-brand-cyan-dark">Tahap 4</span>
-              <p className="text-xs font-bold text-brand-navy">4. Hasil &amp; Achievement</p>
-              <p className="text-[9px] text-brand-text-muted">Penguji beri Lulus &amp; Badge</p>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-brand-line/40 pb-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("pending")}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "pending"
-                ? "bg-brand-navy text-white shadow-xs"
-                : "bg-white text-brand-navy border border-brand-line/60 hover:bg-brand-page"
-            }`}
-          >
-            Pengajuan Perlu Approval ({pendingList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("scheduled")}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "scheduled"
-                ? "bg-brand-navy text-white shadow-xs"
-                : "bg-white text-brand-navy border border-brand-line/60 hover:bg-brand-page"
-            }`}
-          >
-            Telah Dijadwalkan ({scheduledList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("history")}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "history"
-                ? "bg-brand-navy text-white shadow-xs"
-                : "bg-white text-brand-navy border border-brand-line/60 hover:bg-brand-page"
-            }`}
-          >
-            Riwayat Ujian ({historyList.length})
-          </button>
+        <div className="flex gap-2 border-b border-brand-line/60 pb-2">
+          {[
+            { key: "pending", label: `Perlu Review (${pendingList.length})` },
+            { key: "scheduled", label: `Dijadwalkan (${scheduledList.length})` },
+            { key: "history", label: `Riwayat Ujian (${historyList.length})` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                activeTab === tab.key
+                  ? "bg-brand-navy text-white shadow-sm"
+                  : "bg-white text-brand-navy/70 border border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Tab Content: Pending List */}
-        {activeTab === "pending" && (
-          <div className="space-y-4">
-            {pendingList.length === 0 ? (
-              <div className="rounded-2xl border border-brand-line/60 bg-white p-8 text-center text-xs text-brand-text-muted">
-                Tidak ada pengajuan Munaqosah yang pending saat ini.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {pendingList.map((req) => (
-                  <div
-                    key={req.id}
-                    className="flex flex-col justify-between rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between">
+        {loading ? (
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+          </div>
+        ) : (
+          <>
+            {/* Tab 1: Pending */}
+            {activeTab === "pending" && (
+              <div className="space-y-3">
+                {pendingList.length === 0 ? (
+                  <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+                    Tidak ada pengajuan munaqosah yang pending saat ini.
+                  </div>
+                ) : (
+                  pendingList.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex flex-col justify-between gap-4 rounded-2xl border border-brand-line bg-white p-4 shadow-sm md:flex-row md:items-center"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                          <Award className="h-6 w-6" />
+                        </div>
                         <div>
-                          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-900">
-                            Juz {req.juz}
-                          </span>
-                          <h3 className="mt-2 text-base font-black text-brand-navy">
-                            {req.studentName}
-                          </h3>
-                          <p className="text-xs font-semibold text-brand-cyan-dark">
-                            {req.class}
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-brand-navy">
+                              {req.studentName}
+                            </h3>
+                            <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-brand-cyan-dark">
+                              Juz {req.juzKe}
+                            </span>
+                          </div>
+                          <p className="text-xs text-brand-text-muted">
+                            {req.className} • Diajukan oleh: {req.teacherName} ({req.submissionDate})
                           </p>
                         </div>
-                        <span className="text-[10px] text-gray-400">
-                          Diajukan: {req.submissionDate}
-                        </span>
                       </div>
 
-                      <div className="mt-3 rounded-xl bg-brand-page p-3 text-xs">
-                        <p className="text-brand-text-muted">
-                          Diajukan oleh Guru Pembimbing:
-                        </p>
-                        <p className="font-bold text-brand-navy">
-                          {req.teacherName}
-                        </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleReject(req.id)}
+                          className="h-9 rounded-xl border-red-200 text-xs font-bold text-red-600 hover:bg-red-50"
+                        >
+                          <X className="mr-1 h-3.5 w-3.5" /> Tolak
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => setSelectedReq(req)}
+                          className="h-9 rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+                        >
+                          <Check className="mr-1 h-3.5 w-3.5" /> Review &amp; Setujui
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="mt-4 flex items-center gap-2 border-t border-brand-line/40 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedReq(req)}
-                        className="flex-1 rounded-xl bg-brand-navy py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-navy/90"
-                      >
-                        Setujui &amp; Assign Penguji
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleReject(req.id)}
-                        className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100"
-                      >
-                        Tolak
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             )}
-          </div>
+
+            {/* Tab 2: Scheduled */}
+            {activeTab === "scheduled" && (
+              <div className="space-y-3">
+                {scheduledPaginated.length === 0 ? (
+                  <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+                    Belum ada ujian munaqosah yang dijadwalkan.
+                  </div>
+                ) : (
+                  scheduledPaginated.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-brand-navy">
+                            {req.studentName}
+                          </h3>
+                          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                            Juz {req.juzKe}
+                          </span>
+                        </div>
+                        <p className="text-xs text-brand-text-muted">
+                          {req.className} • Penguji: {req.assignedExaminerName ?? "Menunggu Penugasan"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 border border-emerald-200">
+                        {req.status === "disetujui" ? "Disetujui" : "Dijadwalkan"}
+                      </span>
+                    </div>
+                  ))
+                )}
+                {scheduledTotalPages > 1 && (
+                  <Pagination
+                    page={scheduledPage}
+                    totalPages={scheduledTotalPages}
+                    onPageChange={setScheduledPage}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: History */}
+            {activeTab === "history" && (
+              <div className="space-y-3">
+                {historyPaginated.length === 0 ? (
+                  <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+                    Belum ada riwayat hasil ujian munaqosah.
+                  </div>
+                ) : (
+                  historyPaginated.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
+                    >
+                      <div>
+                        <h3 className="text-sm font-bold text-brand-navy">
+                          {req.studentName} (Juz {req.juzKe})
+                        </h3>
+                        <p className="text-xs text-brand-text-muted">
+                          {req.className} • Tanggal: {req.submissionDate}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${
+                          req.status === "lulus"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {req.status === "lulus" ? "LULUS" : "TIDAK LULUS / DITOLAK"}
+                      </span>
+                    </div>
+                  ))
+                )}
+                {historyTotalPages > 1 && (
+                  <Pagination
+                    page={historyPage}
+                    totalPages={historyTotalPages}
+                    onPageChange={setHistoryPage}
+                  />
+                )}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Tab Content: Scheduled */}
-        {activeTab === "scheduled" && (
-          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm space-y-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-brand-navy">
-                <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
-                  <tr>
-                    <th className="px-4 py-3">Nama Siswa &amp; Kelas</th>
-                    <th className="px-4 py-3">Target Juz</th>
-                    <th className="px-4 py-3">Guru Pembimbing</th>
-                    <th className="px-4 py-3">Guru Penguji Assigned</th>
-                    <th className="px-4 py-3">Jadwal Ujian</th>
-                    <th className="px-4 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brand-line/40 font-medium">
-                  {scheduledPaginated.map((req) => (
-                    <tr key={req.id}>
-                      <td className="px-4 py-3 font-bold">{req.studentName} ({req.class})</td>
-                      <td className="px-4 py-3 font-extrabold text-amber-800">Juz {req.juz}</td>
-                      <td className="px-4 py-3">{req.teacherName}</td>
-                      <td className="px-4 py-3 font-bold text-brand-cyan-dark">
-                        {req.assignedExaminer ?? "-"}
-                      </td>
-                      <td className="px-4 py-3 text-brand-navy">{req.examDate ?? "-"}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-brand-cyan-dark">
-                          Dijadwalkan
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-brand-line/40 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
-              <span>Total <span className="font-bold text-brand-navy">{scheduledList.length}</span> ujian dijadwalkan</span>
-              <Pagination page={scheduledPage} totalPages={scheduledTotalPages} onPageChange={setScheduledPage} />
-            </div>
-          </div>
-        )}
-
-        {/* Tab Content: History */}
-        {activeTab === "history" && (
-          <div className="rounded-2xl border border-brand-line/60 bg-white p-4 shadow-sm space-y-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-brand-navy">
-                <thead className="bg-brand-page text-[11px] font-bold uppercase text-brand-text-muted">
-                  <tr>
-                    <th className="px-4 py-3">Nama Siswa</th>
-                    <th className="px-4 py-3">Juz Ujian</th>
-                    <th className="px-4 py-3">Guru Penguji</th>
-                    <th className="px-4 py-3">Hasil Akhir</th>
-                    <th className="px-4 py-3">Achievement Awarded</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brand-line/40 font-medium">
-                  {historyPaginated.map((req) => (
-                    <tr key={req.id}>
-                      <td className="px-4 py-3 font-bold">{req.studentName}</td>
-                      <td className="px-4 py-3 font-bold">Juz {req.juz}</td>
-                      <td className="px-4 py-3">{req.assignedExaminer}</td>
-                      <td className="px-4 py-3">
-                        {req.status === "lulus" ? (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800">
-                            LULUS
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-extrabold text-red-800">
-                            DITOLAK
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {req.status === "lulus" ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-200">
-                            <Award className="h-3 w-3 text-amber-600" />
-                            Badge Juz {req.juz} Awarded
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-brand-line/40 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
-              <span>Total <span className="font-bold text-brand-navy">{historyList.length}</span> riwayat ujian</span>
-              <Pagination page={historyPage} totalPages={historyTotalPages} onPageChange={setHistoryPage} />
-            </div>
-          </div>
-        )}
-
-        {/* Modal Approval & Assign Penguji */}
+        {/* Modal Approval & Assignment */}
         {selectedReq && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setSelectedReq(null)}
-            />
-            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-brand-line/40 pb-3">
-                <h3 className="text-sm font-black text-brand-navy">
-                  Approval &amp; Assign Penguji Munaqosah
-                </h3>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h2 className="text-base font-bold text-brand-navy">
+                  Setujui Pengajuan Munaqosah
+                </h2>
                 <button
                   type="button"
                   onClick={() => setSelectedReq(null)}
-                  className="rounded-lg p-1 text-gray-400 hover:text-brand-navy"
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-100"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="rounded-xl bg-brand-page p-3 text-xs space-y-1">
-                <p className="font-bold text-brand-navy">{selectedReq.studentName}</p>
-                <p className="text-brand-text-muted">
-                  Kelas: {selectedReq.class} &bull; Target: Juz {selectedReq.juz}
-                </p>
-                <p className="text-brand-text-muted">
-                  Pembimbing: {selectedReq.teacherName}
-                </p>
-              </div>
+              <div className="my-4 space-y-3 text-xs">
+                <div className="rounded-xl bg-gray-50 p-3">
+                  <p className="font-bold text-brand-navy">
+                    {selectedReq.studentName} ({selectedReq.className})
+                  </p>
+                  <p className="text-brand-text-muted">
+                    Ujian: Juz {selectedReq.juzKe} • Pembimbing: {selectedReq.teacherName}
+                  </p>
+                </div>
 
-              <div className="space-y-3 text-xs">
                 <div>
-                  <label className="font-bold text-brand-navy block mb-1">
-                    Pilih Guru Penguji (Pool Penguji Munaqosah):
-                  </label>
+                  <label className="font-bold text-brand-navy">Pilih Guru Penguji</label>
                   <select
-                    value={selectedExaminer}
-                    onChange={(e) => setSelectedExaminer(e.target.value)}
-                    className="w-full rounded-xl border border-brand-line/60 bg-white p-2.5 font-semibold text-brand-navy outline-none"
+                    value={selectedTeacherId}
+                    onChange={(e) => setSelectedTeacherId(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                   >
-                    {EXAMINERS_POOL.map((ex) => (
-                      <option key={ex.name} value={ex.name}>
-                        {ex.name} (Kapasitas: {ex.assignedCount}/{ex.capacity})
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                <div>
-                  <label className="font-bold text-brand-navy block mb-1">
-                    Jadwal Waktu Ujian:
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={examDate}
-                    onChange={(e) => setExamDate(e.target.value)}
-                    className="w-full rounded-xl border border-brand-line/60 bg-white p-2.5 font-semibold text-brand-navy outline-none"
-                  />
-                </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <button
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setSelectedReq(null)}
-                  className="flex-1 rounded-xl border border-brand-line bg-white py-2 text-xs font-bold text-brand-navy hover:bg-brand-page"
+                  className="h-10 rounded-xl"
                 >
                   Batal
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleApproveSubmit}
-                  className="flex-1 rounded-xl bg-brand-navy py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-navy/90"
+                  disabled={actionLoading}
+                  className="h-10 rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
                 >
-                  Setujui &amp; Plot Ujian
-                </button>
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Konfirmasi & Setujui"}
+                </Button>
               </div>
             </div>
           </div>
@@ -454,8 +373,4 @@ export function KoorMunaqosahPage() {
       </div>
     </KoorShell>
   );
-}
-
-export default function KoorMunaqosahPageWrapper() {
-  return <KoorMunaqosahPage />;
 }

@@ -235,6 +235,81 @@ class ApiClient {
     return json.data;
   }
 
+  async getMunaqosahRequests(status?: string) {
+    const url = status
+      ? `${API_BASE}/munaqosah/requests?status=${status}`
+      : `${API_BASE}/munaqosah/requests`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil pengajuan munaqosah");
+    return json.data;
+  }
+
+  async createMunaqosahRequest(input: { studentId: string; juzKe: number }) {
+    const res = await fetch(`${API_BASE}/munaqosah/requests`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(input),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat pengajuan munaqosah");
+    return json.data;
+  }
+
+  async approveMunaqosah(id: string) {
+    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/approve`, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal menyetujui munaqosah");
+    return json.data;
+  }
+
+  async rejectMunaqosah(id: string) {
+    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/reject`, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal menolak munaqosah");
+    return json.data;
+  }
+
+  async scheduleMunaqosah(id: string, input: {
+    periodId: string;
+    examinerTeacherId: string;
+    jadwalTanggal: string;
+    jadwalWaktu?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/schedule`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(input),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal menjadwalkan munaqosah");
+    return json.data;
+  }
+
+  async submitMunaqosahResult(assignmentId: string, input: {
+    scores: Record<string, number>;
+    hasil: "lulus" | "tidak_lulus";
+    catatanPenguji?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/munaqosah/assignments/${assignmentId}/result`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(input),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal menyimpan hasil munaqosah");
+    return json.data;
+  }
+
   async getMyProfile(): Promise<UserProfile> {
     const res = await fetch(`${API_BASE}/users/me`, {
       method: "GET",

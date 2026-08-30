@@ -41,6 +41,11 @@ const app = createApp({
   getMonthlyRaportUseCase: {} as never,
   getSemesterRaportUseCase: {} as never,
   getDashboardSummaryUseCase: {} as never,
+  getMunaqosahRequestsUseCase: {} as never,
+  createMunaqosahRequestUseCase: {} as never,
+  updateMunaqosahStatusUseCase: {} as never,
+  scheduleMunaqosahUseCase: {} as never,
+  submitMunaqosahResultUseCase: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {

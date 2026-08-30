@@ -59,6 +59,15 @@ import { DrizzleDashboardRepository } from "../modules/dashboard/infrastructure/
 import { GetDashboardSummaryUseCase } from "../modules/dashboard/application/use-cases/GetDashboardSummaryUseCase";
 import { createDashboardRoutes } from "../modules/dashboard/presentation/routes";
 
+// Munaqosah module
+import { DrizzleMunaqosahRepository } from "../modules/munaqosah/infrastructure/DrizzleMunaqosahRepository";
+import { GetMunaqosahRequestsUseCase } from "../modules/munaqosah/application/use-cases/GetMunaqosahRequestsUseCase";
+import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
+import { UpdateMunaqosahStatusUseCase } from "../modules/munaqosah/application/use-cases/UpdateMunaqosahStatusUseCase";
+import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
+import { SubmitMunaqosahResultUseCase } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
+import { createMunaqosahRoutes } from "../modules/munaqosah/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -93,6 +102,12 @@ export interface ContainerDeps {
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
   // Dashboard
   getDashboardSummaryUseCase: GetDashboardSummaryUseCase;
+  // Munaqosah
+  getMunaqosahRequestsUseCase: GetMunaqosahRequestsUseCase;
+  createMunaqosahRequestUseCase: CreateMunaqosahRequestUseCase;
+  updateMunaqosahStatusUseCase: UpdateMunaqosahStatusUseCase;
+  scheduleMunaqosahUseCase: ScheduleMunaqosahUseCase;
+  submitMunaqosahResultUseCase: SubmitMunaqosahResultUseCase;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -170,6 +185,18 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/dashboard", protectedAuth, tenantScopeMiddleware);
   app.route("/dashboard", dashboardRoutes);
 
+  // Munaqosah
+  const munaqosahRoutes = createMunaqosahRoutes({
+    getRequestsUseCase: deps.getMunaqosahRequestsUseCase,
+    createRequestUseCase: deps.createMunaqosahRequestUseCase,
+    updateStatusUseCase: deps.updateMunaqosahStatusUseCase,
+    scheduleUseCase: deps.scheduleMunaqosahUseCase,
+    submitResultUseCase: deps.submitMunaqosahResultUseCase,
+  });
+  app.use("/munaqosah/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/munaqosah", protectedAuth, tenantScopeMiddleware);
+  app.route("/munaqosah", munaqosahRoutes);
+
   return app;
 }
 
@@ -188,6 +215,7 @@ export function buildContainer() {
   const teacherRepo = new DrizzleTeacherRepository(db);
   const raportRepo = new DrizzleRaportRepository(db);
   const dashboardRepo = new DrizzleDashboardRepository(db);
+  const munaqosahRepo = new DrizzleMunaqosahRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -245,6 +273,13 @@ export function buildContainer() {
   // UseCases — Dashboard
   const getDashboardSummaryUseCase = new GetDashboardSummaryUseCase(dashboardRepo);
 
+  // UseCases — Munaqosah
+  const getMunaqosahRequestsUseCase = new GetMunaqosahRequestsUseCase(munaqosahRepo);
+  const createMunaqosahRequestUseCase = new CreateMunaqosahRequestUseCase(munaqosahRepo);
+  const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo);
+  const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo);
+  const submitMunaqosahResultUseCase = new SubmitMunaqosahResultUseCase(munaqosahRepo, addExpUseCase);
+
   return {
     app: createApp({
       loginUseCase,
@@ -268,6 +303,11 @@ export function buildContainer() {
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
       getDashboardSummaryUseCase,
+      getMunaqosahRequestsUseCase,
+      createMunaqosahRequestUseCase,
+      updateMunaqosahStatusUseCase,
+      scheduleMunaqosahUseCase,
+      submitMunaqosahResultUseCase,
     }),
     redis,
   };
