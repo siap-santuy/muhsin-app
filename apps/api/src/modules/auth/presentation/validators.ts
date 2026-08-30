@@ -2,6 +2,8 @@ import { validator } from "hono/validator";
 import {
   loginInputSchema,
   refreshTokenInputSchema,
+  updateProfileInputSchema,
+  changePasswordInputSchema,
 } from "@muhsin/shared";
 import type { Context } from "hono";
 
@@ -21,3 +23,5 @@ function withSchema<T>(
 
 export const loginValidator = validator("json", withSchema(loginInputSchema));
 export const refreshTokenValidator = validator("json", withSchema(refreshTokenInputSchema));
+export const updateProfileValidator = validator("json", withSchema(updateProfileInputSchema));
+export const changePasswordValidator = validator("json", withSchema(changePasswordInputSchema));

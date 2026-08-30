@@ -1,7 +1,7 @@
 import type { Db } from "../../../db/client";
 import { users } from "../../../db/schema";
 import { eq, and } from "drizzle-orm";
-import type { IUserRepository } from "../domain/repositories/IUserRepository";
+import type { IUserRepository, UpdateUserData } from "../domain/repositories/IUserRepository";
 import type { User } from "../domain/entities/User";
 
 export class DrizzleUserRepository implements IUserRepository {
@@ -27,6 +27,25 @@ export class DrizzleUserRepository implements IUserRepository {
 
     const row = rows[0];
     return row ? this.toDomain(row) : null;
+  }
+
+  async updateProfile(id: string, schoolId: string, data: UpdateUserData): Promise<User> {
+    const rows = await this.db
+      .update(users)
+      .set(data)
+      .where(and(eq(users.id, id), eq(users.schoolId, schoolId)))
+      .returning();
+
+    const row = rows[0];
+    if (!row) throw new Error("User not found");
+    return this.toDomain(row);
+  }
+
+  async updatePasswordHash(id: string, schoolId: string, passwordHash: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ passwordHash })
+      .where(and(eq(users.id, id), eq(users.schoolId, schoolId)));
   }
 
   private toDomain(row: typeof users.$inferSelect): User {

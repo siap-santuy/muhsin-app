@@ -17,6 +17,8 @@ function makeDeps(user: User | null) {
   const userRepository: IUserRepository = {
     findByEmail: async () => user,
     findById: async () => user,
+    updateProfile: async () => user!,
+    updatePasswordHash: async () => {},
   };
 
   const saved: Array<{ userId: string; hash: string; ttl: number }> = [];

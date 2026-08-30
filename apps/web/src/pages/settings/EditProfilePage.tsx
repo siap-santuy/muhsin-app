@@ -1,24 +1,81 @@
-import { useState } from "react";
-import { Camera, Check, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Camera, Check, Loader2, Save } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/lib/api";
 
 export function EditProfilePage() {
   const user = useAuthStore((s) => s.user);
 
-  const [name, setName] = useState(user?.name ?? "Fulan bin Fulan");
-  const [email, setEmail] = useState(user?.email ?? "fulan@student.com");
-  const [phone, setPhone] = useState("081234567890");
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSave(e: React.FormEvent) {
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await api.getMyProfile();
+        setName(profile.name);
+        setEmail(profile.email);
+        setPhone(profile.phone ?? "");
+      } catch {
+        // Fallback to store values
+        if (user) {
+          setName(user.name);
+          setEmail(user.email);
+        }
+      } finally {
+        setFetching(false);
+      }
+    }
+    loadProfile();
+  }, [user]);
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      window.location.hash = "#/profile";
-    }, 1200);
+    setError(null);
+    setLoading(true);
+
+    try {
+      const updated = await api.updateProfile({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || null,
+      });
+
+      // Update auth store with new user data
+      useAuthStore.setState((state) => ({
+        ...state,
+        user: state.user
+          ? { ...state.user, name: updated.name, email: updated.email }
+          : null,
+      }));
+
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        window.location.hash = "#/profile";
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memperbarui profile");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (fetching) {
+    return (
+      <SettingsPageShell title="Ubah Profile" subtitle="Memuat data profile...">
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+        </div>
+      </SettingsPageShell>
+    );
   }
 
   return (
@@ -43,6 +100,13 @@ export function EditProfilePage() {
             Klik kamera untuk mengunggah foto baru
           </p>
         </div>
+
+        {/* Error notification */}
+        {error ? (
+          <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
+            {error}
+          </div>
+        ) : null}
 
         {/* Input Fields */}
         <div className="space-y-3 rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
@@ -73,6 +137,7 @@ export function EditProfilePage() {
             <input
               type="tel"
               value={phone}
+              placeholder="08xxxxxxxxxx"
               onChange={(e) => setPhone(e.target.value)}
               className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white"
             />
@@ -81,11 +146,14 @@ export function EditProfilePage() {
 
         <Button
           type="submit"
-          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark"
+          disabled={loading}
+          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
         >
-          {saved ? (
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : saved ? (
             <>
-              <Check className="mr-2 h-4 w-4" /> Profile Perbarui!
+              <Check className="mr-2 h-4 w-4" /> Profile Diperbarui!
             </>
           ) : (
             <>

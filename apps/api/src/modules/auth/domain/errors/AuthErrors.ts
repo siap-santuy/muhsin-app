@@ -9,6 +9,27 @@ export class InvalidCredentialsError extends AuthError {
   }
 }
 
+export class WrongPasswordError extends AuthError {
+  code = "WRONG_PASSWORD";
+  constructor() {
+    super("Password lama tidak sesuai");
+  }
+}
+
+export class UserNotFoundError extends AuthError {
+  code = "USER_NOT_FOUND";
+  constructor() {
+    super("User tidak ditemukan");
+  }
+}
+
+export class EmailAlreadyUsedError extends AuthError {
+  code = "EMAIL_ALREADY_USED";
+  constructor() {
+    super("Email sudah digunakan user lain");
+  }
+}
+
 export class TokenExpiredError extends AuthError {
   code = "TOKEN_EXPIRED";
   constructor() {

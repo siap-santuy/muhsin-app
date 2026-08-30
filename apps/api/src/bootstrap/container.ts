@@ -7,6 +7,9 @@ import { TokenService } from "../modules/auth/application/services/TokenService"
 import { PasswordHasher } from "../modules/auth/application/services/PasswordHasher";
 import { LoginUseCase } from "../modules/auth/application/use-cases/LoginUseCase";
 import { RefreshTokenUseCase } from "../modules/auth/application/use-cases/RefreshTokenUseCase";
+import { GetProfileUseCase } from "../modules/auth/application/use-cases/GetProfileUseCase";
+import { UpdateProfileUseCase } from "../modules/auth/application/use-cases/UpdateProfileUseCase";
+import { ChangePasswordUseCase } from "../modules/auth/application/use-cases/ChangePasswordUseCase";
 import { buildAuthRoutes, buildAuthProtectedRoutes } from "../modules/auth/presentation/routes";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -15,6 +18,9 @@ import { errorHandler } from "../middleware/error-handler";
 export interface ContainerDeps {
   loginUseCase: LoginUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
+  getProfileUseCase: GetProfileUseCase;
+  updateProfileUseCase: UpdateProfileUseCase;
+  changePasswordUseCase: ChangePasswordUseCase;
   tokenService: TokenService;
 }
 
@@ -22,10 +28,13 @@ export function createApp(deps: ContainerDeps): Hono {
   const app = new Hono();
   app.use("*", errorHandler);
 
+  // Public auth routes
   app.route("/auth", buildAuthRoutes(deps));
 
-  app.use("/auth/me", authMiddleware(deps.tokenService), tenantScopeMiddleware);
-  app.route("/auth/me", buildAuthProtectedRoutes());
+  // Protected user routes (GET /users/me, PATCH /users/profile, PATCH /users/change-password)
+  const protectedUsers = buildAuthProtectedRoutes(deps);
+  app.use("/users/*", authMiddleware(deps.tokenService), tenantScopeMiddleware);
+  app.route("/users", protectedUsers);
 
   return app;
 }
@@ -36,6 +45,7 @@ export function buildContainer() {
 
   const userRepository = new DrizzleUserRepository(db);
   const tokenRepository = new RedisTokenRepository(redis);
+  const passwordHasher = new PasswordHasher();
 
   const tokenService = new TokenService(
     process.env.JWT_SECRET ?? "dev-secret-access-change-me",
@@ -48,15 +58,25 @@ export function buildContainer() {
     userRepository,
     tokenRepository,
     tokenService,
-    new PasswordHasher()
+    passwordHasher
   );
   const refreshTokenUseCase = new RefreshTokenUseCase(
     tokenRepository,
     tokenService
   );
+  const getProfileUseCase = new GetProfileUseCase(userRepository);
+  const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
+  const changePasswordUseCase = new ChangePasswordUseCase(userRepository, passwordHasher);
 
   return {
-    app: createApp({ loginUseCase, refreshTokenUseCase, tokenService }),
+    app: createApp({
+      loginUseCase,
+      refreshTokenUseCase,
+      getProfileUseCase,
+      updateProfileUseCase,
+      changePasswordUseCase,
+      tokenService,
+    }),
     redis,
   };
 }

@@ -1,6 +1,11 @@
 import type { Context, Next } from "hono";
 import { ZodError } from "zod";
-import { AuthError } from "../modules/auth/domain/errors/AuthErrors";
+import {
+  AuthError,
+  UserNotFoundError,
+  WrongPasswordError,
+  EmailAlreadyUsedError,
+} from "../modules/auth/domain/errors/AuthErrors";
 
 export async function errorHandler(c: Context, next: Next) {
   try {
@@ -21,13 +26,30 @@ export async function errorHandler(c: Context, next: Next) {
       );
     }
 
+    if (err instanceof UserNotFoundError) {
+      return c.json(
+        { data: null, error: { code: err.code, message: err.message }, meta: null },
+        404
+      );
+    }
+
+    if (err instanceof WrongPasswordError) {
+      return c.json(
+        { data: null, error: { code: err.code, message: err.message }, meta: null },
+        400
+      );
+    }
+
+    if (err instanceof EmailAlreadyUsedError) {
+      return c.json(
+        { data: null, error: { code: err.code, message: err.message }, meta: null },
+        409
+      );
+    }
+
     if (err instanceof AuthError) {
       return c.json(
-        {
-          data: null,
-          error: { code: err.code, message: err.message },
-          meta: null,
-        },
+        { data: null, error: { code: err.code, message: err.message }, meta: null },
         401
       );
     }

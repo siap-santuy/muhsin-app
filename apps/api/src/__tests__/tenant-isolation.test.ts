@@ -12,6 +12,19 @@ const tokenService = new TokenService(
 const app = createApp({
   loginUseCase: {} as never,
   refreshTokenUseCase: {} as never,
+  getProfileUseCase: {
+    execute: async (userId: string, schoolId: string) => ({
+      id: userId,
+      schoolId,
+      role: "teacher",
+      name: "Test",
+      email: "test@test.com",
+      phone: null,
+      createdAt: new Date().toISOString(),
+    }),
+  } as never,
+  updateProfileUseCase: {} as never,
+  changePasswordUseCase: {} as never,
   tokenService,
 });
 
@@ -21,13 +34,13 @@ async function signToken(userId: string, schoolId: string, role: string) {
 
 describe("tenant isolation", () => {
   it("rejects request without token (401)", async () => {
-    const res = await app.request("/auth/me", { method: "GET" });
+    const res = await app.request("/users/me", { method: "GET" });
     expect(res.status).toBe(401);
   });
 
   it("accepts request when school_id matches token (200)", async () => {
     const token = await signToken("user-1", "school-1", "teacher");
-    const res = await app.request("/auth/me", {
+    const res = await app.request("/users/me", {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -38,7 +51,7 @@ describe("tenant isolation", () => {
 
   it("rejects cross-tenant request via X-School-Id header (403)", async () => {
     const token = await signToken("user-1", "school-1", "teacher");
-    const res = await app.request("/auth/me", {
+    const res = await app.request("/users/me", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -50,7 +63,7 @@ describe("tenant isolation", () => {
 
   it("rejects cross-tenant request via schoolId query param (403)", async () => {
     const token = await signToken("user-1", "school-1", "teacher");
-    const res = await app.request("/auth/me?schoolId=school-2", {
+    const res = await app.request("/users/me?schoolId=school-2", {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });

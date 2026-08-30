@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Check, Eye, EyeOff, Lock } from "lucide-react";
+import { Check, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export function ChangePasswordPage() {
   const [oldPassword, setOldPassword] = useState("");
@@ -10,10 +11,11 @@ export function ChangePasswordPage() {
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -27,11 +29,24 @@ export function ChangePasswordPage() {
       return;
     }
 
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      window.location.hash = "#/profile";
-    }, 1200);
+    setLoading(true);
+
+    try {
+      await api.changePassword({
+        currentPassword: oldPassword,
+        newPassword: newPassword,
+      });
+
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        window.location.hash = "#/profile";
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengubah password");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -113,9 +128,12 @@ export function ChangePasswordPage() {
 
         <Button
           type="submit"
-          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark"
+          disabled={loading}
+          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
         >
-          {saved ? (
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : saved ? (
             <>
               <Check className="mr-2 h-4 w-4" /> Password Diubah!
             </>
