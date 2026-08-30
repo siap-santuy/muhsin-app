@@ -6,8 +6,11 @@ describe("CreateSetoranUseCase", () => {
   it("validates dynamic score fields and adds EXP", async () => {
     const mockRepo: ISetoranRepository = {
       create: vi.fn().mockImplementation(async (e) => e),
+      findById: vi.fn().mockResolvedValue(null),
+      findByStudent: vi.fn().mockResolvedValue([]),
       findByStudentAndMonth: vi.fn().mockResolvedValue([]),
       findByClassAndDate: vi.fn().mockResolvedValue([]),
+      getActiveSubcategories: vi.fn().mockResolvedValue([]),
     };
 
     const mockAddExp = {
@@ -33,8 +36,11 @@ describe("CreateSetoranUseCase", () => {
   it("throws error when invalid score key is provided", async () => {
     const mockRepo: ISetoranRepository = {
       create: vi.fn(),
-      findByStudentAndMonth: vi.fn(),
-      findByClassAndDate: vi.fn(),
+      findById: vi.fn().mockResolvedValue(null),
+      findByStudent: vi.fn().mockResolvedValue([]),
+      findByStudentAndMonth: vi.fn().mockResolvedValue([]),
+      findByClassAndDate: vi.fn().mockResolvedValue([]),
+      getActiveSubcategories: vi.fn().mockResolvedValue([]),
     };
     const mockAddExp = { execute: vi.fn() } as any;
     const useCase = new CreateSetoranUseCase(mockRepo, mockAddExp);

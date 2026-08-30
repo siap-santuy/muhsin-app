@@ -1,7 +1,7 @@
 import type { Db } from "../../../db/client";
-import { setoranEntries } from "../../../db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import type { ISetoranRepository } from "../domain/repositories/ISetoranRepository";
+import { setoranEntries, assessmentCategories, assessmentSubcategories } from "../../../db/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
+import type { ISetoranRepository, AssessmentSubcategoryInfo } from "../domain/repositories/ISetoranRepository";
 import type { SetoranEntryEntity } from "../domain/entities/SetoranEntry";
 
 export class DrizzleSetoranRepository implements ISetoranRepository {
@@ -27,25 +27,52 @@ export class DrizzleSetoranRepository implements ISetoranRepository {
     return this.toDomain(rows[0]);
   }
 
+  async findById(id: string, schoolId: string): Promise<SetoranEntryEntity | null> {
+    const rows = await this.db
+      .select()
+      .from(setoranEntries)
+      .where(and(eq(setoranEntries.id, id), eq(setoranEntries.schoolId, schoolId)))
+      .limit(1);
+
+    const row = rows[0];
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByStudent(
+    studentId: string,
+    schoolId: string,
+    subcategoryId?: string,
+    month?: string
+  ): Promise<SetoranEntryEntity[]> {
+    const conditions = [
+      eq(setoranEntries.studentId, studentId),
+      eq(setoranEntries.schoolId, schoolId),
+    ];
+
+    if (subcategoryId) {
+      conditions.push(eq(setoranEntries.subcategoryId, subcategoryId));
+    }
+
+    if (month) {
+      conditions.push(sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${month}`);
+    }
+
+    const rows = await this.db
+      .select()
+      .from(setoranEntries)
+      .where(and(...conditions))
+      .orderBy(desc(setoranEntries.date));
+
+    return rows.map((r) => this.toDomain(r));
+  }
+
   async findByStudentAndMonth(
     studentId: string,
     subcategoryId: string,
     month: string,
     schoolId: string
   ): Promise<SetoranEntryEntity[]> {
-    const rows = await this.db
-      .select()
-      .from(setoranEntries)
-      .where(
-        and(
-          eq(setoranEntries.studentId, studentId),
-          eq(setoranEntries.subcategoryId, subcategoryId),
-          eq(setoranEntries.schoolId, schoolId),
-          sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${month}`
-        )
-      );
-
-    return rows.map((r) => this.toDomain(r));
+    return this.findByStudent(studentId, schoolId, subcategoryId, month);
   }
 
   async findByClassAndDate(
@@ -64,6 +91,42 @@ export class DrizzleSetoranRepository implements ISetoranRepository {
       );
 
     return rows.map((r) => this.toDomain(r));
+  }
+
+  async getActiveSubcategories(schoolId: string): Promise<AssessmentSubcategoryInfo[]> {
+    const rows = await this.db
+      .select({
+        id: assessmentSubcategories.id,
+        categoryId: assessmentCategories.id,
+        categoryCode: assessmentCategories.code,
+        categoryName: assessmentCategories.name,
+        code: assessmentSubcategories.code,
+        name: assessmentSubcategories.name,
+        scoreFields: assessmentSubcategories.scoreFields,
+        referenceShape: assessmentSubcategories.referenceShape,
+      })
+      .from(assessmentSubcategories)
+      .innerJoin(
+        assessmentCategories,
+        eq(assessmentCategories.id, assessmentSubcategories.categoryId)
+      )
+      .where(
+        and(
+          eq(assessmentSubcategories.schoolId, schoolId),
+          eq(assessmentSubcategories.isActive, true)
+        )
+      );
+
+    return rows.map((r) => ({
+      id: r.id,
+      categoryId: r.categoryId,
+      categoryCode: r.categoryCode,
+      categoryName: r.categoryName,
+      code: r.code,
+      name: r.name,
+      scoreFields: r.scoreFields as any,
+      referenceShape: r.referenceShape as any,
+    }));
   }
 
   private toDomain(row: typeof setoranEntries.$inferSelect): SetoranEntryEntity {

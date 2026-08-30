@@ -117,6 +117,54 @@ class ApiClient {
     return json.data;
   }
 
+  async getAssessmentCategories(): Promise<Array<{
+    id: string;
+    categoryId: string;
+    categoryCode: string;
+    categoryName: string;
+    code: string;
+    name: string;
+    scoreFields: Array<{ key: string; label: string; min: number; max: number }>;
+    referenceShape: Record<string, any> | null;
+  }>> {
+    const res = await fetch(`${API_BASE}/setoran/categories`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil kategori penilaian");
+    return json.data;
+  }
+
+  async getSetoranHistory(params: {
+    studentId?: string;
+    subcategoryId?: string;
+    month?: string;
+  } = {}) {
+    const query = new URLSearchParams();
+    if (params.studentId) query.set("studentId", params.studentId);
+    if (params.subcategoryId) query.set("subcategoryId", params.subcategoryId);
+    if (params.month) query.set("month", params.month);
+
+    const res = await fetch(`${API_BASE}/setoran/history?${query.toString()}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil riwayat setoran");
+    return json.data;
+  }
+
+  async getSetoranById(id: string) {
+    const res = await fetch(`${API_BASE}/setoran/${id}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil detail setoran");
+    return json.data;
+  }
+
   async getMyProfile(): Promise<UserProfile> {
     const res = await fetch(`${API_BASE}/users/me`, {
       method: "GET",

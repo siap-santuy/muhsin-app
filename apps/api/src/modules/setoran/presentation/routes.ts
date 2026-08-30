@@ -3,6 +3,9 @@ import { z } from "zod";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { CreateSetoranUseCase } from "../application/use-cases/CreateSetoranUseCase";
+import type { GetSetoranHistoryUseCase } from "../application/use-cases/GetSetoranHistoryUseCase";
+import type { GetSetoranByIdUseCase } from "../application/use-cases/GetSetoranByIdUseCase";
+import type { GetAssessmentCategoriesUseCase } from "../application/use-cases/GetAssessmentCategoriesUseCase";
 
 const createSetoranBodySchema = z.object({
   subcategoryId: z.string().uuid(),
@@ -15,10 +18,74 @@ const createSetoranBodySchema = z.object({
   scoreFieldKeys: z.array(z.string()),
 });
 
-export function createSetoranRoutes(useCase: CreateSetoranUseCase) {
+export interface SetoranRoutesDeps {
+  createSetoranUseCase: CreateSetoranUseCase;
+  getSetoranHistoryUseCase: GetSetoranHistoryUseCase;
+  getSetoranByIdUseCase: GetSetoranByIdUseCase;
+  getAssessmentCategoriesUseCase: GetAssessmentCategoriesUseCase;
+}
+
+export function createSetoranRoutes(deps: SetoranRoutesDeps) {
   const app = new Hono<{ Variables: AuthVariables }>();
 
-  // POST /api/setoran
+  // GET /setoran/categories — list active assessment subcategories with fields
+  app.get(
+    "/categories",
+    requireRole("teacher", "koordinator_ttq", "student", "parent"),
+    async (c) => {
+      const user = c.get("user");
+      const categories = await deps.getAssessmentCategoriesUseCase.execute(
+        user.schoolId
+      );
+      return c.json({ data: categories, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /setoran/history?studentId=&subcategoryId=&month=
+  app.get(
+    "/history",
+    requireRole("teacher", "koordinator_ttq", "student", "parent"),
+    async (c) => {
+      const user = c.get("user");
+      const studentId = c.req.query("studentId") ?? user.userId;
+      const subcategoryId = c.req.query("subcategoryId");
+      const month = c.req.query("month");
+
+      const history = await deps.getSetoranHistoryUseCase.execute({
+        studentId,
+        schoolId: user.schoolId,
+        subcategoryId,
+        month,
+      });
+
+      return c.json({ data: history, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /setoran/:id — get specific setoran entry
+  app.get(
+    "/:id",
+    requireRole("teacher", "koordinator_ttq", "student", "parent"),
+    async (c) => {
+      const user = c.get("user");
+      const id = c.req.param("id");
+
+      try {
+        const entry = await deps.getSetoranByIdUseCase.execute(
+          id ?? "",
+          user.schoolId
+        );
+        return c.json({ data: entry, error: null, meta: null }, 200);
+      } catch (err: any) {
+        return c.json(
+          { data: null, error: { code: "NOT_FOUND", message: err.message }, meta: null },
+          404
+        );
+      }
+    }
+  );
+
+  // POST /setoran
   app.post("/", requireRole("teacher"), async (c) => {
     const user = c.get("user");
     const body = await c.req.json();
@@ -32,7 +99,7 @@ export function createSetoranRoutes(useCase: CreateSetoranUseCase) {
     }
 
     try {
-      const entry = await useCase.execute({
+      const entry = await deps.createSetoranUseCase.execute({
         schoolId: user.schoolId,
         teacherId: user.userId,
         ...parsed.data,

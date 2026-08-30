@@ -34,6 +34,9 @@ const app = createApp({
   getStudentsUseCase: {} as never,
   getStudentByIdUseCase: {} as never,
   getTeachersUseCase: {} as never,
+  getSetoranHistoryUseCase: {} as never,
+  getSetoranByIdUseCase: {} as never,
+  getAssessmentCategoriesUseCase: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {
