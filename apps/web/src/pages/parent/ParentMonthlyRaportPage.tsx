@@ -1,10 +1,11 @@
-import { ArrowLeft, Download } from "lucide-react";
-import { AbsensiSection } from "@/components/raport/AbsensiSection";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { EvaluasiSection } from "@/components/raport/EvaluasiSection";
 import { MutabaahSection } from "@/components/raport/MutabaahSection";
 import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 interface ParentMonthlyRaportPageProps {
   onBack?: () => void;
@@ -17,6 +18,26 @@ export function ParentMonthlyRaportPage({
   month = "Juli",
   year = "2026",
 }: ParentMonthlyRaportPageProps) {
+  const [raport, setRaport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const displayYear = year.split("/")[0] || year;
+  const monthCode = `${displayYear}-07`;
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.getMonthlyRaport({ month: monthCode });
+        setRaport(data);
+      } catch {
+        // Fallback
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [monthCode]);
+
   function handleBack() {
     if (onBack) {
       onBack();
@@ -25,7 +46,18 @@ export function ParentMonthlyRaportPage({
     }
   }
 
-  const displayYear = year.split("/")[0] || year;
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-brand-page">
+        <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+      </div>
+    );
+  }
+
+  const student = raport?.student;
+  const nilaiTtq = raport?.nilaiTtq;
+  const mutabaah = raport?.mutabaah;
+  const evaluasi = raport?.evaluasi;
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -39,71 +71,39 @@ export function ParentMonthlyRaportPage({
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-brand-cyan">Raport Bulanan</h1>
+        <h1 className="text-xl font-bold text-brand-cyan">Raport Ananda</h1>
         <div className="h-10 w-10" />
       </div>
 
-      {/* Body */}
       <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
         <div className="flex flex-col gap-5">
-          {/* Header Info Student */}
-          <RaportStudentHeader title={`Raport Bulan ${month} ${displayYear}`} />
+          <RaportStudentHeader
+            title={`Raport Bulan ${month} ${displayYear}`}
+            studentName={student?.name}
+            className={student?.className}
+            pembimbingName={student?.pembimbingName}
+          />
 
-          {/* Nilai TTQ Section */}
-          <NilaiTtqSection />
+          {nilaiTtq ? (
+            <NilaiTtqSection
+              tahfidz={nilaiTtq.tahfidz}
+              tahsin={nilaiTtq.tahsin}
+            />
+          ) : (
+            <NilaiTtqSection />
+          )}
 
-          {/* Detail Tahfidz Section */}
-          <section>
-            <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-brand-navy">
-              DETAIL TAHFIDZ
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-brand-cyan/40 bg-brand-cyan/5 px-3 py-2 text-center">
-                <p className="text-[11px] font-bold text-brand-navy">Ziyadah</p>
-                <p className="text-xs font-bold text-brand-cyan">85.2</p>
-              </div>
-              <div className="rounded-xl border border-brand-cyan/40 bg-brand-cyan/5 px-3 py-2 text-center">
-                <p className="text-[11px] font-bold text-brand-navy">Muroja&apos;ah</p>
-                <p className="text-xs font-bold text-brand-cyan">85.2</p>
-              </div>
-            </div>
-          </section>
+          {mutabaah ? (
+            <MutabaahSection rows={mutabaah} />
+          ) : (
+            <MutabaahSection />
+          )}
 
-          {/* Detail Tahsin Section */}
-          <section>
-            <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-brand-navy">
-              DETAIL TAHSIN
-            </h3>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { label: "Makhroj", val: "85.2" },
-                { label: "Mad", val: "85.2" },
-                { label: "Ghunnah", val: "85.2" },
-                { label: "Kelancaran", val: "85.2" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl border border-purple-200 bg-purple-50/50 px-1.5 py-2 text-center"
-                >
-                  <p className="text-[10px] font-bold text-brand-navy truncate">
-                    {item.label}
-                  </p>
-                  <p className="text-xs font-bold text-purple-600">{item.val}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+          <EvaluasiSection
+            evaluationText={evaluasi}
+            pembimbingName={student?.pembimbingName}
+          />
 
-          {/* Mutaba'ah Yaumiyyah Section */}
-          <MutabaahSection />
-
-          {/* Absensi Siswa Section */}
-          <AbsensiSection />
-
-          {/* Evaluasi Guru Pembimbing */}
-          <EvaluasiSection />
-
-          {/* Bottom Action Button */}
           <div className="pt-2">
             <Button
               type="button"
@@ -112,7 +112,7 @@ export function ParentMonthlyRaportPage({
               className="h-11 w-full rounded-2xl border-2 border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10 print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />
-              UNDUH RAPORT
+              UNDUH RAPORT ANANDA
             </Button>
           </div>
         </div>

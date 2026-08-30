@@ -48,6 +48,12 @@ import { DrizzleTeacherRepository } from "../modules/teachers/infrastructure/Dri
 import { GetTeachersUseCase } from "../modules/teachers/application/use-cases/GetTeachersUseCase";
 import { createTeacherRoutes } from "../modules/teachers/presentation/routes";
 
+// Reports module
+import { DrizzleRaportRepository } from "../modules/reports/infrastructure/DrizzleRaportRepository";
+import { GetMonthlyRaportUseCase } from "../modules/reports/application/use-cases/GetMonthlyRaportUseCase";
+import { GetSemesterRaportUseCase } from "../modules/reports/application/use-cases/GetSemesterRaportUseCase";
+import { createRaportRoutes } from "../modules/reports/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -77,6 +83,9 @@ export interface ContainerDeps {
   getStudentByIdUseCase: GetStudentByIdUseCase;
   // Teachers
   getTeachersUseCase: GetTeachersUseCase;
+  // Reports
+  getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
+  getSemesterRaportUseCase: GetSemesterRaportUseCase;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -139,6 +148,15 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/teachers", protectedAuth, tenantScopeMiddleware);
   app.route("/teachers", teacherRoutes);
 
+  // Reports
+  const raportRoutes = createRaportRoutes({
+    getMonthlyRaportUseCase: deps.getMonthlyRaportUseCase,
+    getSemesterRaportUseCase: deps.getSemesterRaportUseCase,
+  });
+  app.use("/raport/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/raport", protectedAuth, tenantScopeMiddleware);
+  app.route("/raport", raportRoutes);
+
   return app;
 }
 
@@ -155,6 +173,7 @@ export function buildContainer() {
   const setoranRepo = new DrizzleSetoranRepository(db);
   const studentRepo = new DrizzleStudentRepository(db);
   const teacherRepo = new DrizzleTeacherRepository(db);
+  const raportRepo = new DrizzleRaportRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -205,6 +224,10 @@ export function buildContainer() {
   const getStudentByIdUseCase = new GetStudentByIdUseCase(studentRepo);
   const getTeachersUseCase = new GetTeachersUseCase(teacherRepo);
 
+  // UseCases — Reports
+  const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
+  const getSemesterRaportUseCase = new GetSemesterRaportUseCase(raportRepo);
+
   return {
     app: createApp({
       loginUseCase,
@@ -225,6 +248,8 @@ export function buildContainer() {
       getStudentsUseCase,
       getStudentByIdUseCase,
       getTeachersUseCase,
+      getMonthlyRaportUseCase,
+      getSemesterRaportUseCase,
     }),
     redis,
   };

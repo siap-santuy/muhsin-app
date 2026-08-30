@@ -123,11 +123,7 @@ function App() {
       case "semester-raport":
         return (
           <StudentSemesterRaportPage
-            semester={
-              searchParams.has("semester")
-                ? Number(searchParams.get("semester"))
-                : undefined
-            }
+            semester={searchParams.get("semester") || undefined}
             year={searchParams.get("year") || undefined}
           />
         );
@@ -160,11 +156,7 @@ function App() {
       case "semester-raport":
         return (
           <ParentSemesterRaportPage
-            semester={
-              searchParams.has("semester")
-                ? Number(searchParams.get("semester"))
-                : undefined
-            }
+            semester={searchParams.get("semester") || undefined}
             year={searchParams.get("year") || undefined}
           />
         );
@@ -205,19 +197,15 @@ function App() {
           <TeacherMonthlyRaportPage
             month={searchParams.get("month") || undefined}
             year={searchParams.get("year") || undefined}
-            student={searchParams.get("student") || undefined}
+            studentId={searchParams.get("student") || undefined}
           />
         );
       case "semester-raport":
         return (
           <TeacherSemesterRaportPage
-            semester={
-              searchParams.has("semester")
-                ? Number(searchParams.get("semester"))
-                : undefined
-            }
+            semester={searchParams.get("semester") || undefined}
             year={searchParams.get("year") || undefined}
-            student={searchParams.get("student") || undefined}
+            studentId={searchParams.get("student") || undefined}
           />
         );
       case "profile":

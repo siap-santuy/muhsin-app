@@ -196,6 +196,35 @@ class ApiClient {
     return json.data;
   }
 
+  async getMonthlyRaport(params: { studentId?: string; month?: string } = {}) {
+    const query = new URLSearchParams();
+    if (params.studentId) query.set("studentId", params.studentId);
+    if (params.month) query.set("month", params.month);
+
+    const res = await fetch(`${API_BASE}/raport/monthly?${query.toString()}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil raport bulanan");
+    return json.data;
+  }
+
+  async getSemesterRaport(params: { studentId?: string; semester?: string; tahunAjaran?: string } = {}) {
+    const query = new URLSearchParams();
+    if (params.studentId) query.set("studentId", params.studentId);
+    if (params.semester) query.set("semester", params.semester);
+    if (params.tahunAjaran) query.set("tahunAjaran", params.tahunAjaran);
+
+    const res = await fetch(`${API_BASE}/raport/semester?${query.toString()}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil raport semester");
+    return json.data;
+  }
+
   async getMyProfile(): Promise<UserProfile> {
     const res = await fetch(`${API_BASE}/users/me`, {
       method: "GET",
