@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 export function ChangePasswordPage() {
@@ -20,12 +21,16 @@ export function ChangePasswordPage() {
     setError(null);
 
     if (newPassword.length < 8) {
-      setError("Password baru minimal 8 karakter.");
+      const msg = "Password baru minimal 8 karakter.";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Konfirmasi password baru tidak cocok.");
+      const msg = "Konfirmasi password baru tidak cocok.";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -37,13 +42,16 @@ export function ChangePasswordPage() {
         newPassword: newPassword,
       });
 
+      toast.success("Password berhasil diubah!");
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
         window.location.hash = "#/profile";
-      }, 1000);
+      }, 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengubah password");
+      const msg = err instanceof Error ? err.message : "Gagal mengubah password";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

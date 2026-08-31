@@ -12,6 +12,23 @@ import type {
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 export const SCHOOL_ID = import.meta.env.VITE_SCHOOL_ID || "school-default-id";
 
+const GENERIC_ERROR = "Terjadi kesalahan server";
+
+async function handleResponse<T = any>(res: Response): Promise<T> {
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error(GENERIC_ERROR);
+  }
+  if (res.ok) return json.data;
+  // Only expose backend message for 400 (validation/user input errors)
+  if (res.status === 400) {
+    throw new Error(json.error?.message || GENERIC_ERROR);
+  }
+  throw new Error(GENERIC_ERROR);
+}
+
 export async function post<T>(endpoint: string, body: any): Promise<T> {
   const token = localStorage.getItem("access_token");
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -22,9 +39,7 @@ export async function post<T>(endpoint: string, body: any): Promise<T> {
     },
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error?.message || "Request failed");
-  return json.data;
+  return handleResponse<T>(res);
 }
 
 export async function get<T>(endpoint: string): Promise<T> {
@@ -36,9 +51,7 @@ export async function get<T>(endpoint: string): Promise<T> {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error?.message || "Request failed");
-  return json.data;
+  return handleResponse<T>(res);
 }
 
 class ApiClient {
@@ -56,9 +69,7 @@ class ApiClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Login gagal");
-    return json.data;
+    return handleResponse<LoginOutput>(res);
   }
 
   async getGamificationSummary(studentId?: string): Promise<GamificationSummary> {
@@ -69,9 +80,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data gamifikasi");
-    return json.data;
+    return handleResponse<GamificationSummary>(res);
   }
 
   async getDailyIbadah(date: string, studentId?: string) {
@@ -82,9 +91,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data ibadah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getDailyIbadahHistory(params: { studentId?: string; month?: string } = {}) {
@@ -96,9 +103,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil riwayat ibadah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getDailyIbadahStats(params: { studentId?: string; month?: string } = {}) {
@@ -110,9 +115,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil statistik ibadah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async saveDailyIbadahDraft(input: DailyIbadahInput) {
@@ -121,9 +124,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal menyimpan draft");
-    return json.data;
+    return handleResponse(res);
   }
 
   async submitDailyIbadah(input: DailyIbadahInput) {
@@ -132,9 +133,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengirim ibadah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async createSetoran(input: CreateSetoranInput) {
@@ -143,9 +142,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mencatat setoran");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getAssessmentCategories(): Promise<Array<{
@@ -162,9 +159,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil kategori penilaian");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getSetoranHistory(params: {
@@ -181,9 +176,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil riwayat setoran");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getSetoranById(id: string) {
@@ -191,9 +184,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil detail setoran");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getMonthlyRaport(params: { studentId?: string; month?: string } = {}) {
@@ -205,9 +196,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil raport bulanan");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getSemesterRaport(params: { studentId?: string; semester?: string; tahunAjaran?: string } = {}) {
@@ -220,9 +209,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil raport semester");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getDashboardSummary<T = any>(): Promise<T> {
@@ -230,9 +217,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data dashboard");
-    return json.data;
+    return handleResponse<T>(res);
   }
 
   async getMunaqosahRequests(status?: string) {
@@ -243,9 +228,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil pengajuan munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async createMunaqosahRequest(input: { studentId: string; juzKe: number }) {
@@ -254,9 +237,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat pengajuan munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async approveMunaqosah(id: string) {
@@ -264,9 +245,7 @@ class ApiClient {
       method: "PATCH",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal menyetujui munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async rejectMunaqosah(id: string) {
@@ -274,9 +253,7 @@ class ApiClient {
       method: "PATCH",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal menolak munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async scheduleMunaqosah(id: string, input: {
@@ -290,9 +267,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal menjadwalkan munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async submitMunaqosahResult(assignmentId: string, input: {
@@ -305,9 +280,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal menyimpan hasil munaqosah");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getKurikulumCategories() {
@@ -315,9 +288,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil kurikulum kategori");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getGradingScale() {
@@ -325,9 +296,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil grading scale");
-    return json.data;
+    return handleResponse(res);
   }
 
   async createKurikulumCategory(input: { code: string; name: string }) {
@@ -336,9 +305,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat kategori");
-    return json.data;
+    return handleResponse(res);
   }
 
   async createKurikulumSubcategory(input: {
@@ -353,9 +320,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal membuat subkategori");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getMyProfile(): Promise<UserProfile> {
@@ -363,9 +328,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil profil");
-    return json.data;
+    return handleResponse<UserProfile>(res);
   }
 
   async updateProfile(input: UpdateProfileInput): Promise<UserProfile> {
@@ -374,9 +337,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal memperbarui profil");
-    return json.data;
+    return handleResponse<UserProfile>(res);
   }
 
   async changePassword(input: ChangePasswordInput): Promise<{ message: string }> {
@@ -385,9 +346,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengubah password");
-    return json.data;
+    return handleResponse<{ message: string }>(res);
   }
 
   async getStudents(teacherId?: string): Promise<Array<{
@@ -408,9 +367,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil daftar siswa");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getStudentById(id: string) {
@@ -418,9 +375,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil data siswa");
-    return json.data;
+    return handleResponse(res);
   }
 
   async getTeachers(): Promise<Array<{
@@ -435,9 +390,7 @@ class ApiClient {
       method: "GET",
       headers: this.getHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Gagal mengambil daftar guru");
-    return json.data;
+    return handleResponse(res);
   }
 }
 

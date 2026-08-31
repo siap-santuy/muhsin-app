@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, BookOpen, Check, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 interface StudentOption {
@@ -59,11 +60,15 @@ export function TeacherZiyadahInputPage() {
 
   async function handleSave() {
     if (!selectedStudentId) {
-      setError("Pilih siswa terlebih dahulu");
+      const msg = "Pilih siswa terlebih dahulu";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
     if (!subcategoryId) {
-      setError("Kategori Ziyadah tidak ditemukan");
+      const msg = "Kategori Ziyadah tidak ditemukan";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -86,12 +91,15 @@ export function TeacherZiyadahInputPage() {
       });
 
       sessionStorage.setItem("lastSetoranId", savedEntry.id);
+      toast.success("Setoran Ziyadah berhasil disimpan!");
       setSaved(true);
       setTimeout(() => {
         window.location.hash = "#/ziyadah-view";
-      }, 1000);
+      }, 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mencatat setoran");
+      const msg = err instanceof Error ? err.message : "Gagal mencatat setoran";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

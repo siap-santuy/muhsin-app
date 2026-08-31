@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import Redis from "ioredis";
 import { createDb } from "../db/client";
 
@@ -124,7 +125,26 @@ export interface ContainerDeps {
 
 export function createApp(deps: ContainerDeps): Hono {
   const app = new Hono();
-  app.use("*", errorHandler);
+
+  app.onError((err, c) => errorHandler(err, c));
+
+  app.use(
+    "*",
+    cors({
+      origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://muhsin.app",
+        "https://www.muhsin.app",
+        "https://stage-muhsin.app",
+        "https://www.stage-muhsin.app",
+        "https://bthqffp6-5174.asse.devtunnels.ms",
+      ],
+      credentials: true,
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+    })
+  );
 
   // Public auth routes
   app.route("/auth", buildAuthRoutes(deps));

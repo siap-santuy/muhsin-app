@@ -46,6 +46,7 @@ import { EditProfilePage } from "@/pages/settings/EditProfilePage";
 import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { useAuthStore } from "@/store/authStore";
+import { ToastContainer } from "@/components/ui/Toast";
 import "@/index.css";
 
 const queryClient = new QueryClient();
@@ -253,6 +254,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <ToastContainer />
     </QueryClientProvider>
   </React.StrictMode>
 );

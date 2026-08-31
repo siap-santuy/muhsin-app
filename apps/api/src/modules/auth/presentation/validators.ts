@@ -15,7 +15,14 @@ function withSchema<T>(
   return (value: unknown, c: Context): T | Response => {
     const result = schema.safeParse(value);
     if (!result.success) {
-      return c.text("Invalid request", 400);
+      return c.json(
+        {
+          data: null,
+          error: { code: "VALIDATION_ERROR", message: "Input tidak valid" },
+          meta: null,
+        },
+        400
+      );
     }
     return result.data;
   };

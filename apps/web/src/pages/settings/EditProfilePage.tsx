@@ -3,6 +3,7 @@ import { Camera, Check, Loader2, Save } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 export function EditProfilePage() {
@@ -56,13 +57,16 @@ export function EditProfilePage() {
           : null,
       }));
 
+      toast.success("Profile berhasil diperbarui!");
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
         window.location.hash = "#/profile";
-      }, 1000);
+      }, 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memperbarui profile");
+      const msg = err instanceof Error ? err.message : "Gagal memperbarui profile";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
