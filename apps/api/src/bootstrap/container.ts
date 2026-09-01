@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import Redis from "ioredis";
 import { createDb } from "../db/client";
 
@@ -139,6 +140,8 @@ export function createApp(deps: ContainerDeps): Hono {
   const app = new Hono();
 
   app.onError((err, c) => errorHandler(err, c));
+
+  app.use("*", logger());
 
   app.use(
     "*",
