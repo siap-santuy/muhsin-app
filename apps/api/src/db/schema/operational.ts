@@ -113,6 +113,26 @@ export const hafalanTargets = pgTable("hafalan_targets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// --- Notifications ---
+
+export const notificationType = ["yaumiyah", "setoran", "system", "raport"] as const;
+export type NotificationType = (typeof notificationType)[number];
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  schoolId: uuid("school_id")
+    .notNull()
+    .references(() => schools.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type", { enum: notificationType }).notNull().default("system"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- Types ---
 
 export type DailyIbadah = typeof dailyIbadah.$inferSelect;
@@ -121,3 +141,5 @@ export type SetoranEntry = typeof setoranEntries.$inferSelect;
 export type NewSetoranEntry = typeof setoranEntries.$inferInsert;
 export type EvaluasiBulanan = typeof evaluasiBulanan.$inferSelect;
 export type HafalanTarget = typeof hafalanTargets.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;

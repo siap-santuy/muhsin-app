@@ -16,11 +16,20 @@ const QUOTE = {
 
 type DialogType = "streak" | "level" | null;
 
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const firstName = user?.name ? user.name.split(" ")[0] : "Santri";
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
+  const todayStr = formatLocalDate(new Date());
+  const [todayIbadahStatus, setTodayIbadahStatus] = useState<"submitted" | "draft" | "empty">("empty");
 
   useEffect(() => {
     api.getDashboardSummary()
@@ -28,7 +37,15 @@ export function StudentDashboardPage() {
       .catch(() => {
         // Fallback
       });
-  }, []);
+
+    api.getDailyIbadah(todayStr)
+      .then((data) => {
+        if (data?.status === "submitted") setTodayIbadahStatus("submitted");
+        else if (data?.status === "draft") setTodayIbadahStatus("draft");
+        else setTodayIbadahStatus("empty");
+      })
+      .catch(() => setTodayIbadahStatus("empty"));
+  }, [todayStr]);
 
   const level = summary?.level ?? 1;
   const currentExp = summary?.totalExp ?? 0;
@@ -44,38 +61,54 @@ export function StudentDashboardPage() {
     progressAyat: "Target Aktif",
   };
 
+  const ziyadahCount = summary?.progresBulanIni?.ziyadahCount ?? 0;
+  const ziyadahPct = Math.min(100, Math.round((ziyadahCount / 20) * 100));
+
+  const tahsinCount = summary?.progresBulanIni?.tahsinCount ?? 0;
+  const tahsinPct = Math.min(100, Math.round((tahsinCount / 20) * 100));
+
+  const murojaahCount = summary?.progresBulanIni?.murojaahCount ?? 0;
+  const murojaahPct = Math.min(100, Math.round((murojaahCount / 20) * 100));
+
+  const yaumiyahDays = summary?.progresBulanIni?.yaumiyahDays ?? 0;
+  const yaumiyahPct = Math.min(100, Math.round((yaumiyahDays / 30) * 100));
+
   const progressItems: ProgressItem[] = [
     {
       label: "Ziyadah",
-      value: `${summary?.progresBulanIni?.ziyadahCount ?? 4}x`,
-      caption: "Setoran hafalan baru",
-      percent: Math.min(100, (summary?.progresBulanIni?.ziyadahCount ?? 4) * 10),
+      value: `${ziyadahPct}%`,
+      caption: "Target 20 halaman",
+      percent: ziyadahPct,
       barClass: "bg-brand-cyan",
       trackClass: "bg-brand-cyan/15",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=ziyadah"),
     },
     {
       label: "Tahsin",
-      value: `${summary?.progresBulanIni?.tahsinCount ?? 6}x`,
-      caption: "Sabiq & Talaqi",
-      percent: Math.min(100, (summary?.progresBulanIni?.tahsinCount ?? 6) * 10),
+      value: `${tahsinPct}%`,
+      caption: "Target 20 pertemuan",
+      percent: tahsinPct,
       barClass: "bg-brand-navy",
       trackClass: "bg-brand-navy/15",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=tahsin"),
     },
     {
       label: "Murojaah",
-      value: `${summary?.progresBulanIni?.murojaahCount ?? 8}x`,
-      caption: "Ulang hafalan",
-      percent: Math.min(100, (summary?.progresBulanIni?.murojaahCount ?? 8) * 10),
+      value: `${murojaahPct}%`,
+      caption: "Target terjaga",
+      percent: murojaahPct,
       barClass: "bg-[#7aa7f0]",
       trackClass: "bg-[#d3e4fe]",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=murojaah"),
     },
     {
       label: "Yaumiyah",
-      value: `${summary?.progresBulanIni?.yaumiyahDays ?? 5}/30`,
-      caption: "Hari terisi bulan ini",
-      percent: Math.min(100, Math.round(((summary?.progresBulanIni?.yaumiyahDays ?? 5) / 30) * 100)),
+      value: `${yaumiyahPct}%`,
+      caption: `${yaumiyahDays} dari 30 hari`,
+      percent: yaumiyahPct,
       barClass: "bg-[#8b5cf6]",
       trackClass: "bg-[#8b5cf6]/15",
+      onClick: () => (window.location.hash = "#/yaumiyah"),
     },
   ];
 
@@ -117,16 +150,26 @@ export function StudentDashboardPage() {
               {target.progressAyat}
             </span>
           </div>
-          <div onClick={() => (window.location.hash = "#/yaumiyah")} className="cursor-pointer">
-            <ProgressGrid title="Progres Bulan Ini" items={progressItems} />
-          </div>
-          <Button
-            type="button"
-            onClick={() => (window.location.hash = "#/yaumiyah-input")}
-            className="h-[38px] w-full rounded-lg bg-brand-cyan text-white shadow-[0_1px_0_#159db5] hover:bg-brand-cyan-dark"
-          >
-            <PenLine className="mr-1.5 h-4 w-4" /> Isi Ibadah Hari Ini
-          </Button>
+          <ProgressGrid title="Progres Bulan Ini" items={progressItems} />
+          {todayIbadahStatus === "empty" && (
+            <Button
+              type="button"
+              onClick={() => (window.location.hash = `#/yaumiyah-input?date=${todayStr}`)}
+              className="h-11 w-full rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+            >
+              <PenLine className="mr-2 h-4 w-4" /> ISI IBADAH HARI INI
+            </Button>
+          )}
+
+          {todayIbadahStatus === "draft" && (
+            <Button
+              type="button"
+              onClick={() => (window.location.hash = `#/yaumiyah-view?date=${todayStr}`)}
+              className="h-11 w-full rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+            >
+              <PenLine className="mr-2 h-4 w-4" /> KIRIM IBADAH HARI INI
+            </Button>
+          )}
         </div>
       </main>
       <BottomNav activeIndex={0} />

@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { AbsensiSection } from "@/components/raport/AbsensiSection";
 import { EvaluasiSection } from "@/components/raport/EvaluasiSection";
 import { MutabaahSection } from "@/components/raport/MutabaahSection";
+import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
+import { RangeNilaiSection } from "@/components/raport/RangeNilaiSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
+import { SumatifSection } from "@/components/raport/SumatifSection";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
@@ -54,10 +58,7 @@ export function ParentSemesterRaportPage({
   }
 
   const student = raport?.student;
-  const nilaiAkhir = raport?.nilaiAkhir ?? 86.5;
-  const gradeAkhir = raport?.gradeAkhir ?? "B";
-  const arabicPredicate = raport?.arabicPredicate ?? "جيد جدا";
-  const kategoriList = raport?.kategoriList ?? [];
+  const nilaiAkhir = raport?.nilaiAkhir ?? 84.0;
   const mutabaah = raport?.mutabaah;
   const evaluasi = raport?.evaluasi;
 
@@ -73,78 +74,53 @@ export function ParentSemesterRaportPage({
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-brand-cyan">Raport Semester Ananda</h1>
+        <h1 className="text-xl font-bold text-brand-cyan">Raport Ananda</h1>
         <div className="h-10 w-10" />
       </div>
 
       <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
         <div className="flex flex-col gap-5">
+          {/* Header Info Student */}
           <RaportStudentHeader
-            title={`Raport Semester ${semester}`}
-            subtitle={`T.A. ${year}`}
+            title={`Raport Semester ${semester === "1" ? "Ganjil" : semester === "2" ? "Genap" : semester}`}
+            subtitle={`Tahun Ajaran ${year}`}
             studentName={student?.name}
             className={student?.className}
             pembimbingName={student?.pembimbingName}
           />
 
-          <div className="flex flex-col items-center rounded-2xl border-2 border-brand-cyan bg-white p-4 shadow-sm text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-              NILAI AKHIR SEMESTER
-            </p>
-            <div className="my-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-cyan text-3xl font-extrabold text-white shadow-md">
-              {gradeAkhir}
-            </div>
-            <p className="text-base font-extrabold text-brand-navy">{nilaiAkhir}</p>
-            <span className="mt-1 rounded-full bg-brand-cyan/10 px-3 py-0.5 text-xs font-bold text-brand-cyan">
-              {arabicPredicate}
-            </span>
-          </div>
+          {/* Nilai TTQ Section */}
+          <NilaiTtqSection />
 
-          <section>
-            <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-brand-navy">
-              RINCIAN NILAI PROGRAM
-            </h3>
-            <div className="space-y-2.5">
-              {kategoriList.map((kat: any) => (
-                <div
-                  key={kat.name}
-                  className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-3.5 shadow-sm"
-                >
-                  <div>
-                    <h4 className="text-xs font-bold text-brand-navy">{kat.name}</h4>
-                    <p className="text-[10px] text-brand-text-muted">
-                      Predikat: {kat.arabicPredicate}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-brand-navy">{kat.score}</span>
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-cyan/10 text-xs font-extrabold text-brand-cyan">
-                      {kat.grade}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* Hasil Asesmen Sumatif TTQ Section */}
+          <SumatifSection />
 
+          {/* Mutaba'ah Yaumiyyah Section */}
           {mutabaah ? (
             <MutabaahSection rows={mutabaah} />
           ) : (
             <MutabaahSection />
           )}
 
+          {/* Absensi Siswa Section */}
+          <AbsensiSection />
+
+          {/* Range Nilai & Nilai Akhir Section */}
+          <RangeNilaiSection finalScore={nilaiAkhir} />
+
+          {/* Evaluasi Guru Pembimbing */}
           <EvaluasiSection
             evaluationText={evaluasi}
             pembimbingName={student?.pembimbingName}
             showSignatureLine
           />
 
+          {/* Bottom Action Button */}
           <div className="pt-2">
             <Button
               type="button"
-              variant="outline"
               onClick={() => window.print()}
-              className="h-11 w-full rounded-2xl border-2 border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10 print:hidden"
+              className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />
               UNDUH RAPORT ANANDA

@@ -115,7 +115,7 @@ function App() {
       case "yaumiyah-view":
         return <StudentYaumiyahViewPage initialDate={searchParams.get("date") || undefined} />;
       case "tahfidz-summary":
-        return <StudentMonthlySummaryPage />;
+        return <StudentMonthlySummaryPage initialTab={searchParams.get("tab") || undefined} />;
       case "raport":
         return <StudentRaportPage />;
       case "monthly-raport":
@@ -148,7 +148,7 @@ function App() {
       case "yaumiyah-view":
         return <ParentYaumiyahViewPage initialDate={searchParams.get("date") || undefined} />;
       case "tahfidz-summary":
-        return <ParentMonthlySummaryPage />;
+        return <ParentMonthlySummaryPage initialTab={searchParams.get("tab") || undefined} />;
       case "raport":
         return <ParentRaportPage />;
       case "monthly-raport":

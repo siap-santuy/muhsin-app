@@ -76,6 +76,13 @@ import { CreateCategoryUseCase } from "../modules/kurikulum/application/use-case
 import { CreateSubcategoryUseCase } from "../modules/kurikulum/application/use-cases/CreateSubcategoryUseCase";
 import { createKurikulumRoutes } from "../modules/kurikulum/presentation/routes";
 
+// Notifications module
+import { DrizzleCachedNotificationRepository } from "../modules/notifications/infrastructure/DrizzleCachedNotificationRepository";
+import { GetNotificationsUseCase } from "../modules/notifications/application/use-cases/GetNotificationsUseCase";
+import { MarkNotificationReadUseCase } from "../modules/notifications/application/use-cases/MarkNotificationReadUseCase";
+import { MarkAllNotificationsReadUseCase } from "../modules/notifications/application/use-cases/MarkAllNotificationsReadUseCase";
+import { createNotificationRoutes } from "../modules/notifications/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -121,6 +128,11 @@ export interface ContainerDeps {
   createCategoryUseCase: CreateCategoryUseCase;
   createSubcategoryUseCase: CreateSubcategoryUseCase;
   kurikulumRepo: DrizzleKurikulumRepository;
+  // Notifications
+  getNotificationsUseCase: GetNotificationsUseCase;
+  markNotificationReadUseCase: MarkNotificationReadUseCase;
+  markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase;
+  notificationRepo: DrizzleCachedNotificationRepository;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -240,6 +252,16 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/kurikulum", protectedAuth, tenantScopeMiddleware);
   app.route("/kurikulum", kurikulumRoutes);
 
+  // Notifications
+  const notificationRoutes = createNotificationRoutes({
+    getNotificationsUseCase: deps.getNotificationsUseCase,
+    markNotificationReadUseCase: deps.markNotificationReadUseCase,
+    markAllNotificationsReadUseCase: deps.markAllNotificationsReadUseCase,
+  });
+  app.use("/notifications/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/notifications", protectedAuth, tenantScopeMiddleware);
+  app.route("/notifications", notificationRoutes);
+
   return app;
 }
 
@@ -260,6 +282,7 @@ export function buildContainer() {
   const dashboardRepo = new DrizzleDashboardRepository(db);
   const munaqosahRepo = new DrizzleMunaqosahRepository(db);
   const kurikulumRepo = new DrizzleKurikulumRepository(db);
+  const notificationRepo = new DrizzleCachedNotificationRepository(db, redis);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -329,6 +352,11 @@ export function buildContainer() {
   const createCategoryUseCase = new CreateCategoryUseCase(kurikulumRepo);
   const createSubcategoryUseCase = new CreateSubcategoryUseCase(kurikulumRepo);
 
+  // UseCases — Notifications
+  const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepo);
+  const markNotificationReadUseCase = new MarkNotificationReadUseCase(notificationRepo);
+  const markAllNotificationsReadUseCase = new MarkAllNotificationsReadUseCase(notificationRepo);
+
   return {
     app: createApp({
       loginUseCase,
@@ -361,7 +389,12 @@ export function buildContainer() {
       createCategoryUseCase,
       createSubcategoryUseCase,
       kurikulumRepo,
+      getNotificationsUseCase,
+      markNotificationReadUseCase,
+      markAllNotificationsReadUseCase,
+      notificationRepo,
     }),
+    db,
     redis,
   };
 }

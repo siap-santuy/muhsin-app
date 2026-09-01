@@ -50,6 +50,10 @@ const app = createApp({
   createCategoryUseCase: {} as never,
   createSubcategoryUseCase: {} as never,
   kurikulumRepo: {} as never,
+  getNotificationsUseCase: {} as never,
+  markNotificationReadUseCase: {} as never,
+  markAllNotificationsReadUseCase: {} as never,
+  notificationRepo: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {

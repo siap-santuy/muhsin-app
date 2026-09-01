@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useNotificationStore } from "@/store/notificationStore";
 
 interface KoorShellProps {
   children: React.ReactNode;
@@ -63,7 +64,15 @@ export function KoorShell({
 }: KoorShellProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const unreadCount = useNotificationStore(
+    (s) => s.notifications.filter((n) => !n.read).length
+  );
+  const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useState(() => {
+    fetchNotifications();
+  });
 
   const userName = user?.name ?? "Ust. Abdullah S.Pd.I";
 
@@ -273,10 +282,11 @@ export function KoorShell({
               className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-brand-line/60 bg-white text-brand-navy shadow-sm hover:border-brand-cyan"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-amber opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-amber" />
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold text-white shadow-xs">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
 
             {/* Profile pill */}

@@ -117,10 +117,10 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
             progressAyat: "Ayat 1-5",
           },
       progresBulanIni: {
-        ziyadahCount: ziyadahCount || 4,
-        murojaahCount: murojaahCount || 8,
-        tahsinCount: tahsinCount || 6,
-        yaumiyahDays: ibadahRows.length || 5,
+        ziyadahCount,
+        murojaahCount,
+        tahsinCount,
+        yaumiyahDays: ibadahRows.length,
       },
     };
   }
@@ -213,6 +213,10 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     let gam: any = null;
     let isTodayFilled = false;
+    let childZiyadah = 0;
+    let childMurojaah = 0;
+    let childTahsin = 0;
+    let childYaumiyahDays = 0;
 
     if (childId) {
       const gRows = await this.db
@@ -240,19 +244,51 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         )
         .limit(1);
       isTodayFilled = !!ibadahToday[0];
+
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const childSetoran = await this.db
+        .select()
+        .from(setoranEntries)
+        .where(
+          and(
+            eq(setoranEntries.studentId, childId),
+            eq(setoranEntries.schoolId, schoolId),
+            sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${currentMonth}`
+          )
+        );
+
+      for (const s of childSetoran) {
+        if (s.referenceStart && (s.referenceStart as any).surah) {
+          childZiyadah++;
+        } else {
+          childTahsin++;
+        }
+      }
+
+      const childIbadah = await this.db
+        .select()
+        .from(dailyIbadah)
+        .where(
+          and(
+            eq(dailyIbadah.studentId, childId),
+            eq(dailyIbadah.schoolId, schoolId),
+            sql`to_char(${dailyIbadah.date}, 'YYYY-MM') = ${currentMonth}`
+          )
+        );
+      childYaumiyahDays = childIbadah.length;
     }
 
     return {
       parentName: parentRows[0]?.name ?? "Orang Tua",
-      childName: child?.studentName ?? "Fulan bin Fulan",
-      childClassName: child?.className ?? "VII Abu Bakar",
-      childLevel: gam?.level ?? 3,
-      childStreak: gam?.currentStreak ?? 5,
+      childName: child?.studentName ?? "Ananda",
+      childClassName: child?.className ?? "Kelas VII",
+      childLevel: gam?.level ?? 1,
+      childStreak: gam?.currentStreak ?? 0,
       progres: {
-        ziyadahCount: 12,
-        murojaahCount: 18,
-        tahsinCount: 10,
-        yaumiyahDays: 20,
+        ziyadahCount: childZiyadah,
+        murojaahCount: childMurojaah,
+        tahsinCount: childTahsin,
+        yaumiyahDays: childYaumiyahDays,
       },
       isYaumiyahTodayFilled: isTodayFilled,
     };

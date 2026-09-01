@@ -9,6 +9,7 @@ export interface ProgressItem {
   trackClass: string;
   icon?: LucideIcon;
   iconClass?: string;
+  onClick?: () => void;
 }
 
 interface ProgressGridProps {
@@ -26,7 +27,10 @@ export function ProgressGrid({ title, items }: ProgressGridProps) {
           return (
             <article
               key={item.label}
-              className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
+              onClick={item.onClick}
+              className={`rounded-2xl border border-brand-line bg-white p-4 shadow-sm transition-all ${
+                item.onClick ? "cursor-pointer hover:border-brand-cyan/40 hover:shadow-md active:scale-[0.98]" : ""
+              }`}
             >
               <div className="flex items-center gap-2">
                 {Icon && (

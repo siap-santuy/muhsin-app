@@ -49,8 +49,22 @@ function formatIndonesianDate(dateStr: string): string {
   return `${dayNames[dateObj.getDay()]}, ${d} ${monthNames[m - 1]} ${y}`;
 }
 
-export function ParentMonthlySummaryPage() {
-  const [activeTab, setActiveTab] = useState("ziyadah");
+interface ParentMonthlySummaryPageProps {
+  initialTab?: string;
+}
+
+export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentMonthlySummaryPageProps) {
+  const [activeTab, setActiveTab] = useState(() => {
+    const fromUrl = new URLSearchParams(window.location.hash.split("?")[1] || "").get("tab");
+    return propInitialTab || fromUrl || "ziyadah";
+  });
+
+  useEffect(() => {
+    if (propInitialTab && propInitialTab !== activeTab) {
+      setActiveTab(propInitialTab);
+    }
+  }, [propInitialTab]);
+
   const [page, setPage] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState(() => formatLocalDate(new Date()).slice(0, 7));
   const [setoranList, setSetoranList] = useState<any[]>([]);

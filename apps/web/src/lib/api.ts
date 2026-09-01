@@ -22,10 +22,11 @@ async function handleResponse<T = any>(res: Response): Promise<T> {
     throw new Error(GENERIC_ERROR);
   }
   if (res.ok) return json.data;
-  // Only expose backend message for 400 (validation/user input errors)
-  if (res.status === 400) {
-    throw new Error(json.error?.message || GENERIC_ERROR);
+  // Expose backend error message for all 4xx client errors (400, 401, 403, 404, 422, etc.)
+  if (res.status >= 400 && res.status < 500) {
+    throw new Error(json.error?.message || json.message || "Permintaan tidak valid");
   }
+  // 500+ server errors
   throw new Error(GENERIC_ERROR);
 }
 
@@ -388,6 +389,30 @@ class ApiClient {
   }>> {
     const res = await fetch(`${API_BASE}/teachers`, {
       method: "GET",
+      headers: this.getHeaders(),
+    });
+    return handleResponse(res);
+  }
+
+  async getNotifications() {
+    const res = await fetch(`${API_BASE}/notifications`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    return handleResponse(res);
+  }
+
+  async markNotificationRead(id: string) {
+    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+    });
+    return handleResponse(res);
+  }
+
+  async markAllNotificationsRead() {
+    const res = await fetch(`${API_BASE}/notifications/read-all`, {
+      method: "PATCH",
       headers: this.getHeaders(),
     });
     return handleResponse(res);

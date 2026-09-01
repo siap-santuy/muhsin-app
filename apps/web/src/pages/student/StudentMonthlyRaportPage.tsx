@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { AbsensiSection } from "@/components/raport/AbsensiSection";
+import { DetailTahfidzTahsinSection } from "@/components/raport/DetailTahfidzTahsinSection";
 import { EvaluasiSection } from "@/components/raport/EvaluasiSection";
 import { MutabaahSection } from "@/components/raport/MutabaahSection";
 import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
@@ -115,12 +117,18 @@ export function StudentMonthlyRaportPage({
             <NilaiTtqSection />
           )}
 
+          {/* Detail Tahfidz & Tahsin Section */}
+          <DetailTahfidzTahsinSection />
+
           {/* Mutaba'ah Yaumiyyah Section */}
           {mutabaah ? (
             <MutabaahSection rows={mutabaah} />
           ) : (
             <MutabaahSection />
           )}
+
+          {/* Absensi Siswa Section */}
+          <AbsensiSection />
 
           {/* Evaluasi Guru Pembimbing */}
           <EvaluasiSection

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import {
   ArrowLeft,
   Bell,
@@ -6,62 +6,26 @@ import {
   CheckCheck,
   HeartHandshake,
   Info,
+  Loader2,
 } from "lucide-react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { useAuthStore } from "@/store/authStore";
-
-export interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  type: "yaumiyah" | "setoran" | "system" | "raport";
-}
+import { useNotificationStore } from "@/store/notificationStore";
 
 export function NotificationPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role ?? "student";
 
-  const initialItems: NotificationItem[] = [
-    {
-      id: "1",
-      title: "Pengingat Ibadah Yaumiyah",
-      message: "Jangan lupa untuk mengisi jurnal ibadah harian hari ini sebelum pukul 21.00 WIB.",
-      time: "Hari ini",
-      read: false,
-      type: "yaumiyah",
-    },
-    {
-      id: "2",
-      title: "Sistem Terhubung ke Database PostgreSQL",
-      message: "Seluruh pencatatan setoran & ibadah yaumiyah kini tersimpan secara real-time dan aman.",
-      time: "1 jam lalu",
-      read: false,
-      type: "system",
-    },
-    {
-      id: "3",
-      title: "Periode Akademik Aktif",
-      message: "Tahun ajaran 2026/2027 semester ganjil aktif.",
-      time: "1 hari lalu",
-      read: true,
-      type: "raport",
-    },
-  ];
+  const notifications = useNotificationStore((s) => s.notifications);
+  const loading = useNotificationStore((s) => s.loading);
+  const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const markAllRead = useNotificationStore((s) => s.markAllRead);
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(initialItems);
-
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
-
-  function markAsRead(id: string) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  }
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -86,53 +50,63 @@ export function NotificationPage() {
       </div>
 
       {/* List */}
-      <div className="space-y-2.5">
-        {notifications.map((item) => {
-          const Icon =
-            item.type === "yaumiyah"
-              ? HeartHandshake
-              : item.type === "setoran"
-              ? BookOpen
-              : item.type === "raport"
-              ? Bell
-              : Info;
+      {loading && notifications.length === 0 ? (
+        <div className="flex h-32 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+          Belum ada notifikasi.
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {notifications.map((item) => {
+            const Icon =
+              item.type === "yaumiyah"
+                ? HeartHandshake
+                : item.type === "setoran"
+                ? BookOpen
+                : item.type === "raport"
+                ? Bell
+                : Info;
 
-          const iconColor =
-            item.type === "yaumiyah"
-              ? "bg-purple-50 text-purple-600"
-              : item.type === "setoran"
-              ? "bg-cyan-50 text-brand-cyan"
-              : item.type === "raport"
-              ? "bg-amber-50 text-amber-600"
-              : "bg-gray-100 text-gray-600";
+            const iconColor =
+              item.type === "yaumiyah"
+                ? "bg-purple-50 text-purple-600"
+                : item.type === "setoran"
+                ? "bg-cyan-50 text-brand-cyan"
+                : item.type === "raport"
+                ? "bg-amber-50 text-amber-600"
+                : "bg-gray-100 text-gray-600";
 
-          return (
-            <div
-              key={item.id}
-              onClick={() => markAsRead(item.id)}
-              className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm transition-all cursor-pointer ${
-                item.read
-                  ? "border-brand-line bg-white"
-                  : "border-brand-cyan/40 bg-cyan-50/20"
-              }`}
-            >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColor}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-brand-navy">{item.title}</h3>
-                  <span className="text-[10px] text-brand-text-muted">{item.time}</span>
+            return (
+              <div
+                key={item.id}
+                onClick={() => markAsRead(item.id)}
+                className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm transition-all cursor-pointer ${
+                  item.read
+                    ? "border-brand-line bg-white"
+                    : "border-brand-cyan/40 bg-cyan-50/20"
+                }`}
+              >
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColor}`}>
+                  <Icon className="h-5 w-5" />
                 </div>
-                <p className="mt-1 text-xs text-brand-navy/80 leading-relaxed">{item.message}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-brand-navy">{item.title}</h3>
+                    <span className="text-[10px] text-brand-text-muted">{item.time}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-brand-navy/80 leading-relaxed">{item.message}</p>
+                </div>
+                {!item.read && (
+                  <span className="h-2 w-2 rounded-full bg-brand-cyan shrink-0 mt-1" />
+                )}
               </div>
-              {!item.read && (
-                <span className="h-2 w-2 rounded-full bg-brand-cyan shrink-0 mt-1" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 

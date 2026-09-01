@@ -62,12 +62,11 @@ export function StudentYaumiyahPage() {
     return undefined;
   }
 
-  const isTodaySubmitted = history.some(
-    (h) => h.date === todayStr && h.status === "submitted"
-  );
+  const todayEntry = history.find((h) => h.date === todayStr);
+  const todayStatus = todayEntry?.status === "submitted" ? "submitted" : todayEntry?.status === "draft" ? "draft" : "empty";
 
   function handleGoToInput() {
-    if (isTodaySubmitted) return;
+    if (todayStatus === "submitted") return;
     window.location.hash = `#/yaumiyah-input?date=${todayStr}`;
   }
 
@@ -132,19 +131,25 @@ export function StudentYaumiyahPage() {
             }}
           />
 
-          <Button
-            type="button"
-            onClick={handleGoToInput}
-            disabled={isTodaySubmitted}
-            className={`h-11 w-full rounded-xl font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] transition-all ${
-              isTodaySubmitted
-                ? "bg-gray-400 cursor-not-allowed opacity-75 shadow-none"
-                : "bg-brand-cyan hover:bg-brand-cyan-dark"
-            }`}
-          >
-            <PenLine className="h-5 w-5 mr-2" />
-            {isTodaySubmitted ? "IBADAH HARI INI SUDAH TERKIRIM" : "ISI IBADAH HARI INI"}
-          </Button>
+          {todayStatus === "empty" && (
+            <Button
+              type="button"
+              onClick={handleGoToInput}
+              className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] hover:bg-brand-cyan-dark"
+            >
+              <PenLine className="h-5 w-5 mr-2" /> ISI IBADAH HARI INI
+            </Button>
+          )}
+
+          {todayStatus === "draft" && (
+            <Button
+              type="button"
+              onClick={() => handleGoToView(todayStr)}
+              className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] hover:bg-brand-cyan-dark"
+            >
+              <PenLine className="h-5 w-5 mr-2" /> KIRIM IBADAH HARI INI
+            </Button>
+          )}
 
           {loading ? (
             <div className="flex h-40 items-center justify-center">

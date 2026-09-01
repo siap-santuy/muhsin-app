@@ -38,47 +38,64 @@ export function ParentDashboardPage() {
   const childName = summary?.childName ?? "Ananda";
   const childClass = summary?.childClassName ?? "Kelas VII";
   const isFilled = summary?.isYaumiyahTodayFilled ?? true;
+  const progres = summary?.progres ?? {};
+
+  const ziyadahCount = progres.ziyadahCount ?? 0;
+  const ziyadahPct = Math.min(100, Math.round((ziyadahCount / 20) * 100));
+
+  const tahsinCount = progres.tahsinCount ?? 0;
+  const tahsinPct = Math.min(100, Math.round((tahsinCount / 20) * 100));
+
+  const murojaahCount = progres.murojaahCount ?? 0;
+  const murojaahPct = Math.min(100, Math.round((murojaahCount / 20) * 100));
+
+  const yaumiyahDays = progres.yaumiyahDays ?? 0;
+  const yaumiyahPct = Math.min(100, Math.round((yaumiyahDays / 30) * 100));
 
   const progressItems: ProgressItem[] = [
     {
       label: "Ziyadah",
-      value: "85%",
+      value: `${ziyadahPct}%`,
       caption: "Target 20 halaman",
-      percent: 85,
+      percent: ziyadahPct,
       icon: BookOpen,
       iconClass: "bg-brand-cyan/10 text-brand-cyan",
       barClass: "bg-brand-cyan",
       trackClass: "bg-brand-cyan/15",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=ziyadah"),
     },
     {
       label: "Tahsin",
-      value: "60%",
+      value: `${tahsinPct}%`,
       caption: "Target 20 pertemuan",
-      percent: 60,
+      percent: tahsinPct,
       icon: Mic,
       iconClass: "bg-brand-navy/10 text-brand-navy",
       barClass: "bg-brand-navy",
       trackClass: "bg-brand-navy/15",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=tahsin"),
     },
     {
       label: "Murojaah",
-      value: "100%",
+      value: `${murojaahPct}%`,
       caption: "Target terjaga",
-      percent: 100,
+      percent: murojaahPct,
       icon: Repeat,
       iconClass: "bg-emerald-500/10 text-emerald-500",
       barClass: "bg-emerald-500",
       trackClass: "bg-emerald-500/15",
+      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=murojaah"),
     },
     {
       label: "Yaumiyah",
-      value: "90%",
-      caption: "27 dari 30 hari",
-      percent: 90,
+      value: `${yaumiyahPct}%`,
+      caption: `${yaumiyahDays} dari 30 hari`,
+      percent: yaumiyahPct,
       icon: HeartHandshake,
       iconClass: "bg-purple-500/10 text-purple-500",
       barClass: "bg-purple-500",
       trackClass: "bg-purple-500/15",
+      onClick: () => (window.location.hash = "#/yaumiyah"),
     },
   ];
 
