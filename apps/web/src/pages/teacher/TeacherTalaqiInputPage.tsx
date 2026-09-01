@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Check, Loader2, Save, Volume2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 interface StudentOption {
   id: string;
   name: string;
+  className: string | null;
 }
 
 export function TeacherTalaqiInputPage() {
@@ -18,9 +20,11 @@ export function TeacherTalaqiInputPage() {
   const [kelancaran, setKelancaran] = useState("88");
   const [fashohah, setFashohah] = useState("82");
   const [catatan, setCatatan] = useState("");
+  const [statusKehadiran, setStatusKehadiran] = useState<"setoran" | "sakit" | "izin" | "alpa">("setoran");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export function TeacherTalaqiInputPage() {
           setSubcategoryId(categories[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat data");
+        setError(err instanceof Error ? err.message : "Gagal memuat data awal");
       } finally {
         setInitLoading(false);
       }
@@ -57,13 +61,19 @@ export function TeacherTalaqiInputPage() {
     init();
   }, []);
 
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
+
   async function handleSave() {
     if (!selectedStudentId) {
-      setError("Pilih siswa terlebih dahulu");
+      const msg = "Pilih santri terlebih dahulu";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
     if (!subcategoryId) {
-      setError("Kategori Talaqi tidak ditemukan");
+      const msg = "Kategori Talaqi tidak ditemukan";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -74,7 +84,7 @@ export function TeacherTalaqiInputPage() {
       const savedEntry = await api.createSetoran({
         studentId: selectedStudentId,
         subcategoryId: subcategoryId,
-        date: new Date().toISOString().slice(0, 10),
+        date: date,
         referenceStart: { materi },
         scores: {
           makhroj: Number(makhroj),
@@ -82,26 +92,32 @@ export function TeacherTalaqiInputPage() {
           kelancaran: Number(kelancaran),
           fashohah: Number(fashohah),
         },
-        keterangan: catatan || null,
+        keterangan: statusKehadiran !== "setoran" ? statusKehadiran : catatan || null,
         scoreFieldKeys: ["makhroj", "tajwid", "kelancaran", "fashohah"],
       });
 
       sessionStorage.setItem("lastSetoranId", savedEntry.id);
-      setSaved(true);
+      toast.success("Setoran Talaqi berhasil disimpan!");
       setTimeout(() => {
-        window.location.hash = "#/talaqi-view";
-      }, 1000);
+        window.location.hash = "#/ziyadah-view";
+      }, 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mencatat talaqi");
+      const msg = err instanceof Error ? err.message : "Gagal mencatat setoran";
+      setError(msg);
+      toast.warning(msg);
     } finally {
       setLoading(false);
     }
   }
 
+  function handleBack() {
+    window.location.hash = "#/dashboard";
+  }
+
   if (initLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-page">
-        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
       </div>
     );
   }
@@ -112,145 +128,223 @@ export function TeacherTalaqiInputPage() {
       <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
         <button
           type="button"
-          onClick={() => (window.location.hash = "#/students")}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/10"
+          onClick={handleBack}
+          aria-label="Kembali"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
         >
-          <ArrowLeft className="h-4 w-4 text-indigo-600" />
+          <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-indigo-600">Input Talaqi</h1>
+        <h1 className="text-lg font-bold text-brand-cyan">
+          Input Talaqi (Tahsin)
+        </h1>
         <div className="h-10 w-10" />
       </div>
 
-      <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
+      {/* Main Body */}
+      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-1">
         <div className="flex flex-col gap-4">
-          {error ? (
-            <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
+          {error && (
+            <div className="rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-600">
               {error}
             </div>
-          ) : null}
+          )}
 
-          {/* Siswa Selector */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-              SISWA
+          {/* Pilih Santri Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <label className="text-xs font-bold text-brand-navy">
+              Pilih Santri Bimbingan
             </label>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-brand-navy outline-none shadow-sm transition-all focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 cursor-pointer"
-            >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Form Talaqi */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2">
-              <Volume2 className="h-4 w-4 text-indigo-600" />
-              <h2 className="text-sm font-bold text-brand-navy">Materi Talaqi</h2>
+            <div className="relative mt-2">
+              <select
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-3 pl-3 pr-9 text-xs font-bold text-brand-navy outline-none focus:border-emerald-500"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.className ?? "Kelas TTQ"})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-brand-navy">Materi / Ayat</label>
+            {selectedStudent && (
+              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-emerald-50 p-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-xs font-extrabold text-emerald-700">
+                  {selectedStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-brand-navy">
+                    {selectedStudent.name}
+                  </p>
+                  <p className="text-[10px] text-brand-text-muted">
+                    {selectedStudent.className ?? "Kelas Halaqah"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Tanggal & Kehadiran Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-brand-navy">
+                Tanggal Setoran
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="rounded-xl border border-brand-line bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-brand-navy outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="mt-3">
+              <label className="text-[11px] font-semibold text-brand-text-muted">
+                Status Kehadiran
+              </label>
+              <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                {[
+                  { id: "setoran", label: "Setoran" },
+                  { id: "sakit", label: "Sakit" },
+                  { id: "izin", label: "Izin" },
+                  { id: "alpa", label: "Alpa" },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setStatusKehadiran(st.id as any)}
+                    className={`rounded-xl py-2 text-xs font-bold transition-all border ${
+                      statusKehadiran === st.id
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                        : "bg-gray-50 text-brand-navy border-brand-line/60 hover:bg-gray-100"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Materi Talaqi Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <Mic className="h-4 w-4" />
+              </span>
+              <h2 className="text-sm font-bold text-brand-navy">
+                Materi Talaqi
+              </h2>
+            </div>
+
+            <div className="mt-3">
+              <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
+                Materi / Ayat Talaqi
+              </label>
               <input
                 type="text"
                 value={materi}
                 onChange={(e) => setMateri(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-indigo-600"
+                placeholder="Contoh: Surah An-Naba: 1-10"
+                className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-emerald-500"
               />
             </div>
-          </div>
+          </section>
 
-          {/* Nilai 4 Aspek */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-            <h2 className="text-sm font-bold text-brand-navy border-b border-brand-line/40 pb-2">
-              Detail Penilaian Talaqi (0 - 100)
+          {/* Penilaian Aspek (Scores) Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-bold text-brand-navy mb-3">
+              Penilaian Aspek (Skala 0 - 100)
             </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Makhroj</label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Makhraj</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={makhroj}
                   onChange={(e) => setMakhroj(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-indigo-600 outline-none focus:border-indigo-600"
+                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-emerald-700 outline-none focus:border-emerald-500"
                 />
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Tajwid</label>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Tajwid</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={tajwid}
                   onChange={(e) => setTajwid(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-indigo-600 outline-none focus:border-indigo-600"
+                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-emerald-700 outline-none focus:border-emerald-500"
                 />
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Kelancaran</label>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Kelancaran</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={kelancaran}
                   onChange={(e) => setKelancaran(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-indigo-600 outline-none focus:border-indigo-600"
+                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-emerald-700 outline-none focus:border-emerald-500"
                 />
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Fashohah</label>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Fashohah</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={fashohah}
                   onChange={(e) => setFashohah(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-indigo-600 outline-none focus:border-indigo-600"
+                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-emerald-700 outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
+          </section>
 
-            <div>
-              <label className="text-[11px] font-bold text-brand-navy">Catatan Evaluasi</label>
-              <textarea
-                rows={3}
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Catatan talaqi..."
-                className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-medium text-brand-navy outline-none focus:border-indigo-600"
-              />
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={loading}
-            className="h-11 w-full rounded-xl bg-indigo-600 font-bold uppercase tracking-wider text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : saved ? (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Tersimpan!
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" /> Simpan Talaqi
-              </>
-            )}
-          </Button>
+          {/* Catatan / Evaluasi */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <label className="text-xs font-bold text-brand-navy">
+              Catatan &amp; Evaluasi Guru Pembimbing
+            </label>
+            <textarea
+              rows={3}
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              placeholder="Contoh: Perhatikan panjang harakat..."
+              className="mt-2 w-full rounded-xl border border-brand-line bg-gray-50/50 p-3 text-xs font-medium text-brand-navy outline-none placeholder:text-gray-400 focus:border-emerald-500"
+            />
+          </section>
         </div>
       </main>
+
+      {/* Sticky Bottom Actions */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 flex gap-3 border-t border-brand-line bg-white px-4 py-3 shadow-lg">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleBack}
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl border-brand-line text-xs font-bold text-brand-navy hover:bg-gray-50"
+        >
+          BATAL
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl bg-emerald-600 font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "SIMPAN SETORAN"}
+        </Button>
+      </div>
     </div>
   );
 }

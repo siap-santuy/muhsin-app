@@ -1,27 +1,33 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, BookOpen, Check, Loader2, Save } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
+import { SURAH_LIST } from "@muhsin/shared";
 
 interface StudentOption {
   id: string;
   name: string;
+  className: string | null;
 }
 
 export function TeacherZiyadahInputPage() {
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [subcategoryId, setSubcategoryId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-  const [surah, setSurah] = useState("Al-Baqarah");
-  const [ayatMulai, setAyatMulai] = useState("1");
-  const [ayatSelesai, setAyatSelesai] = useState("5");
+  const [surahStart, setSurahStart] = useState("1");
+  const [ayatStart, setAyatStart] = useState("1");
+  const [surahEnd, setSurahEnd] = useState("1");
+  const [ayatEnd, setAyatEnd] = useState("5");
   const [tajwid, setTajwid] = useState("90");
   const [kelancaran, setKelancaran] = useState("85");
+  const [makhraj, setMakhraj] = useState("90");
   const [catatan, setCatatan] = useState("");
+  const [statusKehadiran, setStatusKehadiran] = useState<"setoran" | "sakit" | "izin" | "alpa">("setoran");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export function TeacherZiyadahInputPage() {
           setSubcategoryId(categories[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat data");
+        setError(err instanceof Error ? err.message : "Gagal memuat data awal");
       } finally {
         setInitLoading(false);
       }
@@ -58,9 +64,11 @@ export function TeacherZiyadahInputPage() {
     init();
   }, []);
 
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
+
   async function handleSave() {
     if (!selectedStudentId) {
-      const msg = "Pilih siswa terlebih dahulu";
+      const msg = "Pilih santri terlebih dahulu";
       setError(msg);
       toast.warning(msg);
       return;
@@ -76,33 +84,40 @@ export function TeacherZiyadahInputPage() {
     setLoading(true);
 
     try {
+      const sStart = SURAH_LIST.find((s) => s.no === Number(surahStart))?.nameLatin ?? `Surah ${surahStart}`;
+      const sEnd = SURAH_LIST.find((s) => s.no === Number(surahEnd))?.nameLatin ?? `Surah ${surahEnd}`;
+
       const savedEntry = await api.createSetoran({
         studentId: selectedStudentId,
         subcategoryId: subcategoryId,
-        date: new Date().toISOString().slice(0, 10),
-        referenceStart: { surah, ayat: Number(ayatMulai) },
-        referenceEnd: { surah, ayat: Number(ayatSelesai) },
+        date: date,
+        referenceStart: { surah: sStart, ayat: Number(ayatStart), surahNo: Number(surahStart) },
+        referenceEnd: { surah: sEnd, ayat: Number(ayatEnd), surahNo: Number(surahEnd) },
         scores: {
           tajwid: Number(tajwid),
           kelancaran: Number(kelancaran),
+          makhraj: Number(makhraj),
         },
-        keterangan: catatan || null,
-        scoreFieldKeys: ["tajwid", "kelancaran"],
+        keterangan: statusKehadiran !== "setoran" ? statusKehadiran : catatan || null,
+        scoreFieldKeys: ["tajwid", "kelancaran", "makhraj"],
       });
 
       sessionStorage.setItem("lastSetoranId", savedEntry.id);
       toast.success("Setoran Ziyadah berhasil disimpan!");
-      setSaved(true);
       setTimeout(() => {
         window.location.hash = "#/ziyadah-view";
       }, 800);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gagal mencatat setoran";
       setError(msg);
-      toast.error(msg);
+      toast.warning(msg);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleBack() {
+    window.location.hash = "#/dashboard";
   }
 
   if (initLoading) {
@@ -119,147 +134,281 @@ export function TeacherZiyadahInputPage() {
       <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
         <button
           type="button"
-          onClick={() => (window.location.hash = "#/students")}
+          onClick={handleBack}
+          aria-label="Kembali"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
-        <h1 className="text-xl font-bold text-brand-cyan">Input Ziyadah</h1>
+        <h1 className="text-lg font-bold text-brand-cyan">
+          Input Ziyadah (Tahfidz)
+        </h1>
         <div className="h-10 w-10" />
       </div>
 
-      {/* Form */}
-      <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
+      {/* Main Body */}
+      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-1">
         <div className="flex flex-col gap-4">
-          {error ? (
-            <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
+          {error && (
+            <div className="rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-600">
               {error}
             </div>
-          ) : null}
+          )}
 
-          {/* Siswa Selector */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-              SISWA
+          {/* Pilih Santri Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <label className="text-xs font-bold text-brand-navy">
+              Pilih Santri Bimbingan
             </label>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-brand-navy outline-none shadow-sm transition-all focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 cursor-pointer"
-            >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Hafalan Form */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2">
-              <BookOpen className="h-4 w-4 text-brand-cyan" />
-              <h2 className="text-sm font-bold text-brand-navy">Capaian Hafalan</h2>
+            <div className="relative mt-2">
+              <select
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-3 pl-3 pr-9 text-xs font-bold text-brand-navy outline-none focus:border-brand-cyan"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.className ?? "Kelas TTQ"})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-brand-navy">Surah</label>
-              <input
-                type="text"
-                value={surah}
-                onChange={(e) => setSurah(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Ayat Mulai</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={ayatMulai}
-                  onChange={(e) => setAyatMulai(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                />
+            {selectedStudent && (
+              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-brand-cyan/5 p-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-cyan/15 text-xs font-extrabold text-brand-cyan-dark">
+                  {selectedStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-brand-navy">
+                    {selectedStudent.name}
+                  </p>
+                  <p className="text-[10px] text-brand-text-muted">
+                    {selectedStudent.className ?? "Kelas Halaqah"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Ayat Selesai</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={ayatSelesai}
-                  onChange={(e) => setAyatSelesai(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Penilaian Form */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-            <h2 className="text-sm font-bold text-brand-navy border-b border-brand-line/40 pb-2">
-              Nilai Performance (0 - 100)
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Tajwid</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={tajwid}
-                  onChange={(e) => setTajwid(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-brand-cyan outline-none focus:border-brand-cyan"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-brand-navy">Kelancaran</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={kelancaran}
-                  onChange={(e) => setKelancaran(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-bold text-brand-cyan outline-none focus:border-brand-cyan"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold text-brand-navy">Catatan Evaluasi</label>
-              <textarea
-                rows={3}
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Catatan untuk siswa (opsional)..."
-                className="mt-1 w-full rounded-xl border border-brand-line bg-white p-2.5 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
-              />
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={loading}
-            className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : saved ? (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Tersimpan!
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" /> Simpan Setoran Ziyadah
-              </>
             )}
-          </Button>
+          </section>
+
+          {/* Tanggal & Kehadiran Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-brand-navy">
+                Tanggal Setoran
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="rounded-xl border border-brand-line bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+              />
+            </div>
+
+            <div className="mt-3">
+              <label className="text-[11px] font-semibold text-brand-text-muted">
+                Status Kehadiran
+              </label>
+              <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                {[
+                  { id: "setoran", label: "Setoran" },
+                  { id: "sakit", label: "Sakit" },
+                  { id: "izin", label: "Izin" },
+                  { id: "alpa", label: "Alpa" },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setStatusKehadiran(st.id as any)}
+                    className={`rounded-xl py-2 text-xs font-bold transition-all border ${
+                      statusKehadiran === st.id
+                        ? "bg-brand-cyan text-white border-brand-cyan shadow-sm"
+                        : "bg-gray-50 text-brand-navy border-brand-line/60 hover:bg-gray-100"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Materi Hafalan (Awal - Akhir Surah) Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-cyan/10 text-brand-cyan">
+                <BookOpen className="h-4 w-4" />
+              </span>
+              <h2 className="text-sm font-bold text-brand-navy">
+                Materi Hafalan Ziyadah
+              </h2>
+            </div>
+
+            <div className="mt-3 flex flex-col gap-3">
+              {/* Awal Surah & Ayat */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
+                    Awal Surah
+                  </label>
+                  <div className="relative mt-1">
+                    <select
+                      value={surahStart}
+                      onChange={(e) => {
+                        setSurahStart(e.target.value);
+                        if (Number(surahEnd) < Number(e.target.value)) {
+                          setSurahEnd(e.target.value);
+                        }
+                      }}
+                      className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-2.5 pl-3 pr-8 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    >
+                      {SURAH_LIST.map((s) => (
+                        <option key={s.no} value={String(s.no)}>
+                          {s.no}. {s.nameLatin}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+                <div className="w-20 shrink-0">
+                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
+                    Ayat
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={ayatStart}
+                    onChange={(e) => setAyatStart(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 py-2.5 px-3 text-center text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+
+              {/* Akhir Surah & Ayat */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
+                    Akhir Surah
+                  </label>
+                  <div className="relative mt-1">
+                    <select
+                      value={surahEnd}
+                      onChange={(e) => setSurahEnd(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-2.5 pl-3 pr-8 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    >
+                      {SURAH_LIST.map((s) => (
+                        <option key={s.no} value={String(s.no)}>
+                          {s.no}. {s.nameLatin}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+                <div className="w-20 shrink-0">
+                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
+                    Ayat
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={ayatEnd}
+                    onChange={(e) => setAyatEnd(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 py-2.5 px-3 text-center text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Penilaian Aspek (Scores) Card */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-bold text-brand-navy mb-3">
+              Penilaian Aspek (Skala 0 - 100)
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Tajwid</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={tajwid}
+                    onChange={(e) => setTajwid(e.target.value)}
+                    className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-brand-cyan-dark outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Kelancaran</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={kelancaran}
+                    onChange={(e) => setKelancaran(e.target.value)}
+                    className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-brand-cyan-dark outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-brand-navy">Makhraj Huruf</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={makhraj}
+                    onChange={(e) => setMakhraj(e.target.value)}
+                    className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-brand-cyan-dark outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Catatan / Evaluasi */}
+          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            <label className="text-xs font-bold text-brand-navy">
+              Catatan &amp; Evaluasi Guru Pembimbing
+            </label>
+            <textarea
+              rows={3}
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              placeholder="Contoh: Perhatikan panjang mad wajib dan ketepatan makhraj huruf 'Ain..."
+              className="mt-2 w-full rounded-xl border border-brand-line bg-gray-50/50 p-3 text-xs font-medium text-brand-navy outline-none placeholder:text-gray-400 focus:border-brand-cyan"
+            />
+          </section>
         </div>
       </main>
+
+      {/* Sticky Bottom Actions */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 flex gap-3 border-t border-brand-line bg-white px-4 py-3 shadow-lg">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleBack}
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl border-brand-line text-xs font-bold text-brand-navy hover:bg-gray-50"
+        >
+          BATAL
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={loading}
+          className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "SIMPAN SETORAN"}
+        </Button>
+      </div>
     </div>
   );
 }

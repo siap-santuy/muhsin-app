@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
+import { api } from "@/lib/api";
 
 interface MonthDef {
   name: string;
@@ -38,17 +39,44 @@ function getCurrentAcademicOffset(): number {
   return month >= 6 ? month - 6 : month + 6;
 }
 
+interface StudentOption {
+  id: string;
+  name: string;
+  className: string | null;
+}
+
 export function TeacherRaportPage() {
   const currentOffset = getCurrentAcademicOffset();
   const defaultMonthOffset = Math.max(0, currentOffset - 1);
   const defaultMonth = ACADEMIC_MONTHS[defaultMonthOffset];
 
-  const [student, setStudent] = useState("Fulan bin Fulan");
+  const [students, setStudents] = useState<StudentOption[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState("2026/2027");
   const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth.name);
   const [selectedSemester, setSelectedSemester] = useState<number>(
     defaultMonth.semester
   );
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const studentList = await api.getStudents();
+        setStudents(studentList);
+        if (studentList.length > 0) {
+          const preselected = sessionStorage.getItem("selectedStudentId");
+          if (preselected && studentList.some((s) => s.id === preselected)) {
+            setSelectedStudentId(preselected);
+          } else {
+            setSelectedStudentId(studentList[0].id);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    load();
+  }, []);
 
   const isPastYear = selectedYear !== "2026/2027";
 
@@ -79,16 +107,23 @@ export function TeacherRaportPage() {
     setSelectedSemester(sem);
   }
 
+  const selectedStudentName = students.find((s) => s.id === selectedStudentId)?.name ?? "Siswa Halaqah";
+
   function handleMonthlyClick() {
-    const params = new URLSearchParams({ month: selectedMonth, year: selectedYear, student });
+    const params = new URLSearchParams({
+      month: selectedMonth,
+      year: selectedYear,
+      studentId: selectedStudentId,
+    });
     window.location.hash = `#/monthly-raport?${params.toString()}`;
   }
 
   function handleSemesterClick() {
+    const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
     const params = new URLSearchParams({
-      semester: String(selectedSemester),
+      semester: semName,
       year: selectedYear,
-      student,
+      studentId: selectedStudentId,
     });
     window.location.hash = `#/semester-raport?${params.toString()}`;
   }
@@ -104,15 +139,20 @@ export function TeacherRaportPage() {
             <label className="text-xs font-bold uppercase tracking-wider text-brand-navy">
               PILIH SISWA HALAQAH
             </label>
-            <select
-              value={student}
-              onChange={(e) => setStudent(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-bold text-brand-navy outline-none"
-            >
-              <option value="Fulan bin Fulan">Fulan bin Fulan (9991239201)</option>
-              <option value="Ahmad Abdullah">Ahmad Abdullah (9991239202)</option>
-              <option value="Muhammad Ali">Muhammad Ali (9991239203)</option>
-            </select>
+            <div className="relative mt-1">
+              <select
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50 p-2.5 pr-8 text-xs font-bold text-brand-navy outline-none"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.className ?? "Kelas TTQ"})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
 
           {/* Academic Year Dropdown */}
@@ -246,7 +286,7 @@ export function TeacherRaportPage() {
                   Input / Edit Raport Bulanan
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Siswa: {student} ({selectedMonth})
+                  Siswa: {selectedStudentName} ({selectedMonth})
                 </p>
               </div>
             </div>
@@ -267,7 +307,7 @@ export function TeacherRaportPage() {
                   Input / Edit Raport Semester
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Siswa: {student} (Semester {selectedSemester})
+                  Siswa: {selectedStudentName} (Semester {selectedSemester === 1 ? "Ganjil" : "Genap"})
                 </p>
               </div>
             </div>

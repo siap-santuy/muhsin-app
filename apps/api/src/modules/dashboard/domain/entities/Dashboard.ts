@@ -25,6 +25,13 @@ export interface TeacherDashboardSummary {
   setorHariIniCount: number;
   belumSetorCount: number;
   className: string;
+  konsistensiIbadahPercent?: number;
+  todayBreakdown?: {
+    ziyadahCount: number;
+    murojaahCount: number;
+    tahsinCount: number;
+    totalTarget: number;
+  };
 }
 
 export interface ParentDashboardSummary {

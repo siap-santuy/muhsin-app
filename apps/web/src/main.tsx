@@ -202,7 +202,7 @@ function App() {
           <TeacherMonthlyRaportPage
             month={searchParams.get("month") || undefined}
             year={searchParams.get("year") || undefined}
-            studentId={searchParams.get("student") || undefined}
+            studentId={searchParams.get("studentId") || searchParams.get("student") || undefined}
           />
         );
       case "semester-raport":
@@ -210,7 +210,7 @@ function App() {
           <TeacherSemesterRaportPage
             semester={searchParams.get("semester") || undefined}
             year={searchParams.get("year") || undefined}
-            studentId={searchParams.get("student") || undefined}
+            studentId={searchParams.get("studentId") || searchParams.get("student") || undefined}
           />
         );
       case "profile":
