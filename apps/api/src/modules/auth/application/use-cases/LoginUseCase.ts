@@ -15,8 +15,8 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
-    const user = await this.userRepository.findByEmail(
-      input.email,
+    const user = await this.userRepository.findByIdentifier(
+      input.identifier,
       input.schoolId
     );
 
@@ -60,6 +60,7 @@ export class LoginUseCase {
         role: user.role,
         name: user.name,
         email: user.email,
+        username: user.username,
       },
     };
   }

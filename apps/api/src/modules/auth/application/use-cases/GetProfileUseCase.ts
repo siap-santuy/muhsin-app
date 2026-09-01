@@ -13,6 +13,7 @@ export class GetProfileUseCase {
       schoolId: user.schoolId,
       role: user.role,
       name: user.name,
+      username: user.username,
       email: user.email,
       phone: user.phone,
       createdAt: user.createdAt.toISOString(),

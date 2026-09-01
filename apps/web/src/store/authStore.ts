@@ -7,7 +7,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   user: AuthUser | null;
-  login: (email: string, password: string, schoolId?: string) => Promise<void>;
+  login: (identifier: string, password: string, schoolId?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -17,8 +17,8 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       user: null,
-      login: async (email, password, schoolId = SCHOOL_ID) => {
-        const input: LoginInput = { email: email.trim(), password, schoolId };
+      login: async (identifier, password, schoolId = SCHOOL_ID) => {
+        const input: LoginInput = { identifier: identifier.trim(), password, schoolId };
         const result = await api.login(input);
         localStorage.setItem("access_token", result.accessToken);
         set({

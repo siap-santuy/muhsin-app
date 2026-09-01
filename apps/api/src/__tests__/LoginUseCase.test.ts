@@ -15,7 +15,12 @@ function makeTokenService() {
 
 function makeDeps(user: User | null) {
   const userRepository: IUserRepository = {
-    findByEmail: async () => user,
+    findByEmail: async (email: string) => (user?.email === email ? user : null),
+    findByIdentifier: async (identifier: string) => {
+      if (!user) return null;
+      if (user.email === identifier || user.username === identifier) return user;
+      return null;
+    },
     findById: async () => user,
     updateProfile: async () => user!,
     updatePasswordHash: async () => {},
@@ -41,6 +46,7 @@ const seededUser: User = {
   schoolId: "school-1",
   role: "koordinator_ttq",
   name: "Koordinator Demo",
+  username: "koordinator",
   email: "koordinator@demo.sch.id",
   passwordHash: "",
   phone: null,
@@ -52,11 +58,11 @@ beforeEach(async () => {
 });
 
 describe("LoginUseCase", () => {
-  it("returns tokens and user on valid credentials", async () => {
+  it("returns tokens and user on valid email credentials", async () => {
     const { useCase, saved } = makeDeps(seededUser);
 
     const result = await useCase.execute({
-      email: "koordinator@demo.sch.id",
+      identifier: "koordinator@demo.sch.id",
       password: "muhsin123",
       schoolId: "school-1",
     });
@@ -70,18 +76,34 @@ describe("LoginUseCase", () => {
       role: "koordinator_ttq",
       name: "Koordinator Demo",
       email: "koordinator@demo.sch.id",
+      username: "koordinator",
     });
     expect(saved).toHaveLength(1);
     expect(saved[0].userId).toBe("user-1");
     expect(saved[0].hash).not.toBe(result.refreshToken);
   });
 
-  it("throws InvalidCredentialsError when email not found", async () => {
+  it("returns tokens and user on valid username credentials", async () => {
+    const { useCase, saved } = makeDeps(seededUser);
+
+    const result = await useCase.execute({
+      identifier: "koordinator",
+      password: "muhsin123",
+      schoolId: "school-1",
+    });
+
+    expect(result.accessToken).toBeTruthy();
+    expect(result.refreshToken).toBeTruthy();
+    expect(result.user.name).toBe("Koordinator Demo");
+    expect(saved).toHaveLength(1);
+  });
+
+  it("throws InvalidCredentialsError when identifier not found", async () => {
     const { useCase } = makeDeps(null);
 
     await expect(
       useCase.execute({
-        email: "nonexistent@demo.sch.id",
+        identifier: "nonexistent",
         password: "muhsin123",
         schoolId: "school-1",
       })
@@ -93,7 +115,7 @@ describe("LoginUseCase", () => {
 
     await expect(
       useCase.execute({
-        email: "koordinator@demo.sch.id",
+        identifier: "koordinator",
         password: "wrongpass123",
         schoolId: "school-1",
       })

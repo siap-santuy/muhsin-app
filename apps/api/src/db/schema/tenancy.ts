@@ -31,6 +31,7 @@ export const users = pgTable("users", {
     .references(() => schools.id),
   role: text("role", { enum: userRole }).notNull(),
   name: text("name").notNull(),
+  username: text("username"),
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
   phone: text("phone"),

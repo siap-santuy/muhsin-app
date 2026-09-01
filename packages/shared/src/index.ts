@@ -11,7 +11,7 @@ export const userRoleSchema = z.enum([
 export type UserRole = z.infer<typeof userRoleSchema>;
 
 export const loginInputSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1),
   password: z.string().min(8),
   schoolId: z.string().min(1),
 });
@@ -28,6 +28,7 @@ export const authUserSchema = z.object({
   role: userRoleSchema,
   name: z.string(),
   email: z.string().email(),
+  username: z.string().nullable().optional(),
 });
 export type AuthUser = z.infer<typeof authUserSchema>;
 
@@ -109,6 +110,7 @@ export const userProfileSchema = z.object({
   role: userRoleSchema,
   name: z.string(),
   email: z.string(),
+  username: z.string().nullable().optional(),
   phone: z.string().nullable(),
   createdAt: z.string(),
 });
@@ -127,3 +129,7 @@ export const createSetoranInputSchema = z.object({
   scoreFieldKeys: z.array(z.string()),
 });
 export type CreateSetoranInput = z.infer<typeof createSetoranInputSchema>;
+
+// --- Surah Reference ---
+export * from "./surah";
+

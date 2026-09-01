@@ -15,6 +15,13 @@
       "when": 1788097697318,
       "tag": "0001_sparkling_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788191008081,
+      "tag": "0002_sour_stick",
+      "breakpoints": true
     }
   ]
 }

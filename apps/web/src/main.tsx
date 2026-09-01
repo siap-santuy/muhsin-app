@@ -47,7 +47,11 @@ import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
+import { registerSW } from "virtual:pwa-register";
 import "@/index.css";
+
+// Auto-register service worker for PWA capabilities
+registerSW({ immediate: true });
 
 const queryClient = new QueryClient();
 

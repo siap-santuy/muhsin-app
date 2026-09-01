@@ -1,6 +1,6 @@
 import type { Db } from "../../../db/client";
 import { users } from "../../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import type { IUserRepository, UpdateUserData } from "../domain/repositories/IUserRepository";
 import type { User } from "../domain/entities/User";
 
@@ -12,6 +12,26 @@ export class DrizzleUserRepository implements IUserRepository {
       .select()
       .from(users)
       .where(and(eq(users.email, email), eq(users.schoolId, schoolId)))
+      .limit(1);
+
+    const row = rows[0];
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByIdentifier(identifier: string, schoolId: string): Promise<User | null> {
+    const trimmed = identifier.trim().toLowerCase();
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.schoolId, schoolId),
+          or(
+            sql`lower(${users.email}) = ${trimmed}`,
+            sql`lower(${users.username}) = ${trimmed}`
+          )
+        )
+      )
       .limit(1);
 
     const row = rows[0];
@@ -54,6 +74,7 @@ export class DrizzleUserRepository implements IUserRepository {
       schoolId: row.schoolId,
       role: row.role,
       name: row.name,
+      username: row.username,
       email: row.email,
       passwordHash: row.passwordHash,
       phone: row.phone,

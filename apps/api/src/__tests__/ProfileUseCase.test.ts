@@ -19,6 +19,7 @@ function makeMockUser(overrides: Partial<User> = {}): User {
     schoolId: "school-1",
     role: "student",
     name: "Ahmad Siswa",
+    username: "ahmadsiswa",
     email: "ahmad@sekolah.sch.id",
     passwordHash: "",
     phone: "08123456789",
@@ -32,6 +33,7 @@ describe("Profile UseCases", () => {
     const user = makeMockUser();
     const userRepo: IUserRepository = {
       findByEmail: async () => null,
+      findByIdentifier: async () => null,
       findById: async (id, schoolId) =>
         id === user.id && schoolId === user.schoolId ? user : null,
       updateProfile: async () => user,
@@ -44,12 +46,14 @@ describe("Profile UseCases", () => {
     expect(result.id).toBe("user-123");
     expect(result.name).toBe("Ahmad Siswa");
     expect(result.email).toBe("ahmad@sekolah.sch.id");
+    expect(result.username).toBe("ahmadsiswa");
     expect((result as any).passwordHash).toBeUndefined();
   });
 
   it("GetProfileUseCase throws UserNotFoundError when user not found", async () => {
     const userRepo: IUserRepository = {
       findByEmail: async () => null,
+      findByIdentifier: async () => null,
       findById: async () => null,
       updateProfile: async () => makeMockUser(),
       updatePasswordHash: async () => {},
@@ -65,6 +69,7 @@ describe("Profile UseCases", () => {
     let current = makeMockUser();
     const userRepo: IUserRepository = {
       findByEmail: async (email) => (email === current.email ? current : null),
+      findByIdentifier: async () => null,
       findById: async (id, schoolId) =>
         id === current.id && schoolId === current.schoolId ? current : null,
       updateProfile: async (_id, _schoolId, data: UpdateUserData) => {
@@ -96,6 +101,7 @@ describe("Profile UseCases", () => {
     const userRepo: IUserRepository = {
       findByEmail: async (email) =>
         email === existingOther.email ? existingOther : null,
+      findByIdentifier: async () => null,
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async () => {},
@@ -118,6 +124,7 @@ describe("Profile UseCases", () => {
 
     const userRepo: IUserRepository = {
       findByEmail: async () => null,
+      findByIdentifier: async () => null,
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async (_id, _schoolId, hash) => {
@@ -142,6 +149,7 @@ describe("Profile UseCases", () => {
 
     const userRepo: IUserRepository = {
       findByEmail: async () => null,
+      findByIdentifier: async () => null,
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async () => {},

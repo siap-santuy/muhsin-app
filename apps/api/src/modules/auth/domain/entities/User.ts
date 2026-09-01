@@ -5,6 +5,7 @@ export interface User {
   schoolId: string;
   role: UserRole;
   name: string;
+  username: string | null;
   email: string;
   passwordHash: string;
   phone: string | null;
