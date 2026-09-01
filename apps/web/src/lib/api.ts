@@ -14,54 +14,133 @@ export const SCHOOL_ID = import.meta.env.VITE_SCHOOL_ID || "school-default-id";
 
 const GENERIC_ERROR = "Terjadi kesalahan server";
 
-async function handleResponse<T = any>(res: Response): Promise<T> {
+function getStoredRefreshToken(): string | null {
+  try {
+    const raw = localStorage.getItem("muhsin-auth");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.refreshToken || null;
+  } catch {
+    return null;
+  }
+}
+
+function handleAuthExpired() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("muhsin-auth");
+  if (window.location.hash !== "#/" && window.location.hash !== "") {
+    window.location.hash = "#/";
+    window.location.reload();
+  }
+}
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function tryRefreshToken(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  const rToken = getStoredRefreshToken();
+  if (!rToken) {
+    handleAuthExpired();
+    return null;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: rToken }),
+      });
+      if (!res.ok) {
+        handleAuthExpired();
+        return null;
+      }
+      const json = await res.json();
+      const newAccessToken = json.data?.accessToken;
+      if (newAccessToken) {
+        localStorage.setItem("access_token", newAccessToken);
+        try {
+          const raw = localStorage.getItem("muhsin-auth");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            parsed.state.accessToken = newAccessToken;
+            if (json.data?.refreshToken) {
+              parsed.state.refreshToken = json.data.refreshToken;
+            }
+            localStorage.setItem("muhsin-auth", JSON.stringify(parsed));
+          }
+        } catch {}
+        return newAccessToken;
+      }
+      handleAuthExpired();
+      return null;
+    } catch {
+      handleAuthExpired();
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+async function handleResponse<T = any>(res: Response, retryFn?: (newToken: string) => Promise<Response>): Promise<T> {
+  if (res.status === 401) {
+    if (retryFn) {
+      const newToken = await tryRefreshToken();
+      if (newToken) {
+        const retryRes = await retryFn(newToken);
+        return handleResponse<T>(retryRes);
+      }
+    } else {
+      handleAuthExpired();
+    }
+  }
+
   let json: any;
   try {
     json = await res.json();
   } catch {
     throw new Error(GENERIC_ERROR);
   }
+
   if (res.ok) return json.data;
+
   // Expose backend error message for all 4xx client errors (400, 401, 403, 404, 422, etc.)
   if (res.status >= 400 && res.status < 500) {
     throw new Error(json.error?.message || json.message || "Permintaan tidak valid");
   }
+
   // 500+ server errors
   throw new Error(GENERIC_ERROR);
 }
 
-export async function post<T>(endpoint: string, body: any): Promise<T> {
-  const token = localStorage.getItem("access_token");
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  return handleResponse<T>(res);
-}
-
-export async function get<T>(endpoint: string): Promise<T> {
-  const token = localStorage.getItem("access_token");
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-  return handleResponse<T>(res);
-}
-
 class ApiClient {
-  private getHeaders(): HeadersInit {
+  private async request<T = any>(
+    method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
+    endpoint: string,
+    body?: any
+  ): Promise<T> {
     const token = localStorage.getItem("access_token");
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
+    const doFetch = (authToken: string | null) =>
+      fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+
+    const res = await doFetch(token);
+    return handleResponse<T>(res, (newToken) => doFetch(newToken));
   }
 
   async login(input: LoginInput): Promise<LoginOutput> {
@@ -75,75 +154,42 @@ class ApiClient {
 
   async getGamificationSummary(studentId?: string): Promise<GamificationSummary> {
     const url = studentId
-      ? `${API_BASE}/gamification/summary?studentId=${studentId}`
-      : `${API_BASE}/gamification/summary`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse<GamificationSummary>(res);
+      ? `/gamification/summary?studentId=${studentId}`
+      : `/gamification/summary`;
+    return this.request<GamificationSummary>("GET", url);
   }
 
   async getDailyIbadah(date: string, studentId?: string) {
     const url = studentId
-      ? `${API_BASE}/daily-ibadah?date=${date}&studentId=${studentId}`
-      : `${API_BASE}/daily-ibadah?date=${date}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+      ? `/daily-ibadah?date=${date}&studentId=${studentId}`
+      : `/daily-ibadah?date=${date}`;
+    return this.request("GET", url);
   }
 
   async getDailyIbadahHistory(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
     if (params.studentId) query.set("studentId", params.studentId);
     if (params.month) query.set("month", params.month);
-
-    const res = await fetch(`${API_BASE}/daily-ibadah/history?${query.toString()}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/daily-ibadah/history?${query.toString()}`);
   }
 
   async getDailyIbadahStats(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
     if (params.studentId) query.set("studentId", params.studentId);
     if (params.month) query.set("month", params.month);
-
-    const res = await fetch(`${API_BASE}/daily-ibadah/stats?${query.toString()}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/daily-ibadah/stats?${query.toString()}`);
   }
 
   async saveDailyIbadahDraft(input: DailyIbadahInput) {
-    const res = await fetch(`${API_BASE}/daily-ibadah/draft`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/daily-ibadah/draft`, input);
   }
 
   async submitDailyIbadah(input: DailyIbadahInput) {
-    const res = await fetch(`${API_BASE}/daily-ibadah/submit`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/daily-ibadah/submit`, input);
   }
 
   async createSetoran(input: CreateSetoranInput) {
-    const res = await fetch(`${API_BASE}/setoran`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/setoran`, input);
   }
 
   async getAssessmentCategories(): Promise<Array<{
@@ -156,11 +202,7 @@ class ApiClient {
     scoreFields: Array<{ key: string; label: string; min: number; max: number }>;
     referenceShape: Record<string, any> | null;
   }>> {
-    const res = await fetch(`${API_BASE}/setoran/categories`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/setoran/categories`);
   }
 
   async getSetoranHistory(params: {
@@ -172,32 +214,18 @@ class ApiClient {
     if (params.studentId) query.set("studentId", params.studentId);
     if (params.subcategoryId) query.set("subcategoryId", params.subcategoryId);
     if (params.month) query.set("month", params.month);
-
-    const res = await fetch(`${API_BASE}/setoran/history?${query.toString()}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/setoran/history?${query.toString()}`);
   }
 
   async getSetoranById(id: string) {
-    const res = await fetch(`${API_BASE}/setoran/${id}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/setoran/${id}`);
   }
 
   async getMonthlyRaport(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
     if (params.studentId) query.set("studentId", params.studentId);
     if (params.month) query.set("month", params.month);
-
-    const res = await fetch(`${API_BASE}/raport/monthly?${query.toString()}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/raport/monthly?${query.toString()}`);
   }
 
   async getSemesterRaport(params: { studentId?: string; semester?: string; tahunAjaran?: string } = {}) {
@@ -205,56 +233,30 @@ class ApiClient {
     if (params.studentId) query.set("studentId", params.studentId);
     if (params.semester) query.set("semester", params.semester);
     if (params.tahunAjaran) query.set("tahunAjaran", params.tahunAjaran);
-
-    const res = await fetch(`${API_BASE}/raport/semester?${query.toString()}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/raport/semester?${query.toString()}`);
   }
 
   async getDashboardSummary<T = any>(): Promise<T> {
-    const res = await fetch(`${API_BASE}/dashboard/summary`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse<T>(res);
+    return this.request<T>("GET", `/dashboard/summary`);
   }
 
   async getMunaqosahRequests(status?: string) {
     const url = status
-      ? `${API_BASE}/munaqosah/requests?status=${status}`
-      : `${API_BASE}/munaqosah/requests`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+      ? `/munaqosah/requests?status=${status}`
+      : `/munaqosah/requests`;
+    return this.request("GET", url);
   }
 
   async createMunaqosahRequest(input: { studentId: string; juzKe: number }) {
-    const res = await fetch(`${API_BASE}/munaqosah/requests`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/munaqosah/requests`, input);
   }
 
   async approveMunaqosah(id: string) {
-    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/approve`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("PATCH", `/munaqosah/requests/${id}/approve`);
   }
 
   async rejectMunaqosah(id: string) {
-    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/reject`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("PATCH", `/munaqosah/requests/${id}/reject`);
   }
 
   async scheduleMunaqosah(id: string, input: {
@@ -263,12 +265,7 @@ class ApiClient {
     jadwalTanggal: string;
     jadwalWaktu?: string;
   }) {
-    const res = await fetch(`${API_BASE}/munaqosah/requests/${id}/schedule`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/munaqosah/requests/${id}/schedule`, input);
   }
 
   async submitMunaqosahResult(assignmentId: string, input: {
@@ -276,37 +273,19 @@ class ApiClient {
     hasil: "lulus" | "tidak_lulus";
     catatanPenguji?: string;
   }) {
-    const res = await fetch(`${API_BASE}/munaqosah/assignments/${assignmentId}/result`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/munaqosah/assignments/${assignmentId}/result`, input);
   }
 
   async getKurikulumCategories() {
-    const res = await fetch(`${API_BASE}/kurikulum/categories`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/kurikulum/categories`);
   }
 
   async getGradingScale() {
-    const res = await fetch(`${API_BASE}/kurikulum/grading-scale`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/kurikulum/grading-scale`);
   }
 
   async createKurikulumCategory(input: { code: string; name: string }) {
-    const res = await fetch(`${API_BASE}/kurikulum/categories`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/kurikulum/categories`, input);
   }
 
   async createKurikulumSubcategory(input: {
@@ -316,38 +295,19 @@ class ApiClient {
     scoreFields: Array<{ key: string; label: string; min: number; max: number }>;
     includeInRanking?: boolean;
   }) {
-    const res = await fetch(`${API_BASE}/kurikulum/subcategories`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse(res);
+    return this.request("POST", `/kurikulum/subcategories`, input);
   }
 
   async getMyProfile(): Promise<UserProfile> {
-    const res = await fetch(`${API_BASE}/users/me`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse<UserProfile>(res);
+    return this.request<UserProfile>("GET", `/users/me`);
   }
 
   async updateProfile(input: UpdateProfileInput): Promise<UserProfile> {
-    const res = await fetch(`${API_BASE}/users/profile`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse<UserProfile>(res);
+    return this.request<UserProfile>("PATCH", `/users/profile`, input);
   }
 
   async changePassword(input: ChangePasswordInput): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE}/users/change-password`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse<{ message: string }>(res);
+    return this.request<{ message: string }>("PATCH", `/users/change-password`, input);
   }
 
   async getStudents(teacherId?: string): Promise<Array<{
@@ -362,21 +322,13 @@ class ApiClient {
     currentStreak: number;
   }>> {
     const url = teacherId
-      ? `${API_BASE}/students?teacherId=${teacherId}`
-      : `${API_BASE}/students`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+      ? `/students?teacherId=${teacherId}`
+      : `/students`;
+    return this.request("GET", url);
   }
 
   async getStudentById(id: string) {
-    const res = await fetch(`${API_BASE}/students/${id}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/students/${id}`);
   }
 
   async getTeachers(): Promise<Array<{
@@ -387,35 +339,19 @@ class ApiClient {
     classes: Array<{ id: string; name: string }>;
     studentCount: number;
   }>> {
-    const res = await fetch(`${API_BASE}/teachers`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/teachers`);
   }
 
   async getNotifications() {
-    const res = await fetch(`${API_BASE}/notifications`, {
-      method: "GET",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("GET", `/notifications`);
   }
 
   async markNotificationRead(id: string) {
-    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("PATCH", `/notifications/${id}/read`);
   }
 
   async markAllNotificationsRead() {
-    const res = await fetch(`${API_BASE}/notifications/read-all`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-    });
-    return handleResponse(res);
+    return this.request("PATCH", `/notifications/read-all`);
   }
 }
 
