@@ -100,11 +100,12 @@ export function ParentRaportPage({
   }
 
   function handleSemesterClick() {
+    const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
     if (onNavigateToSemester) {
       onNavigateToSemester(selectedSemester, selectedYear);
     } else {
       const params = new URLSearchParams({
-        semester: String(selectedSemester),
+        semester: semName,
         year: selectedYear,
       });
       window.location.hash = `#/semester-raport?${params.toString()}`;

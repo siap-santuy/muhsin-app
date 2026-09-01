@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export interface DayStatus {
   day: number;
   monthOffset?: number;
-  status?: "setoran" | "sakit" | "alpa" | "empty";
+  status?: "setoran" | "sakit" | "alpa" | "empty" | "submitted" | "draft";
   date?: Date;
 }
 
@@ -40,29 +40,13 @@ const INDONESIAN_MONTHS = [
 const DAY_NAMES = ["S", "S", "R", "K", "J", "S", "M"];
 
 const DOT_COLORS: Record<string, string> = {
+  submitted: "bg-emerald-500",
   setoran: "bg-emerald-500",
+  draft: "bg-amber-500",
   sakit: "bg-amber-500",
   alpa: "bg-red-500",
   empty: "bg-gray-300",
 };
-
-function getDefaultStatusForDate(date: Date, today: Date): DayStatus["status"] {
-  if (date > today) return undefined;
-
-  const diffMonths =
-    (today.getFullYear() - date.getFullYear()) * 12 +
-    (today.getMonth() - date.getMonth());
-
-  if (diffMonths >= 0 && diffMonths <= 1) {
-    const day = date.getDate();
-    if (day % 7 === 1) return "sakit";
-    if (day % 7 === 4) return "alpa";
-    if (day % 7 === 6) return "empty";
-    return "setoran";
-  }
-
-  return "empty";
-}
 
 export function MonthCalendar({
   monthYear: customMonthYear,
@@ -169,7 +153,7 @@ export function MonthCalendar({
       const dayStatus =
         getStatusForDate?.(date) ??
         statusMap.get(d) ??
-        getDefaultStatusForDate(date, today);
+        "empty";
       items.push({
         day: d,
         isOtherMonth: false,

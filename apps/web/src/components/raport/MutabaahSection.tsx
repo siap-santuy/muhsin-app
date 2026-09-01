@@ -8,16 +8,29 @@ import {
 } from "lucide-react";
 
 export interface MutabaahRow {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   label: string;
   ratio: string;
   grade: string;
-  color: string;
+  color?: string;
 }
 
 export interface MutabaahSectionProps {
   rows?: MutabaahRow[];
 }
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  tilawah: BookOpen,
+  "shalat fardhu": CalendarCheck,
+  "sholat fardhu": CalendarCheck,
+  "shalat sunnah": Sun,
+  "sholat sunnah": Sun,
+  "sunnah rawatib": Sun,
+  tahajud: Moon,
+  dhuha: Sun,
+  shaum: UtensilsCrossed,
+  puasa: UtensilsCrossed,
+};
 
 const DEFAULT_ROWS: MutabaahRow[] = [
   { icon: BookOpen, label: "Tilawah", ratio: "30/30", grade: "A", color: "text-emerald-500" },
@@ -36,16 +49,35 @@ export function MutabaahSection({ rows = DEFAULT_ROWS }: MutabaahSectionProps) {
       </h3>
       <div className="rounded-2xl border border-brand-line bg-white px-4 py-2 shadow-sm divide-y divide-brand-line/40">
         {rows.map((row) => {
-          const Icon = row.icon;
+          const Icon = row.icon ?? ICON_MAP[row.label.toLowerCase()] ?? BookOpen;
           return (
-            <div key={row.label} className="flex items-center justify-between py-2.5">
-              <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-brand-cyan" />
-                <span className="text-xs font-bold text-brand-navy">{row.label}</span>
+            <div
+              key={row.label}
+              className="flex items-center justify-between py-2.5"
+            >
+              <div className="flex items-center gap-2.5">
+                <Icon className={`h-4 w-4 ${row.color ?? "text-brand-cyan"}`} />
+                <span className="text-xs font-bold text-brand-navy">
+                  {row.label}
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-brand-text-muted">{row.ratio}</span>
-                <span className={`text-sm font-extrabold ${row.color}`}>{row.grade}</span>
+                <span className="text-xs font-bold text-brand-navy">
+                  {row.ratio}
+                </span>
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 text-xs font-extrabold ${
+                    row.grade === "A"
+                      ? "text-emerald-600 bg-emerald-50"
+                      : row.grade === "B"
+                      ? "text-brand-cyan bg-brand-cyan/10"
+                      : row.grade === "C"
+                      ? "text-amber-600 bg-amber-50"
+                      : "text-red-600 bg-red-50"
+                  }`}
+                >
+                  {row.grade}
+                </span>
               </div>
             </div>
           );

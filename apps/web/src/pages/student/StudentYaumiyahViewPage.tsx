@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft,
   BookOpen,
@@ -15,7 +15,9 @@ import {
   type DayItem,
 } from "@/components/student/DayStripPicker";
 import { Button } from "@/components/ui/button";
+import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import { SURAH_LIST } from "@muhsin/shared";
 
 const CODE_LABELS: Record<string, { desc: string; status: "success" | "warning" | "danger" | "off" }> = {
   BA: { desc: "Berjamaah di awal waktu", status: "success" },
@@ -26,46 +28,102 @@ const CODE_LABELS: Record<string, { desc: string; status: "success" | "warning" 
   T: { desc: "Tidak sholat", status: "off" },
 };
 
-function generateDays(): DayItem[] {
-  const days: DayItem[] = [];
-  const today = new Date();
-  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
-  for (let i = 4; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dayName = dayNames[d.getDay()];
-    const dayNum = d.getDate();
-    const fullDate = d.toISOString().slice(0, 10);
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getCenteredDays(centerDateStr: string): DayItem[] {
+  const target = parseLocalDate(centerDateStr);
+  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const days: DayItem[] = [];
+
+  for (let offset = -2; offset <= 2; offset++) {
+    const d = new Date(target);
+    d.setDate(d.getDate() + offset);
     days.push({
-      dayName,
-      dayNum,
-      fullDate,
+      dayName: dayNames[d.getDay()],
+      dayNum: d.getDate(),
+      fullDate: formatLocalDate(d),
       status: "empty",
     });
   }
   return days;
 }
 
-export function StudentYaumiyahViewPage() {
-  const days = generateDays();
-  const [selectedDayIdx, setSelectedDayIdx] = useState(4); // Default to today (index 4)
+interface StudentYaumiyahViewPageProps {
+  initialDate?: string;
+}
+
+export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: StudentYaumiyahViewPageProps) {
+  const [selectedDate, setSelectedDate] = useState(() => propInitialDate || formatLocalDate(new Date()));
+  const [days, setDays] = useState<DayItem[]>(() => getCenteredDays(propInitialDate || formatLocalDate(new Date())));
+  const selectedDayIdx = 2; // Always index 2 (center item)
+
   const [ibadah, setIbadah] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
 
-  const selectedDate = days[selectedDayIdx]?.fullDate ?? new Date().toISOString().slice(0, 10);
+  // Sync if propInitialDate changes from route
+  useEffect(() => {
+    if (propInitialDate && propInitialDate !== selectedDate) {
+      setSelectedDate(propInitialDate);
+    }
+  }, [propInitialDate]);
+
+  // Recalculate centered days whenever selectedDate changes
+  useEffect(() => {
+    setDays((prevDays) => {
+      const newCentered = getCenteredDays(selectedDate);
+      const statusMap = new Map(prevDays.map((d) => [d.fullDate, d.status]));
+      return newCentered.map((d) => ({
+        ...d,
+        status: statusMap.get(d.fullDate) ?? "empty",
+      }));
+    });
+  }, [selectedDate]);
+
+  const handleCloseToast = useCallback(() => setToast(null), []);
+
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const months = Array.from(new Set(days.map((d) => d.fullDate.slice(0, 7))));
+        const results = await Promise.all(
+          months.map((m) => api.getDailyIbadahHistory({ month: m }))
+        );
+        const historyMap = new Map<string, "submitted" | "draft">();
+        results.flat().forEach((h: any) => {
+          if (h?.date) {
+            historyMap.set(h.date, h.status === "submitted" ? "submitted" : "draft");
+          }
+        });
+        setDays((prevDays) =>
+          prevDays.map((d) => ({
+            ...d,
+            status: historyMap.get(d.fullDate) ?? "empty",
+          }))
+        );
+      } catch {
+        // Keep existing
+      }
+    }
+    loadHistory();
+  }, [selectedDate]);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const storedDate = sessionStorage.getItem("viewIbadahDate");
-        const targetDate = storedDate || selectedDate;
-        if (storedDate) {
-          sessionStorage.removeItem("viewIbadahDate");
-        }
-
-        const data = await api.getDailyIbadah(targetDate);
+        const data = await api.getDailyIbadah(selectedDate);
         setIbadah(data);
       } catch {
         setIbadah(null);
@@ -76,13 +134,60 @@ export function StudentYaumiyahViewPage() {
     load();
   }, [selectedDate]);
 
+  function handleSelectDay(idx: number) {
+    const clickedDate = days[idx]?.fullDate;
+    if (clickedDate && clickedDate !== selectedDate) {
+      setSelectedDate(clickedDate);
+      window.location.hash = `#/yaumiyah-view?date=${clickedDate}`;
+    }
+  }
+
+  function handlePrev() {
+    const d = parseLocalDate(selectedDate);
+    d.setDate(d.getDate() - 1);
+    const newDate = formatLocalDate(d);
+    setSelectedDate(newDate);
+    window.location.hash = `#/yaumiyah-view?date=${newDate}`;
+  }
+
+  function handleNext() {
+    const d = parseLocalDate(selectedDate);
+    d.setDate(d.getDate() + 1);
+    const newDate = formatLocalDate(d);
+    setSelectedDate(newDate);
+    window.location.hash = `#/yaumiyah-view?date=${newDate}`;
+  }
+
   function handleBack() {
     window.location.hash = "#/yaumiyah";
   }
 
   function handleEdit() {
-    sessionStorage.setItem("inputIbadahDate", selectedDate);
-    window.location.hash = "#/yaumiyah-input";
+    window.location.hash = `#/yaumiyah-input?date=${selectedDate}`;
+  }
+
+  async function handleSubmit() {
+    if (!ibadah) return;
+    setSubmitting(true);
+    try {
+      await api.submitDailyIbadah({
+        date: selectedDate,
+        sholatFardhu: ibadah.sholatFardhu,
+        sholatRawatib: ibadah.sholatRawatib || [],
+        tahajud: !!ibadah.tahajud,
+        dhuha: !!ibadah.dhuha,
+        puasaSunnah: ibadah.puasaSunnah || null,
+        tilawah: ibadah.tilawah || null,
+      });
+      setToast({ message: "Ibadah yaumiyah berhasil dikirim!", variant: "success" });
+      setTimeout(() => {
+        window.location.hash = "#/yaumiyah";
+      }, 1200);
+    } catch (err: any) {
+      setToast({ message: err.message || "Gagal mengirim ibadah", variant: "warning" });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const fardhu = ibadah?.sholatFardhu ?? {};
@@ -119,7 +224,9 @@ export function StudentYaumiyahViewPage() {
           <DayStripPicker
             days={days}
             selectedIndex={selectedDayIdx}
-            onSelectDay={setSelectedDayIdx}
+            onSelectDay={handleSelectDay}
+            onPrev={handlePrev}
+            onNext={handleNext}
           />
 
           {loading ? (
@@ -145,7 +252,16 @@ export function StudentYaumiyahViewPage() {
                 <div className="mt-3 rounded-xl border border-brand-line/60 bg-gray-50 px-3 py-2.5">
                   <p className="text-xs font-bold tracking-wider text-brand-cyan uppercase">
                     {tilawah && tilawah.surahStart
-                      ? `Surah ${tilawah.surahStart}: ${tilawah.ayatStart}-${tilawah.ayatEnd}`
+                      ? (() => {
+                          const sStart = SURAH_LIST.find((s) => s.no === tilawah.surahStart);
+                          const sEnd = SURAH_LIST.find((s) => s.no === tilawah.surahEnd);
+                          const startName = sStart?.nameLatin || `Surah ${tilawah.surahStart}`;
+                          if (tilawah.surahStart === tilawah.surahEnd || !tilawah.surahEnd) {
+                            return `${startName}: ${tilawah.ayatStart}-${tilawah.ayatEnd}`;
+                          }
+                          const endName = sEnd?.nameLatin || `Surah ${tilawah.surahEnd}`;
+                          return `${startName}:${tilawah.ayatStart} — ${endName}:${tilawah.ayatEnd}`;
+                        })()
                       : "Tidak ada tilawah hari ini"}
                   </p>
                 </div>
@@ -247,7 +363,7 @@ export function StudentYaumiyahViewPage() {
                     Sunnah Lainnya
                   </h2>
                 </div>
-                <div className="mt-3 divide-y divide-brand-line/40 flex justify-between">
+                <div className="mt-3 flex items-center justify-between px-2">
                   {[
                     { name: "Tahajud", done: !!ibadah?.tahajud },
                     { name: "Dhuha", done: !!ibadah?.dhuha },
@@ -255,7 +371,7 @@ export function StudentYaumiyahViewPage() {
                   ].map((item) => (
                     <div
                       key={item.name}
-                      className="flex items-center justify-between gap-2 px-4 py-2"
+                      className="flex items-center gap-2"
                     >
                       <span className="text-xs font-bold text-brand-navy">
                         {item.name}
@@ -263,7 +379,7 @@ export function StudentYaumiyahViewPage() {
                       {item.done ? (
                         <CheckCircle2 className="h-4 w-4 text-brand-cyan" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-gray-400" />
+                        <XCircle className="h-4 w-4 text-red-400" />
                       )}
                     </div>
                   ))}
@@ -276,22 +392,44 @@ export function StudentYaumiyahViewPage() {
 
       {/* Sticky Bottom Actions */}
       <div className="shrink-0 flex gap-3 border-t border-brand-line bg-white px-4 py-3 shadow-sm">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleEdit}
-          className="h-10 flex-1 rounded-xl border-brand-amber text-xs font-bold text-brand-amber hover:bg-brand-amber/10"
-        >
-          UBAH
-        </Button>
-        <Button
-          type="button"
-          onClick={handleBack}
-          className="h-10 flex-1 rounded-xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
-        >
-          KEMBALI
-        </Button>
+        {ibadah?.status === "draft" ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleEdit}
+              disabled={submitting}
+              className="h-11 flex-1 rounded-xl border-brand-amber font-bold text-brand-amber hover:bg-brand-amber/10"
+            >
+              UBAH
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || !ibadah}
+              className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "KIRIM"}
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            onClick={handleBack}
+            className="h-11 w-full rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+          >
+            KEMBALI
+          </Button>
+        )}
       </div>
+
+      {toast ? (
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onClose={handleCloseToast}
+        />
+      ) : null}
     </div>
   );
 }

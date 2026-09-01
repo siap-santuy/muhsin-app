@@ -13,24 +13,43 @@ interface StudentMonthlyRaportPageProps {
   year?: string;
 }
 
+const MONTH_MAP: Record<string, string> = {
+  juli: "07",
+  agustus: "08",
+  september: "09",
+  oktober: "10",
+  november: "11",
+  desember: "12",
+  januari: "01",
+  februari: "02",
+  maret: "03",
+  april: "04",
+  mei: "05",
+  juni: "06",
+};
+
 export function StudentMonthlyRaportPage({
   onBack,
-  month = "Juli",
-  year = "2026",
+  month = "September",
+  year = "2026/2027",
 }: StudentMonthlyRaportPageProps) {
   const [raport, setRaport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const displayYear = year.split("/")[0] || year;
-  const monthCode = `${displayYear}-07`;
+  const cleanMonth = (month || "").trim().toLowerCase();
+  const monthNum = MONTH_MAP[cleanMonth] ?? (cleanMonth.padStart(2, "0").slice(0, 2) || "09");
+  const [startYear, endYear] = (year || "2026/2027").split("/").map((s) => s.trim());
+  const numericMonth = Number(monthNum);
+  const targetYear = numericMonth >= 7 ? startYear : (endYear || startYear);
+  const monthCode = `${targetYear}-${monthNum}`;
 
   useEffect(() => {
     async function load() {
       try {
         const data = await api.getMonthlyRaport({ month: monthCode });
         setRaport(data);
-      } catch {
-        // Fallback
+      } catch (err) {
+        console.error("Failed to load monthly raport:", err);
       } finally {
         setLoading(false);
       }
@@ -80,7 +99,7 @@ export function StudentMonthlyRaportPage({
         <div className="flex flex-col gap-5">
           {/* Header Info Student */}
           <RaportStudentHeader
-            title={`Raport Bulan ${month} ${displayYear}`}
+            title={`Raport Bulan ${month} ${targetYear}`}
             studentName={student?.name}
             className={student?.className}
             pembimbingName={student?.pembimbingName}

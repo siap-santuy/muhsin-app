@@ -16,19 +16,26 @@ import { YaumiyahStatCard } from "@/components/student/YaumiyahStatCard";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function StudentYaumiyahPage() {
   const [stats, setStats] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const todayStr = formatLocalDate(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(() => todayStr.slice(0, 7));
 
   useEffect(() => {
     async function loadData() {
       try {
         const [statsData, historyData] = await Promise.all([
-          api.getDailyIbadahStats({ month: currentMonth }),
-          api.getDailyIbadahHistory({ month: currentMonth }),
+          api.getDailyIbadahStats({ month: selectedMonth }),
+          api.getDailyIbadahHistory({ month: selectedMonth }),
         ]);
         setStats(statsData);
         setHistory(historyData);
@@ -39,15 +46,37 @@ export function StudentYaumiyahPage() {
       }
     }
     loadData();
-  }, [currentMonth]);
+  }, [selectedMonth]);
+
+  function handleMonthChange(year: number, month: number) {
+    const formatted = `${year}-${String(month + 1).padStart(2, "0")}`;
+    setSelectedMonth(formatted);
+  }
+
+  function getStatusForDate(date: Date) {
+    const dateStr = formatLocalDate(date);
+    const entry = history.find((h) => h.date === dateStr);
+    if (entry) {
+      return entry.status === "submitted" ? "submitted" : "draft";
+    }
+    return undefined;
+  }
+
+  const isTodaySubmitted = history.some(
+    (h) => h.date === todayStr && h.status === "submitted"
+  );
 
   function handleGoToInput() {
-    window.location.hash = "#/yaumiyah-input";
+    if (isTodaySubmitted) return;
+    window.location.hash = `#/yaumiyah-input?date=${todayStr}`;
   }
 
   function handleGoToView(date?: string) {
-    if (date) sessionStorage.setItem("viewIbadahDate", date);
-    window.location.hash = "#/yaumiyah-view";
+    if (date) {
+      window.location.hash = `#/yaumiyah-view?date=${date}`;
+    } else {
+      window.location.hash = "#/yaumiyah-view";
+    }
   }
 
   const statItems = [
@@ -94,14 +123,27 @@ export function StudentYaumiyahPage() {
       <AppHeader />
       <main className="flex-1 overflow-y-auto px-4 pt-1 pb-4">
         <div className="flex flex-col gap-4">
-          <MonthCalendar />
+          <MonthCalendar
+            getStatusForDate={getStatusForDate}
+            onMonthChange={handleMonthChange}
+            onSelectDate={(date) => {
+              const dateStr = formatLocalDate(date);
+              handleGoToView(dateStr);
+            }}
+          />
 
           <Button
             type="button"
             onClick={handleGoToInput}
-            className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] hover:bg-brand-cyan-dark"
+            disabled={isTodaySubmitted}
+            className={`h-11 w-full rounded-xl font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] transition-all ${
+              isTodaySubmitted
+                ? "bg-gray-400 cursor-not-allowed opacity-75 shadow-none"
+                : "bg-brand-cyan hover:bg-brand-cyan-dark"
+            }`}
           >
-            <PenLine className="h-5 w-5 mr-2" /> ISI IBADAH HARI INI
+            <PenLine className="h-5 w-5 mr-2" />
+            {isTodaySubmitted ? "IBADAH HARI INI SUDAH TERKIRIM" : "ISI IBADAH HARI INI"}
           </Button>
 
           {loading ? (

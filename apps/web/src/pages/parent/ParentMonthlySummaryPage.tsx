@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   ActivityCard,
   type ActivityCardProps,
@@ -7,6 +7,7 @@ import {
 import { MonthCalendar } from "@/components/student/MonthCalendar";
 import { Pagination } from "@/components/ui/Pagination";
 import { TabBar } from "@/components/ui/TabBar";
+import { api } from "@/lib/api";
 
 const TABS = [
   { id: "ziyadah", label: "Ziyadah" },
@@ -20,79 +21,6 @@ const RIWAYAT_TITLE: Record<string, string> = {
   tahsin: "Riwayat Tahsin",
 };
 
-const ZIYADAH_ACTIVITIES: ActivityCardProps[] = [
-  {
-    date: "Sen, 2 Nov 2025",
-    statusLabel: "Setoran",
-    statusType: "setoran",
-    title: "Ziyadah — Al-Baqarah: 1-5",
-    metrics: [
-      { label: "Tajwid", value: 90 },
-      { label: "Kelancaran", value: 85 },
-    ],
-  },
-  {
-    date: "Sen, 9 Nov 2025",
-    statusLabel: "Setoran",
-    statusType: "setoran",
-    title: "Ziyadah — Al-Baqarah: 6-10",
-    metrics: [
-      { label: "Tajwid", value: 95 },
-      { label: "Kelancaran", value: 90 },
-    ],
-  },
-  {
-    date: "Rab, 11 Nov 2025",
-    statusLabel: "Izin",
-    statusType: "izin",
-    title: "Ziyadah — Al-Baqarah: 11-15",
-  },
-];
-
-const MUROJAAH_ACTIVITIES: ActivityCardProps[] = [
-  {
-    date: "Sel, 3 Nov 2025",
-    statusLabel: "Setoran",
-    statusType: "setoran",
-    title: "Murojaah — Al-Fatihah: 1-7",
-    metrics: [
-      { label: "Tajwid", value: 95 },
-      { label: "Kelancaran", value: 98 },
-    ],
-  },
-  {
-    date: "Kam, 5 Nov 2025",
-    statusLabel: "Setoran",
-    statusType: "setoran",
-    title: "Murojaah — An-Nas: 1-6",
-    metrics: [
-      { label: "Tajwid", value: 92 },
-      { label: "Kelancaran", value: 95 },
-    ],
-  },
-];
-
-const TAHSIN_ACTIVITIES: ActivityCardProps[] = [
-  {
-    date: "Sel, 3 Nov 2025",
-    statusLabel: "Setoran",
-    statusType: "setoran",
-    title: "Talaqi — Halaman 5-10",
-    metrics: [
-      { label: "Makhroj", value: 85 },
-      { label: "Tajwid", value: 90 },
-      { label: "Kelancaran", value: 88 },
-      { label: "Fashohah", value: 82 },
-    ],
-  },
-];
-
-const ACTIVITIES_MAP: Record<string, ActivityCardProps[]> = {
-  ziyadah: ZIYADAH_ACTIVITIES,
-  murojaah: MUROJAAH_ACTIVITIES,
-  tahsin: TAHSIN_ACTIVITIES,
-};
-
 const PER_PAGE = 4;
 
 const LEGEND = [
@@ -102,11 +30,100 @@ const LEGEND = [
   { label: "Alpa", color: "bg-red-500" },
 ];
 
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatIndonesianDate(dateStr: string): string {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+  ];
+  return `${dayNames[dateObj.getDay()]}, ${d} ${monthNames[m - 1]} ${y}`;
+}
+
 export function ParentMonthlySummaryPage() {
   const [activeTab, setActiveTab] = useState("ziyadah");
   const [page, setPage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState(() => formatLocalDate(new Date()).slice(0, 7));
+  const [setoranList, setSetoranList] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const activities = ACTIVITIES_MAP[activeTab] ?? [];
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const [dashData, historyData] = await Promise.all([
+          api.getDashboardSummary(),
+          api.getSetoranHistory({ month: selectedMonth }),
+        ]);
+        setSummary(dashData);
+        setSetoranList(historyData || []);
+      } catch {
+        setSetoranList([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [selectedMonth]);
+
+  function handleMonthChange(year: number, month: number) {
+    const formatted = `${year}-${String(month + 1).padStart(2, "0")}`;
+    setSelectedMonth(formatted);
+  }
+
+  function handleTabChange(id: string) {
+    setActiveTab(id);
+    setPage(1);
+  }
+
+  const childName = summary?.childName ?? "Ananda";
+
+  const filteredSetoran = setoranList.filter((s) => {
+    const code = (s.subcategoryCode || s.categoryCode || "").toLowerCase();
+    const name = (s.subcategoryName || s.categoryName || "").toLowerCase();
+    if (activeTab === "ziyadah") return code.includes("ziyadah") || name.includes("ziyadah");
+    if (activeTab === "murojaah") return code.includes("murojaah") || name.includes("murojaah");
+    if (activeTab === "tahsin") return code.includes("tahsin") || code.includes("talaqi") || code.includes("sabiq") || name.includes("tahsin");
+    return true;
+  });
+
+  const activities: ActivityCardProps[] = filteredSetoran.map((s) => {
+    const metrics: Array<{ label: string; value: number }> = [];
+    if (s.scores && typeof s.scores === "object") {
+      Object.entries(s.scores).forEach(([k, v]) => {
+        metrics.push({
+          label: k.charAt(0).toUpperCase() + k.slice(1),
+          value: Number(v) || 0,
+        });
+      });
+    }
+
+    let title = s.subcategoryName || s.categoryName || "Setoran";
+    if (s.referenceStart?.surah) {
+      title = `${title} — ${s.referenceStart.surah}: ${s.referenceStart.ayat}-${s.referenceEnd?.ayat ?? s.referenceStart.ayat}`;
+    } else if (s.referenceStart?.halaman) {
+      title = `${title} — Halaman ${s.referenceStart.halaman}`;
+    }
+
+    return {
+      date: formatIndonesianDate(s.date),
+      statusLabel: s.status === "sakit" ? "Sakit" : s.status === "izin" ? "Izin" : s.status === "alpa" ? "Alpa" : "Setoran",
+      statusType: (s.status === "sakit" || s.status === "izin" || s.status === "alpa") ? s.status : "setoran",
+      title,
+      metrics: metrics.length > 0 ? metrics : undefined,
+    };
+  });
+
   const totalPages = Math.max(1, Math.ceil(activities.length / PER_PAGE));
   const safePage = Math.min(page, totalPages);
   const paged = activities.slice(
@@ -114,13 +131,15 @@ export function ParentMonthlySummaryPage() {
     safePage * PER_PAGE
   );
 
-  function handleTabChange(id: string) {
-    setActiveTab(id);
-    setPage(1);
-  }
-
-  function handleBack() {
-    window.location.hash = "#/dashboard";
+  function getStatusForDate(date: Date) {
+    const dateStr = formatLocalDate(date);
+    const entry = setoranList.find((s) => s.date === dateStr);
+    if (entry) {
+      if (entry.status === "sakit") return "sakit";
+      if (entry.status === "alpa") return "alpa";
+      return "setoran";
+    }
+    return undefined;
   }
 
   return (
@@ -129,15 +148,15 @@ export function ParentMonthlySummaryPage() {
       <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
         <button
           type="button"
-          onClick={handleBack}
+          onClick={() => (window.location.hash = "#/dashboard")}
           aria-label="Kembali"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
         >
           <ArrowLeft className="h-4 w-4 text-brand-cyan" />
         </button>
         <div className="text-center">
-          <h1 className="text-lg font-bold text-brand-cyan">Progress TTQ</h1>
-          <p className="text-[11px] font-semibold text-brand-navy">Ananda: Fulan bin Fulan</p>
+          <h1 className="text-xl font-bold text-brand-cyan">Progress TTQ</h1>
+          <p className="text-[11px] font-semibold text-brand-navy">Ananda: {childName}</p>
         </div>
         <div className="h-10 w-10" />
       </div>
@@ -155,7 +174,10 @@ export function ParentMonthlySummaryPage() {
 
         {/* Calendar */}
         <div className="mt-3 px-4">
-          <MonthCalendar />
+          <MonthCalendar
+            getStatusForDate={getStatusForDate}
+            onMonthChange={handleMonthChange}
+          />
         </div>
 
         {/* Legend */}
@@ -179,11 +201,22 @@ export function ParentMonthlySummaryPage() {
             {activities.length} aktifitas
           </span>
         </div>
-        <div className="mt-2 space-y-3 px-4">
-          {paged.map((a, i) => (
-            <ActivityCard key={`${activeTab}-${safePage}-${i}`} {...a} />
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="flex h-32 items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+          </div>
+        ) : activities.length === 0 ? (
+          <div className="mx-4 mt-3 rounded-2xl border border-brand-line bg-white p-6 text-center text-xs text-brand-text-muted">
+            Belum ada riwayat setoran {activeTab} untuk bulan ini.
+          </div>
+        ) : (
+          <div className="mt-2 space-y-3 px-4">
+            {paged.map((a, i) => (
+              <ActivityCard key={`${activeTab}-${safePage}-${i}`} {...a} />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 ? (

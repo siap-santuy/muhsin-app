@@ -1,11 +1,10 @@
-import { useRef, useLayoutEffect, useCallback, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface DayItem {
   dayName: string;
   dayNum: number;
   fullDate: string;
-  status?: "setoran" | "sakit" | "alpa" | "empty";
+  status?: "setoran" | "sakit" | "alpa" | "empty" | "submitted" | "draft";
 }
 
 interface DayStripPickerProps {
@@ -17,17 +16,27 @@ interface DayStripPickerProps {
 }
 
 const DOT_COLORS: Record<string, string> = {
+  submitted: "bg-emerald-500",
   setoran: "bg-emerald-500",
+  draft: "bg-amber-500",
   sakit: "bg-amber-500",
   alpa: "bg-red-500",
   empty: "bg-gray-300",
 };
 
-// ponytail: fixed item width keeps offset math simple; upgrade to measured widths if items vary
-const ITEM_W = 48;
-const GAP = 8;
 const ITEM_H = 56; // fixed height — prevents layout shift on selection change
-const SWIPE_THRESHOLD = 30; // px drag before snapping to next/prev
+
+function formatIndonesianFullDate(dateStr: string): string {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const monthNames = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  return `${dayNames[dateObj.getDay()]}, ${d} ${monthNames[m - 1]} ${y}`;
+}
 
 export function DayStripPicker({
   days,
@@ -36,132 +45,69 @@ export function DayStripPicker({
   onPrev,
   onNext,
 }: DayStripPickerProps) {
-  const selectedDay = days[selectedIndex];
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [containerW, setContainerW] = useState(0);
-
-  // Touch/drag state
-  const dragRef = useRef({ startX: 0, dragging: false });
-
-  // Measure container once + on resize
-  useLayoutEffect(() => {
-    const el = trackRef.current?.parentElement;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width));
-    ro.observe(el);
-    setContainerW(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-
-  // Offset so selectedIndex is centered
-  const totalItemW = ITEM_W + GAP;
-  const centerOffset = containerW / 2 - ITEM_W / 2;
-  const translateX = centerOffset - selectedIndex * totalItemW;
-
-  const clampIdx = useCallback(
-    (i: number) => Math.max(0, Math.min(days.length - 1, i)),
-    [days.length],
-  );
-
-  const handlePrev = useCallback(() => {
-    if (onPrev) return onPrev();
-    onSelectDay(clampIdx(selectedIndex - 1));
-  }, [onPrev, selectedIndex, onSelectDay, clampIdx]);
-
-  const handleNext = useCallback(() => {
-    if (onNext) return onNext();
-    onSelectDay(clampIdx(selectedIndex + 1));
-  }, [onNext, selectedIndex, onSelectDay, clampIdx]);
-
-  // --- Touch handlers ---
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    dragRef.current = { startX: e.touches[0].clientX, dragging: true };
-  }, []);
-
-  const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (!dragRef.current.dragging) return;
-      const dx = e.changedTouches[0].clientX - dragRef.current.startX;
-      dragRef.current.dragging = false;
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-      // swipe left → next, swipe right → prev
-      if (dx < 0) handleNext();
-      else handlePrev();
-    },
-    [handleNext, handlePrev],
-  );
+  const selectedDay = days[selectedIndex] ?? days[2] ?? days[0];
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex w-full items-center justify-between px-2">
+      <div className="flex w-full items-center justify-between gap-1 px-1">
         <button
           type="button"
-          onClick={handlePrev}
-          className="shrink-0 p-1 text-brand-navy hover:opacity-70"
+          onClick={onPrev}
+          aria-label="Hari sebelumnya"
+          className="shrink-0 rounded-lg p-1.5 text-brand-navy hover:bg-gray-100 transition-colors"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
 
-        {/* Carousel viewport */}
-        <div
-          className="relative flex-1 overflow-hidden"
-          style={{ height: `${ITEM_H}px` }}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          <div
-            ref={trackRef}
-            className="flex h-full items-center transition-transform duration-300 ease-out"
-            style={{
-              transform: `translateX(${translateX}px)`,
-              gap: `${GAP}px`,
-            }}
-          >
-            {days.map((item, idx) => {
-              const isSelected = idx === selectedIndex;
-              return (
-                <button
-                  key={`${item.dayName}-${item.dayNum}`}
-                  type="button"
-                  onClick={() => onSelectDay(idx)}
-                  className={`flex shrink-0 flex-col items-center justify-center rounded-xl border-2 transition-colors ${
-                    isSelected
-                      ? "border-brand-cyan bg-white shadow-sm"
-                      : "border-transparent"
+        {/* 5 Day Cards Grid centered */}
+        <div className="flex flex-1 items-center justify-center gap-1.5">
+          {days.map((item, idx) => {
+            const isSelected = idx === selectedIndex;
+            return (
+              <button
+                key={`${item.fullDate}-${idx}`}
+                type="button"
+                onClick={() => onSelectDay(idx)}
+                className={`flex flex-1 max-w-[56px] flex-col items-center justify-center rounded-xl border-2 py-1 transition-all ${
+                  isSelected
+                    ? "border-brand-cyan bg-white shadow-sm scale-105 z-10"
+                    : "border-transparent bg-transparent hover:bg-gray-50/80 opacity-85"
+                }`}
+                style={{ height: `${ITEM_H}px` }}
+              >
+                <span
+                  className={`text-[10px] font-bold ${
+                    isSelected ? "text-brand-cyan" : "text-brand-text-muted"
                   }`}
-                  style={{ width: `${ITEM_W}px`, height: `${ITEM_H}px` }}
                 >
+                  {item.dayName}
+                </span>
+                <span
+                  className={`text-base font-bold ${
+                    isSelected ? "text-brand-cyan" : "text-brand-navy"
+                  }`}
+                >
+                  {item.dayNum}
+                </span>
+                {item.status && item.status !== "empty" ? (
                   <span
-                    className={`text-[10px] font-bold ${
-                      isSelected ? "text-brand-cyan" : "text-brand-text-muted"
+                    className={`mt-1 h-2 w-2 rounded-full ring-1 ring-white shadow-xs ${
+                      DOT_COLORS[item.status] ?? "bg-gray-300"
                     }`}
-                  >
-                    {item.dayName}
-                  </span>
-                  <span
-                    className={`text-base font-bold ${
-                      isSelected ? "text-brand-cyan" : "text-brand-navy"
-                    }`}
-                  >
-                    {item.dayNum}
-                  </span>
-                  {item.status ? (
-                    <span
-                      className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
-                        DOT_COLORS[item.status] ?? "bg-transparent"
-                      }`}
-                    />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+                  />
+                ) : (
+                  <span className="mt-1 h-2 w-2 rounded-full bg-gray-200" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <button
           type="button"
-          onClick={handleNext}
-          className="shrink-0 p-1 text-brand-navy hover:opacity-70"
+          onClick={onNext}
+          aria-label="Hari berikutnya"
+          className="shrink-0 rounded-lg p-1.5 text-brand-navy hover:bg-gray-100 transition-colors"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -169,7 +115,7 @@ export function DayStripPicker({
 
       {selectedDay ? (
         <span className="mt-2 text-xs font-semibold text-brand-navy">
-          {selectedDay.fullDate}
+          {formatIndonesianFullDate(selectedDay.fullDate)}
         </span>
       ) : null}
     </div>
