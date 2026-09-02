@@ -173,6 +173,55 @@ Pipeline otomatis terdefinisi di `Jenkinsfile`:
 
 ---
 
+## 🎮 Aturan & Formula Sistem Gamifikasi Ihsan
+
+Sistem gamifikasi bertujuan mendorong konsistensi (*istiqomah*) ibadah harian santri dan capaian hafalan Al-Qur'an. Gamifikasi terdiri dari **EXP (Experience Points)**, **Level**, dan **Streak Istiqomah**.
+
+### 1. Formula Kenaikan Level (Level Up)
+- **Karakteristik**: Level bersifat kumulatif dan tidak pernah turun.
+- **Kebutuhan EXP**: Untuk mencapai Level $N$, dibutuhkan akumulasi total EXP sebesar:
+  $$\text{Target EXP (Level } N) = 100 \times N$$
+  $$\text{Total Akumulasi EXP} = \sum_{k=1}^{N-1} (100 \times k) = 50 \times N \times (N - 1)$$
+- **Tabel Level Threshold**:
+  - **Level 1**: 0 – 99 EXP
+  - **Level 2**: 100 – 299 EXP
+  - **Level 3**: 300 – 599 EXP
+  - **Level 4**: 600 – 999 EXP
+  - **Level 5**: 1000 – 1499 EXP (dan seterusnya).
+
+---
+
+### 2. Aturan Perolehan EXP (Points Breakdown)
+
+| Kategori Aktivitas | Aksi / Indikator | EXP yang Didapat |
+|---|---|---|
+| **Sholat Fardhu** | **BA** (Berjamaah Awal Waktu / Masjid) | **+5 EXP** per waktu |
+| | **MA** (Munfarid Awal Waktu) | **+4 EXP** per waktu |
+| | **BT** (Berjamaah Terlambat) | **+3 EXP** per waktu |
+| | **MT** (Munfarid Terlambat) | **+2 EXP** per waktu |
+| | **H** (Haid - khusus santriwati) | **+5 EXP** per waktu |
+| | **T** (Tidak Sholat) | **0 EXP** (Poin minus di raport) |
+| **Sholat Sunnah** | **Rawatib** (Qobliyah / Ba'diyah) | **+2 EXP** per jenis rawatib |
+| | **Sholat Dhuha** | **+5 EXP** |
+| | **Qiyamul Lail / Tahajud** | **+10 EXP** |
+| **Ibadah Tambahan** | **Puasa Sunnah** (Senin / Kamis / Ayyamul Bidh) | **+15 EXP** |
+| | **Tilawah Mandiri** | **+10 EXP** |
+| **Setoran TTQ** | **Ziyadah / Muroja'ah / Sabiq / Talaqi** (Nilai > 0) | **+20 EXP** per sesi setoran |
+| **Munaqosah** | **Lulus Ujian Munaqosah Kenaikan Juz** | **+100 EXP** + Badge Achievement |
+
+---
+
+### 3. Aturan Streak Istiqomah (Daily Streak)
+1. **Syarat Bertambah**:
+   - Status pengisian `daily_ibadah` hari itu telah di-**submit** (bukan sekadar draft).
+   - Seluruh 5 waktu sholat fardhu wajib terisi (Subuh, Dzuhur, Ashar, Maghrib, Isya).
+   - Pengisian dilakukan pada hari berturut-turut ($H \to H+1$).
+2. **Idempoten**: Mengedit / submit ulang data pada hari yang sama tidak menambah streak ganda.
+3. **Reset Streak**:
+   - Jika terlewat 1 hari tanpa pengisian lengkap (gap $> 1$ hari), streak kembali ke **0** (atau **1** pada hari pengisian berikutnya).
+
+---
+
 ## 🔒 Aturan Keamanan & Desain Sistem
 
 1. **Tenant Scoping**: Setiap query wajib memfilter berdasarkan `school_id`.
