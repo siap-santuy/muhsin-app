@@ -47,6 +47,7 @@ import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { registerSW } from "virtual:pwa-register";
 import "@/index.css";
 
@@ -257,6 +258,7 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
+      <OfflineBanner />
       <App />
       <ToastContainer />
     </QueryClientProvider>

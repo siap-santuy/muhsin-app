@@ -8,11 +8,50 @@ import type {
   ChangePasswordInput,
   UserProfile,
 } from "@muhsin/shared";
+import {
+  addToOfflineQueue,
+  getOfflineQueue,
+  removeFromOfflineQueue,
+} from "./offlineQueue";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 export const SCHOOL_ID = import.meta.env.VITE_SCHOOL_ID || "school-default-id";
 
 const GENERIC_ERROR = "Terjadi kesalahan server";
+const OFFLINE_CACHE_PREFIX = "muhsin_offline_get_";
+
+function getOfflineCacheKey(endpoint: string): string {
+  try {
+    const raw = localStorage.getItem("muhsin-auth");
+    const user = raw ? JSON.parse(raw)?.state?.user : null;
+    const userId = user?.id || "guest";
+    const schoolId = user?.schoolId || SCHOOL_ID;
+    return `${OFFLINE_CACHE_PREFIX}${schoolId}_${userId}_${endpoint}`;
+  } catch {
+    return `${OFFLINE_CACHE_PREFIX}${SCHOOL_ID}_guest_${endpoint}`;
+  }
+}
+
+function saveToOfflineCache(endpoint: string, data: any): void {
+  try {
+    const key = getOfflineCacheKey(endpoint);
+    localStorage.setItem(key, JSON.stringify({ data, cachedAt: Date.now() }));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function getFromOfflineCache<T>(endpoint: string): T | null {
+  try {
+    const key = getOfflineCacheKey(endpoint);
+    const item = localStorage.getItem(key);
+    if (!item) return null;
+    const parsed = JSON.parse(item);
+    return (parsed?.data as T) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function getStoredRefreshToken(): string | null {
   try {
@@ -128,6 +167,7 @@ class ApiClient {
     endpoint: string,
     body?: any
   ): Promise<T> {
+    const isGet = method === "GET";
     const token = localStorage.getItem("access_token");
     const doFetch = (authToken: string | null) =>
       fetch(`${API_BASE}${endpoint}`, {
@@ -139,8 +179,22 @@ class ApiClient {
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
 
-    const res = await doFetch(token);
-    return handleResponse<T>(res, (newToken) => doFetch(newToken));
+    try {
+      const res = await doFetch(token);
+      const data = await handleResponse<T>(res, (newToken) => doFetch(newToken));
+      if (isGet && data !== undefined) {
+        saveToOfflineCache(endpoint, data);
+      }
+      return data;
+    } catch (err) {
+      if (isGet) {
+        const cached = getFromOfflineCache<T>(endpoint);
+        if (cached !== null) {
+          return cached;
+        }
+      }
+      throw err;
+    }
   }
 
   async login(input: LoginInput): Promise<LoginOutput> {
@@ -181,15 +235,92 @@ class ApiClient {
   }
 
   async saveDailyIbadahDraft(input: DailyIbadahInput) {
-    return this.request("POST", `/daily-ibadah/draft`, input);
+    try {
+      const res = await this.request("POST", `/daily-ibadah/draft`, input);
+      // Update local GET cache for this date immediately
+      saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
+        status: "draft",
+        ...input,
+      });
+      return res;
+    } catch (err) {
+      // Offline fallback: queue draft mutation and update local date cache
+      const raw = localStorage.getItem("muhsin-auth");
+      const user = raw ? JSON.parse(raw)?.state?.user : null;
+      addToOfflineQueue({
+        endpoint: "/daily-ibadah/draft",
+        method: "POST",
+        body: input,
+        schoolId: user?.schoolId || SCHOOL_ID,
+        userId: user?.id || "guest",
+      });
+      saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
+        status: "draft",
+        ...input,
+      });
+      return { success: true, offlineQueued: true };
+    }
   }
 
   async submitDailyIbadah(input: DailyIbadahInput) {
-    return this.request("POST", `/daily-ibadah/submit`, input);
+    try {
+      const res = await this.request("POST", `/daily-ibadah/submit`, input);
+      saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
+        status: "submitted",
+        ...input,
+      });
+      return res;
+    } catch (err) {
+      // Offline fallback: queue submission mutation and update local date cache
+      const raw = localStorage.getItem("muhsin-auth");
+      const user = raw ? JSON.parse(raw)?.state?.user : null;
+      addToOfflineQueue({
+        endpoint: "/daily-ibadah/submit",
+        method: "POST",
+        body: input,
+        schoolId: user?.schoolId || SCHOOL_ID,
+        userId: user?.id || "guest",
+      });
+      saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
+        status: "submitted",
+        ...input,
+      });
+      return { success: true, offlineQueued: true };
+    }
   }
 
   async createSetoran(input: CreateSetoranInput) {
-    return this.request("POST", `/setoran`, input);
+    try {
+      return await this.request("POST", `/setoran`, input);
+    } catch (err) {
+      const raw = localStorage.getItem("muhsin-auth");
+      const user = raw ? JSON.parse(raw)?.state?.user : null;
+      addToOfflineQueue({
+        endpoint: "/setoran",
+        method: "POST",
+        body: input,
+        schoolId: user?.schoolId || SCHOOL_ID,
+        userId: user?.id || "guest",
+      });
+      return { success: true, offlineQueued: true, id: `offline_${Date.now()}` };
+    }
+  }
+
+  async processOfflineQueue(): Promise<number> {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return 0;
+    let processed = 0;
+    for (const item of queue) {
+      try {
+        await this.request(item.method, item.endpoint, item.body);
+        removeFromOfflineQueue(item.id);
+        processed++;
+      } catch {
+        // Stop on first failure if offline
+        break;
+      }
+    }
+    return processed;
   }
 
   async getAssessmentCategories(): Promise<Array<{

@@ -42,9 +42,8 @@ export default defineConfig({
       },
       workbox: {
         // Cache static assets: JS, CSS, HTML, Fonts, Images
-        globPatterns: ["**/*.{js,css,html,ico,png,woff,woff2}"],
-        // brand/ folder has large SVGs with embedded base64 — skip precache
-        globIgnores: ["**/brand/**"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB to cover brand assets
         runtimeCaching: [
           {
             // Google Fonts Stylesheets
