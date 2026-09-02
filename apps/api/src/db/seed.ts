@@ -357,31 +357,34 @@ async function main() {
     }
   }
 
-  // 5.4 Students, Mappings, and Parents
-  const sctSheet = workbook.Sheets["student-class-teacher"];
-  const sctRows: ExcelStudentRow[] = xlsx.utils.sheet_to_json(sctSheet);
+  // 5.4 Students, Parents, Class Enrollment & Teacher Mappings
+  const mappingSheet = workbook.Sheets["student-parent-class-teacher"];
+  const mappingRows: any[] = xlsx.utils.sheet_to_json(mappingSheet);
 
-  console.log(`[seed] processing ${sctRows.length} student rows from Excel...`);
+  console.log(`[seed] processing ${mappingRows.length} mapping rows from Excel...`);
   const usedEmails = new Set<string>();
+  const usedStudentUsernames = new Set<string>();
   const teacherClassPairs = new Set<string>();
+  const studentMap = new Map<string, any>(); // username -> student user entity
 
   let studentCount = 0;
+  let parentCount = 0;
   let mappingCount = 0;
 
-  for (const row of sctRows) {
-    if (!row.fullname || !row.username) continue; // Skip empty rows
+  // 5.4.1 Seed Students first
+  for (const row of mappingRows) {
+    if (!row.username || !row.student_name) continue;
 
-    const fullname = row.fullname.trim();
-    const username = row.username.trim();
-    const className = row.class ? row.class.trim() : "";
-    const teacherName = row.teacher ? row.teacher.trim() : "";
+    const fullname = String(row.student_name).trim();
+    const username = String(row.username).trim().toLowerCase();
+    if (usedStudentUsernames.has(username)) continue;
+    usedStudentUsernames.add(username);
 
     // Determine unique email
-    let email = row.email ? row.email.trim().toLowerCase() : "";
+    let email = row.email ? String(row.email).trim().toLowerCase() : "";
     if (!email || usedEmails.has(email)) {
       email = `${username}@student.alfitrah.sch.id`;
     }
-    // If still duplicate, add random suffix
     if (usedEmails.has(email)) {
       email = `${username}.${Math.floor(Math.random() * 899 + 100)}@student.alfitrah.sch.id`;
     }
@@ -391,7 +394,6 @@ async function main() {
     const rawPassword = studentPasswordMap.get(username) || DEFAULT_PASSWORD;
     const pwdHash = await hash(rawPassword);
 
-    // Find or create Student user
     let student = (
       await db
         .select()
@@ -399,7 +401,7 @@ async function main() {
         .where(
           and(
             eq(users.schoolId, school.id),
-            eq(users.name, fullname),
+            eq(users.username, username),
             eq(users.role, "student")
           )
         )
@@ -423,65 +425,11 @@ async function main() {
       )[0];
       studentCount++;
     }
-
-    // Find or create Parent user
-    const parentUsername = `ortu_${username}`;
-    const parentEmail = `ortu.${username}@parent.alfitrah.sch.id`;
-    let parent = (
-      await db
-        .select()
-        .from(users)
-        .where(
-          and(
-            eq(users.schoolId, school.id),
-            eq(users.email, parentEmail),
-            eq(users.role, "parent")
-          )
-        )
-        .limit(1)
-    )[0];
-
-    if (!parent) {
-      parent = (
-        await db
-          .insert(users)
-          .values({
-            schoolId: school.id,
-            role: "parent",
-            name: `Orang Tua dari ${fullname}`,
-            username: parentUsername,
-            email: parentEmail,
-            passwordHash: defaultPasswordHash,
-            phone: null,
-          })
-          .returning()
-      )[0];
-    }
-
-    // Map Parent -> Student
-    const existingParentMapping = (
-      await db
-        .select()
-        .from(parentStudentMapping)
-        .where(
-          and(
-            eq(parentStudentMapping.schoolId, school.id),
-            eq(parentStudentMapping.parentId, parent.id),
-            eq(parentStudentMapping.studentId, student.id)
-          )
-        )
-        .limit(1)
-    )[0];
-
-    if (!existingParentMapping) {
-      await db.insert(parentStudentMapping).values({
-        schoolId: school.id,
-        parentId: parent.id,
-        studentId: student.id,
-      });
-    }
+    studentMap.set(username, student);
 
     // Class Enrollment & Teacher Mapping
+    const className = row.class ? String(row.class).trim() : "";
+    const teacherName = row.teacher ? String(row.teacher).trim() : "";
     const classId = classMap.get(className);
     const teacherId = teacherMap.get(teacherName);
 
@@ -568,17 +516,132 @@ async function main() {
     }
   }
 
+  // 5.4.2 Seed Parents & Parent-Student Mappings (Grouped by Parent Name)
+  const parentsGrouped = new Map<string, {
+    name: string;
+    email: string;
+    username: string;
+    studentUsernames: string[];
+  }>();
+
+  const usedParentUsernames = new Set<string>();
+
+  for (const row of mappingRows) {
+    if (!row.username || !row.student_name) continue;
+    const studentUsername = String(row.username).trim().toLowerCase();
+    const parentName = row.parent_name ? String(row.parent_name).trim() : `Orang Tua ${row.student_name}`;
+    const pKey = parentName.toLowerCase();
+    const rawEmail = row.email_parent ? String(row.email_parent).trim().toLowerCase() : "";
+
+    if (!parentsGrouped.has(pKey)) {
+      let baseUsername = `ortu_${parentName.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16)}`;
+      if (!baseUsername || baseUsername === "ortu_") {
+        baseUsername = `ortu_${studentUsername}`;
+      }
+      let finalUsername = baseUsername;
+      let counter = 1;
+      while (usedParentUsernames.has(finalUsername)) {
+        finalUsername = `${baseUsername}${counter++}`;
+      }
+      usedParentUsernames.add(finalUsername);
+
+      const email = rawEmail && !usedEmails.has(rawEmail)
+        ? rawEmail
+        : `${finalUsername}@parent.alfitrah.sch.id`;
+      usedEmails.add(email);
+
+      parentsGrouped.set(pKey, {
+        name: parentName,
+        email,
+        username: finalUsername,
+        studentUsernames: [studentUsername],
+      });
+    } else {
+      const existing = parentsGrouped.get(pKey)!;
+      existing.studentUsernames.push(studentUsername);
+      if (rawEmail && !usedEmails.has(rawEmail) && existing.email.endsWith("@parent.alfitrah.sch.id")) {
+        existing.email = rawEmail;
+        usedEmails.add(rawEmail);
+      }
+    }
+  }
+
+  console.log(`[seed] seeding ${parentsGrouped.size} distinct parents...`);
+
+  for (const pData of parentsGrouped.values()) {
+    let parentUser = (
+      await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.schoolId, school.id),
+            eq(users.username, pData.username),
+            eq(users.role, "parent")
+          )
+        )
+        .limit(1)
+    )[0];
+
+    if (!parentUser) {
+      parentUser = (
+        await db
+          .insert(users)
+          .values({
+            schoolId: school.id,
+            role: "parent",
+            name: pData.name,
+            username: pData.username,
+            email: pData.email,
+            passwordHash: defaultPasswordHash,
+            phone: null,
+          })
+          .returning()
+      )[0];
+      parentCount++;
+    }
+
+    // Map parent to all their children
+    for (const sUser of pData.studentUsernames) {
+      const studentEntity = studentMap.get(sUser);
+      if (!studentEntity) continue;
+
+      const existingParentMapping = (
+        await db
+          .select()
+          .from(parentStudentMapping)
+          .where(
+            and(
+              eq(parentStudentMapping.schoolId, school.id),
+              eq(parentStudentMapping.parentId, parentUser.id),
+              eq(parentStudentMapping.studentId, studentEntity.id)
+            )
+          )
+          .limit(1)
+      )[0];
+
+      if (!existingParentMapping) {
+        await db.insert(parentStudentMapping).values({
+          schoolId: school.id,
+          parentId: parentUser.id,
+          studentId: studentEntity.id,
+        });
+      }
+    }
+  }
+
   console.log(`\n[seed] SUCCESS:`);
   console.log(`- Created/verified ${classMap.size} classes`);
   console.log(`- Created/verified ${teacherMap.size} teachers`);
   console.log(`- Created/verified ${studentCount} students`);
+  console.log(`- Created/verified ${parentCount} parents`);
   console.log(`- Created/verified ${teacherClassPairs.size} teacher-class assignments`);
   console.log(`- Created/verified ${mappingCount} student-teacher group mappings`);
   console.log(`\nDemo Credentials:`);
   console.log(`- Koordinator: ${KOORDINATOR_EMAIL} / ${DEFAULT_PASSWORD}`);
   console.log(`- Guru (Contoh): asa@teacher.alfitrah.sch.id / ${DEFAULT_PASSWORD}`);
   console.log(`- Siswa (Contoh): abdulpradipta@student.alfitrah.sch.id / abdulpradipta2026`);
-  console.log(`- Ortu (Contoh): ortu.abdulpradipta@parent.alfitrah.sch.id / ${DEFAULT_PASSWORD}`);
+  console.log(`- Ortu (Contoh): ortu_daraindahpertiwi / ${DEFAULT_PASSWORD}`);
 }
 
 main()
