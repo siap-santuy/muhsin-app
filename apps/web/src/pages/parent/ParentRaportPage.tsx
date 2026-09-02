@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { api } from "@/lib/api";
 
 interface MonthDef {
   name: string;
@@ -56,6 +57,17 @@ export function ParentRaportPage({
   const [selectedSemester, setSelectedSemester] = useState<number>(
     defaultMonth.semester
   );
+  const [childName, setChildName] = useState<string>("Ananda");
+  const [childClass, setChildClass] = useState<string>("");
+
+  useEffect(() => {
+    api.getDashboardSummary()
+      .then((summary) => {
+        if (summary?.childName) setChildName(summary.childName);
+        if (summary?.childClassName) setChildClass(summary.childClassName);
+      })
+      .catch(() => {});
+  }, []);
 
   const isPastYear = selectedYear !== "2026/2027";
 
@@ -121,7 +133,8 @@ export function ParentRaportPage({
           {/* Header context ananda */}
           <div className="rounded-xl border border-brand-cyan/30 bg-brand-cyan/5 px-3 py-2 text-center">
             <p className="text-xs font-bold text-brand-navy">
-              Raport TTQ Ananda: <span className="text-brand-cyan-dark">Fulan bin Fulan</span>
+              Raport TTQ Ananda: <span className="text-brand-cyan-dark">{childName}</span>
+              {childClass ? <span className="text-brand-text-muted font-normal"> ({childClass})</span> : null}
             </p>
           </div>
 
