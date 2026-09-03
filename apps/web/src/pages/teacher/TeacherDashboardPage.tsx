@@ -166,22 +166,23 @@ export function TeacherDashboardPage() {
                     </span>
                   </button>
 
-                  {/* Murojaah */}
-                  <button
-                    type="button"
-                    onClick={() => (window.location.hash = "#/murojaah-input")}
-                    className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-white p-4 shadow-sm hover:border-brand-cyan/40 hover:shadow-md active:scale-95 transition-all text-center"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
-                      <Repeat className="h-6 w-6" />
-                    </div>
-                    <span className="mt-2.5 text-xs font-bold text-brand-navy">
-                      Muroja&apos;ah (Tahfidz)
-                    </span>
-                    <span className="mt-0.5 text-[10px] text-brand-text-muted">
-                      Ulang hafalan lama
-                    </span>
-                  </button>
+          {/* Munaqosah Request */}
+          <button
+            type="button"
+            onClick={() => (window.location.hash = "#/munaqosah-request")}
+            className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-white p-4 shadow-sm hover:border-brand-cyan/40 hover:shadow-md active:scale-95 transition-all text-center"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <span className="mt-2.5 text-xs font-bold text-brand-navy">
+              Munaqosah Request
+            </span>
+            <span className="mt-0.5 text-[10px] text-brand-text-muted">
+              Rekomendasi santri untuk munaqosah
+            </span>
+          </button>
+
 
                   {/* Sabiq */}
                   <button

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, BookOpen, ChevronDown, Loader2 } from "lucide-react";
+import { formatLocalDate } from "@/utils/date";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
