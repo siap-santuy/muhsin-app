@@ -275,7 +275,7 @@ export function TeacherRaportPage() {
           <button
             type="button"
             onClick={handleMonthlyClick}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-brand-cyan bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
+            className="flex w-full items-center justify-between rounded-2xl border-2 border-emerald-200 bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
           >
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">

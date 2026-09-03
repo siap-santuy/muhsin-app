@@ -63,8 +63,9 @@ interface StudentYaumiyahInputPageProps {
 }
 
 export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate }: StudentYaumiyahInputPageProps) {
-  const [selectedDate, setSelectedDate] = useState(() => propInitialDate || formatLocalDate(new Date()));
-  const [days, setDays] = useState<DayItem[]>(() => getCenteredDays(propInitialDate || formatLocalDate(new Date())));
+  const todayStr = formatLocalDate(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => propInitialDate || todayStr);
+  const [days, setDays] = useState<DayItem[]>(() => getCenteredDays(propInitialDate || todayStr));
   const selectedDayIdx = 2; // Always index 2 (center item)
 
   const [surahStart, setSurahStart] = useState("");
@@ -202,7 +203,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
 
   function handleSelectDay(idx: number) {
     const clickedDate = days[idx]?.fullDate;
-    if (clickedDate && clickedDate !== selectedDate) {
+    if (clickedDate && clickedDate !== selectedDate && clickedDate <= todayStr) {
       setSelectedDate(clickedDate);
       window.location.hash = `#/yaumiyah-input?date=${clickedDate}`;
     }
@@ -220,6 +221,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
     const d = parseLocalDate(selectedDate);
     d.setDate(d.getDate() + 1);
     const newDate = formatLocalDate(d);
+    if (newDate > todayStr) return;
     setSelectedDate(newDate);
     window.location.hash = `#/yaumiyah-input?date=${newDate}`;
   }
@@ -343,6 +345,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
             onSelectDay={handleSelectDay}
             onPrev={handlePrev}
             onNext={handleNext}
+            maxDate={todayStr}
           />
 
           {/* Tilawah Section */}

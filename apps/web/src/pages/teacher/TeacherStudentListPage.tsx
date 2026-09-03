@@ -62,7 +62,7 @@ export function TeacherStudentListPage() {
   function handleAction(type: "ziyadah" | "murojaah" | "sabiq" | "talaqi", studentId: string) {
     sessionStorage.setItem("selectedStudentId", studentId);
     setSelectedStudentForAction(null);
-    window.location.hash = `#/${type}-input`;
+    window.location.hash = `#/${type}-view?studentId=${studentId}`;
   }
 
   return (

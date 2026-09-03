@@ -13,6 +13,7 @@ interface DayStripPickerProps {
   onSelectDay: (index: number) => void;
   onPrev?: () => void;
   onNext?: () => void;
+  maxDate?: string;
 }
 
 const DOT_COLORS: Record<string, string> = {
@@ -38,14 +39,26 @@ function formatIndonesianFullDate(dateStr: string): string {
   return `${dayNames[dateObj.getDay()]}, ${d} ${monthNames[m - 1]} ${y}`;
 }
 
+function getTodayLocalDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function DayStripPicker({
   days,
   selectedIndex,
   onSelectDay,
   onPrev,
   onNext,
+  maxDate,
 }: DayStripPickerProps) {
+  const todayStr = getTodayLocalDate();
+  const effectiveMaxDate = maxDate || todayStr;
   const selectedDay = days[selectedIndex] ?? days[2] ?? days[0];
+  const isNextDisabled = selectedDay ? selectedDay.fullDate >= effectiveMaxDate : false;
 
   return (
     <div className="flex flex-col items-center">
@@ -63,16 +76,18 @@ export function DayStripPicker({
         <div className="flex flex-1 items-center justify-center gap-1.5">
           {days.map((item, idx) => {
             const isSelected = idx === selectedIndex;
+            const disabled = item.fullDate > effectiveMaxDate;
             return (
               <button
                 key={`${item.fullDate}-${idx}`}
                 type="button"
-                onClick={() => onSelectDay(idx)}
+                onClick={() => !disabled && onSelectDay(idx)}
+                disabled={disabled}
                 className={`flex flex-1 max-w-[56px] flex-col items-center justify-center rounded-xl border-2 py-1 transition-all ${
                   isSelected
                     ? "border-brand-cyan bg-white shadow-sm scale-105 z-10"
                     : "border-transparent bg-transparent hover:bg-gray-50/80 opacity-85"
-                }`}
+                } ${disabled ? "cursor-not-allowed opacity-30 pointer-events-none" : "cursor-pointer"}`}
                 style={{ height: `${ITEM_H}px` }}
               >
                 <span
@@ -106,8 +121,13 @@ export function DayStripPicker({
         <button
           type="button"
           onClick={onNext}
+          disabled={isNextDisabled}
           aria-label="Hari berikutnya"
-          className="shrink-0 rounded-lg p-1.5 text-brand-navy hover:bg-gray-100 transition-colors"
+          className={`shrink-0 rounded-lg p-1.5 text-brand-navy transition-colors ${
+            isNextDisabled
+              ? "cursor-not-allowed opacity-30 pointer-events-none"
+              : "hover:bg-gray-100"
+          }`}
         >
           <ChevronRight className="h-5 w-5" />
         </button>

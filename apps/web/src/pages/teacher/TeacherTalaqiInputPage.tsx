@@ -21,7 +21,8 @@ export function TeacherTalaqiInputPage() {
   const [fashohah, setFashohah] = useState("82");
   const [catatan, setCatatan] = useState("");
   const [statusKehadiran, setStatusKehadiran] = useState<"setoran" | "sakit" | "izin" | "alpa">("setoran");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const todayStr = formatLocalDate(new Date());
+  const [date, setDate] = useState(() => todayStr);
 
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
