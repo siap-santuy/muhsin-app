@@ -1,3 +1,34 @@
+export interface RaportSumatifTestTahfidz {
+  grade: string;
+  score: string;
+  arabicPredicate: string;
+  capaian: string;
+  tajwid: string;
+  kelancaran: string;
+}
+
+export interface RaportSumatifTestTilawah {
+  grade: string;
+  score: string;
+  arabicPredicate: string;
+  capaian: string;
+  tajwid: string;
+  kelancaran: string;
+}
+
+export interface RaportSumatifTestTertulis {
+  grade: string;
+  score: string;
+  arabicPredicate: string;
+  materi: string;
+}
+
+export interface RaportSumatif {
+  testTahfidz: RaportSumatifTestTahfidz;
+  testTilawah: RaportSumatifTestTilawah;
+  testTertulis: RaportSumatifTestTertulis;
+}
+
 export interface RaportDetailTtq {
   ziyadah: number;
   murojaah: number;
@@ -50,6 +81,7 @@ export interface MonthlyRaportData {
     color: string;
   }>;
   evaluasi: string | null;
+  sumatif?: RaportSumatif;
 }
 
 export interface SemesterRaportData {
@@ -96,4 +128,6 @@ export interface SemesterRaportData {
     color: string;
   }>;
   evaluasi: string | null;
+  sumatif?: RaportSumatif;
 }
+

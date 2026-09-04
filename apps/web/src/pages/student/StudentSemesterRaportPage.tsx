@@ -63,6 +63,7 @@ export function StudentSemesterRaportPage({
   const nilaiTtq = raport?.nilaiTtq;
   const detailTtq = raport?.detailTtq;
   const absensi = raport?.absensi;
+  const sumatif = raport?.sumatif;
   const mutabaah = raport?.mutabaah;
   const evaluasi = raport?.evaluasi;
 
@@ -105,7 +106,7 @@ export function StudentSemesterRaportPage({
           )}
 
           {/* Hasil Asesmen Sumatif TTQ Section */}
-          <SumatifSection />
+          <SumatifSection data={sumatif} />
 
           {/* Detail Tahfidz & Tahsin Section */}
           <DetailTahfidzTahsinSection {...detailTtq} />

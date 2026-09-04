@@ -328,6 +328,30 @@ export class DrizzleRaportRepository implements IRaportRepository {
         izinCount: 0,
         alpaCount: 0,
       },
+      sumatif: {
+        testTahfidz: {
+          grade: tahfidzGrade.grade,
+          score: `${avgTahfidz}/100`,
+          arabicPredicate: tahfidzGrade.arabic,
+          capaian: monthlyResults.map(m => m.nilaiTtq.tahfidz.capaian).filter(c => c !== "-").pop() || "-",
+          tajwid: cntTahfidz > 0 ? `${Math.round((sumZiyadah / cntTahfidz) * 10) / 10}` : "0",
+          kelancaran: cntTahfidz > 0 ? `${Math.round((sumMurojaah / cntTahfidz) * 10) / 10}` : "0",
+        },
+        testTilawah: {
+          grade: tahsinGrade.grade,
+          score: `${avgTahsin}/100`,
+          arabicPredicate: tahsinGrade.arabic,
+          capaian: monthlyResults.map(m => m.nilaiTtq.tahsin.capaian).filter(c => c !== "-").pop() || "-",
+          tajwid: cntTahsin > 0 ? `${Math.round((sumMakhroj / cntTahsin) * 10) / 10}` : "0",
+          kelancaran: cntTahsin > 0 ? `${Math.round((sumKelancaran / cntTahsin) * 10) / 10}` : "0",
+        },
+        testTertulis: {
+          grade: grade.grade,
+          score: `${nilaiAkhir}/100`,
+          arabicPredicate: grade.arabic,
+          materi: "-",
+        },
+      },
       kategoriList: [
         {
           name: "Tahfidz Al-Qur'an",

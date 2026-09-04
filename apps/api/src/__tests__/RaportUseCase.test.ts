@@ -69,6 +69,30 @@ describe("Raport Module UseCases", () => {
       { name: "Tahfidz", grade: "B", score: 86, arabicPredicate: "جيد جدا" },
       { name: "Tahsin", grade: "A", score: 92, arabicPredicate: "ممتاز" },
     ],
+    sumatif: {
+      testTahfidz: {
+        grade: "B",
+        score: "86/100",
+        arabicPredicate: "جيد جدا",
+        capaian: "Al-Baqarah: 1-5",
+        tajwid: "85.0",
+        kelancaran: "87.0",
+      },
+      testTilawah: {
+        grade: "A",
+        score: "92/100",
+        arabicPredicate: "ممتاز",
+        capaian: "Sabiq Jilid 3 Hal 1-5",
+        tajwid: "90.0",
+        kelancaran: "95.0",
+      },
+      testTertulis: {
+        grade: "B",
+        score: "89/100",
+        arabicPredicate: "جيد جدا",
+        materi: "-",
+      },
+    },
     mutabaah: mockMonthly.mutabaah,
     evaluasi: mockMonthly.evaluasi,
   };
