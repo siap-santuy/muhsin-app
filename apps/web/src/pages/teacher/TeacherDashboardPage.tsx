@@ -3,7 +3,6 @@ import {
   BookOpen,
   Loader2,
   Mic,
-  Repeat,
   Sparkles,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";

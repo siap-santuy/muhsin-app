@@ -3,14 +3,20 @@ import {
   Award,
   BookOpen,
   Download,
+  Edit2,
   Filter,
   Loader2,
+  Plus,
   Search,
+  Trash2,
   UserCheck,
   Users,
+  X,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { Pagination } from "@/components/ui/Pagination";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 interface StudentRecord {
@@ -31,19 +37,82 @@ export function KoorStudentPage() {
   const [classFilter, setClassFilter] = useState("all");
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await api.getStudents();
-        setStudents(data);
-      } catch {
-        // Fallback
-      } finally {
-        setLoading(false);
-      }
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentRecord | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    className: "VII Abu Bakar",
+    gender: "ikhwan" as "ikhwan" | "akhwat",
+    nisn: "",
+  });
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await api.getStudents();
+      setStudents(data);
+    } catch {
+      // Fallback
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     load();
   }, []);
+
+  async function handleSaveStudent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formData.name || !formData.email) {
+      toast.warning("Nama dan email wajib diisi");
+      return;
+    }
+
+    setModalLoading(true);
+    try {
+      if (editingStudent) {
+        await api.updateStudent(editingStudent.id, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          gender: formData.gender,
+          nisn: formData.nisn || null,
+        });
+        toast.success("Data santri berhasil diperbarui");
+      } else {
+        await api.createStudent({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          gender: formData.gender,
+          nisn: formData.nisn || null,
+        });
+        toast.success("Santri baru berhasil ditambahkan");
+      }
+      setIsModalOpen(false);
+      load();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal menyimpan data santri");
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  async function handleDeleteStudent(id: string, name: string) {
+    if (!window.confirm(`Yakin ingin menghapus santri "${name}"?`)) return;
+    try {
+      await api.deleteStudent(id);
+      toast.success("Santri berhasil dihapus");
+      load();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal menghapus santri");
+    }
+  }
 
   const PAGE_SIZE = 5;
 
@@ -101,6 +170,19 @@ export function KoorStudentPage() {
                 <option value="ix">Kelas IX</option>
               </select>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingStudent(null);
+                setFormData({ name: "", email: "", phone: "", className: "VII Abu Bakar", gender: "ikhwan", nisn: "" });
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 rounded-xl bg-brand-cyan px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tambah Santri</span>
+            </button>
 
             <button
               type="button"
@@ -245,13 +327,42 @@ export function KoorStudentPage() {
                           🔥 {st.currentStreak} Hari
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => (window.location.hash = "#/munaqosah")}
-                            className="rounded-lg bg-brand-navy/10 px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-all"
-                          >
-                            Detail Munaqosah
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingStudent(st);
+                                setFormData({
+                                  name: st.name,
+                                  email: st.email,
+                                  phone: st.phone || "",
+                                  className: st.className || "VII Abu Bakar",
+                                  gender: "ikhwan",
+                                  nisn: "",
+                                });
+                                setIsModalOpen(true);
+                              }}
+                              className="rounded-lg p-1.5 text-brand-navy hover:bg-brand-page hover:text-brand-cyan transition-colors"
+                              title="Edit Santri"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStudent(st.id, st.name)}
+                              className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
+                              title="Hapus Santri"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => (window.location.hash = "#/munaqosah")}
+                              className="rounded-lg bg-brand-navy/10 px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-all ml-1"
+                            >
+                              Munaqosah
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -270,6 +381,107 @@ export function KoorStudentPage() {
             <Pagination page={currentPage} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </div>
+
+        {/* Modal Add / Edit Santri */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h3 className="text-base font-bold text-brand-navy">
+                  {editingStudent ? "Edit Data Santri" : "Tambah Santri Baru"}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveStudent} className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Contoh: Muhammad Abdullah"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Contoh: abdullah@muhsin.sch.id"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">No. WhatsApp / HP</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="08123456789"
+                      className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">Jenis Kelamin</label>
+                    <select
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    >
+                      <option value="ikhwan">Ikhwan (Laki-laki)</option>
+                      <option value="akhwat">Akhwat (Perempuan)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Kelas</label>
+                  <select
+                    value={formData.className}
+                    onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="VII Abu Bakar">VII Abu Bakar</option>
+                    <option value="VII Umar">VII Umar</option>
+                    <option value="VIII Utsman">VIII Utsman</option>
+                    <option value="IX Ali">IX Ali</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-brand-line">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="rounded-xl border border-brand-line px-4 py-2 text-xs font-bold text-brand-navy hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <Button
+                    type="submit"
+                    disabled={modalLoading}
+                    className="rounded-xl bg-brand-cyan px-5 py-2 text-xs font-bold text-white hover:bg-brand-cyan-dark"
+                  >
+                    {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStudent ? "Simpan Perubahan" : "Tambah Santri"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </KoorShell>
   );

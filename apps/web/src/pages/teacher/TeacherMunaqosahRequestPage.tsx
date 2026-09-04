@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, BookOpen, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 export function TeacherMunaqosahRequestPage() {
-  const [students, setStudents] = useState<Array<{ id: string; name: string; className?: string }>>([]);
+  const [students, setStudents] = useState<Array<{ id: string; name: string; className?: string | null }>>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [juzKe, setJuzKe] = useState<number>(1);
   const [loading, setLoading] = useState(true);

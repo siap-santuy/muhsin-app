@@ -462,6 +462,35 @@ class ApiClient {
     return this.request("GET", `/students/${id}`);
   }
 
+  async createStudent(input: {
+    name: string;
+    email: string;
+    phone?: string | null;
+    classId?: string | null;
+    gender?: "ikhwan" | "akhwat";
+    nisn?: string | null;
+  }) {
+    return this.request("POST", `/students`, input);
+  }
+
+  async updateStudent(
+    id: string,
+    input: {
+      name?: string;
+      email?: string;
+      phone?: string | null;
+      classId?: string | null;
+      gender?: "ikhwan" | "akhwat";
+      nisn?: string | null;
+    }
+  ) {
+    return this.request("PUT", `/students/${id}`, input);
+  }
+
+  async deleteStudent(id: string) {
+    return this.request("DELETE", `/students/${id}`);
+  }
+
   async getTeachers(): Promise<Array<{
     id: string;
     name: string;
@@ -471,6 +500,69 @@ class ApiClient {
     studentCount: number;
   }>> {
     return this.request("GET", `/teachers`);
+  }
+
+  async createTeacher(input: {
+    name: string;
+    email: string;
+    phone?: string | null;
+    classId?: string | null;
+  }) {
+    return this.request("POST", `/teachers`, input);
+  }
+
+  async updateTeacher(
+    id: string,
+    input: {
+      name?: string;
+      email?: string;
+      phone?: string | null;
+      classId?: string | null;
+    }
+  ) {
+    return this.request("PUT", `/teachers/${id}`, input);
+  }
+
+  async deleteTeacher(id: string) {
+    return this.request("DELETE", `/teachers/${id}`);
+  }
+
+  async createCategory(input: { code: string; name: string; academicPeriodId?: string }) {
+    return this.request("POST", `/kurikulum/categories`, input);
+  }
+
+  async updateCategory(id: string, input: { code?: string; name?: string }) {
+    return this.request("PUT", `/kurikulum/categories/${id}`, input);
+  }
+
+  async deleteCategory(id: string) {
+    return this.request("DELETE", `/kurikulum/categories/${id}`);
+  }
+
+  async createSubcategory(input: {
+    categoryId: string;
+    code: string;
+    name: string;
+    scoreFields: Array<{ key: string; label: string; min: number; max: number }>;
+    includeInRanking?: boolean;
+  }) {
+    return this.request("POST", `/kurikulum/subcategories`, input);
+  }
+
+  async updateSubcategory(
+    id: string,
+    input: {
+      code?: string;
+      name?: string;
+      scoreFields?: Array<{ key: string; label: string; min: number; max: number }>;
+      includeInRanking?: boolean;
+    }
+  ) {
+    return this.request("PUT", `/kurikulum/subcategories/${id}`, input);
+  }
+
+  async deleteSubcategory(id: string) {
+    return this.request("DELETE", `/kurikulum/subcategories/${id}`);
   }
 
   async getNotifications() {

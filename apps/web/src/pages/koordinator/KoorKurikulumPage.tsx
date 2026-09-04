@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2, X } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 export function KoorKurikulumPage() {
@@ -8,6 +10,22 @@ export function KoorKurikulumPage() {
   const [gradingScale, setGradingScale] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"categories" | "grading">("categories");
+
+  // Modal State Subcategory / Kategori
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [catFormData, setCatFormData] = useState({
+    code: "",
+    name: "",
+  });
+
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [selectedCatId, setSelectedCatId] = useState("");
+  const [subFormData, setSubFormData] = useState({
+    code: "",
+    name: "",
+    includeInRanking: true,
+  });
 
   async function loadData() {
     try {
@@ -27,6 +45,72 @@ export function KoorKurikulumPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  async function handleCreateCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!catFormData.code || !catFormData.name) return;
+    setModalLoading(true);
+    try {
+      await api.createCategory(catFormData);
+      toast.success("Kategori kurikulum baru berhasil ditambahkan");
+      setIsCatModalOpen(false);
+      setCatFormData({ code: "", name: "" });
+      loadData();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal membuat kategori");
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  async function handleCreateSubcategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!subFormData.code || !subFormData.name || !selectedCatId) return;
+    setModalLoading(true);
+    try {
+      await api.createSubcategory({
+        categoryId: selectedCatId,
+        code: subFormData.code,
+        name: subFormData.name,
+        includeInRanking: subFormData.includeInRanking,
+        scoreFields: [
+          { key: "tajwid", label: "Tajwid", min: 0, max: 100 },
+          { key: "kelancaran", label: "Kelancaran", min: 0, max: 100 },
+          { key: "makhraj", label: "Makharijul Huruf", min: 0, max: 100 },
+        ],
+      });
+      toast.success("Sub-kategori berhasil ditambahkan");
+      setIsSubModalOpen(false);
+      setSubFormData({ code: "", name: "", includeInRanking: true });
+      loadData();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal membuat sub-kategori");
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  async function handleDeleteCategory(id: string, name: string) {
+    if (!window.confirm(`Hapus kategori "${name}" beserta seluruh sub-kategori di dalamnya?`)) return;
+    try {
+      await api.deleteCategory(id);
+      toast.success("Kategori berhasil dihapus");
+      loadData();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal menghapus kategori");
+    }
+  }
+
+  async function handleDeleteSubcategory(id: string, name: string) {
+    if (!window.confirm(`Hapus sub-kategori "${name}"?`)) return;
+    try {
+      await api.deleteSubcategory(id);
+      toast.success("Sub-kategori berhasil dihapus");
+      loadData();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal menghapus sub-kategori");
+    }
+  }
 
   return (
     <KoorShell
@@ -53,29 +137,42 @@ export function KoorKurikulumPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 border-b border-brand-line/60 pb-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("categories")}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "categories"
-                ? "bg-brand-navy text-white shadow-sm"
-                : "bg-white text-brand-navy/70 border border-brand-line hover:bg-gray-50"
-            }`}
-          >
-            Kategori &amp; Field Nilai ({categories.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("grading")}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              activeTab === "grading"
-                ? "bg-brand-navy text-white shadow-sm"
-                : "bg-white text-brand-navy/70 border border-brand-line hover:bg-gray-50"
-            }`}
-          >
-            Skala Konversi Nilai Huruf
-          </button>
+        <div className="flex items-center justify-between border-b border-brand-line/60 pb-2">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("categories")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                activeTab === "categories"
+                  ? "bg-brand-navy text-white shadow-sm"
+                  : "bg-white text-brand-navy/70 border border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              Kategori &amp; Field Nilai ({categories.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("grading")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                activeTab === "grading"
+                  ? "bg-brand-navy text-white shadow-sm"
+                  : "bg-white text-brand-navy/70 border border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              Skala Konversi Nilai Huruf
+            </button>
+          </div>
+
+          {activeTab === "categories" && (
+            <button
+              type="button"
+              onClick={() => setIsCatModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-brand-cyan px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tambah Kategori</span>
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -98,6 +195,27 @@ export function KoorKurikulumPage() {
                       {cat.name}
                     </h2>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCatId(cat.id);
+                        setIsSubModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 rounded-xl bg-brand-cyan/10 px-3 py-1.5 text-xs font-bold text-brand-cyan-dark hover:bg-brand-cyan/20 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Tambah Sub-kategori</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      className="rounded-xl p-1.5 text-red-500 hover:bg-red-50 transition-colors"
+                      title="Hapus Kategori"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Subcategories list */}
@@ -111,11 +229,21 @@ export function KoorKurikulumPage() {
                         <h3 className="text-xs font-black text-brand-navy">
                           {sub.name}
                         </h3>
-                        {sub.includeInRanking ? (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
-                            Masuk Ranking
-                          </span>
-                        ) : null}
+                        <div className="flex items-center gap-1.5">
+                          {sub.includeInRanking ? (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+                              Masuk Ranking
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubcategory(sub.id, sub.name)}
+                            className="rounded p-1 text-red-500 hover:bg-red-50 transition-colors"
+                            title="Hapus Sub-kategori"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-1.5">
@@ -172,6 +300,141 @@ export function KoorKurikulumPage() {
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modal Tambah Kategori */}
+        {isCatModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h3 className="text-base font-bold text-brand-navy">Tambah Kategori Kurikulum</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsCatModalOpen(false)}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCategory} className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Kode Kategori</label>
+                  <input
+                    type="text"
+                    required
+                    value={catFormData.code}
+                    onChange={(e) => setCatFormData({ ...catFormData, code: e.target.value })}
+                    placeholder="Contoh: tahsin / tahfidz / hadits"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Nama Kategori</label>
+                  <input
+                    type="text"
+                    required
+                    value={catFormData.name}
+                    onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })}
+                    placeholder="Contoh: Program Tahsin Qur'an"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-brand-line">
+                  <button
+                    type="button"
+                    onClick={() => setIsCatModalOpen(false)}
+                    className="rounded-xl border border-brand-line px-4 py-2 text-xs font-bold text-brand-navy hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <Button
+                    type="submit"
+                    disabled={modalLoading}
+                    className="rounded-xl bg-brand-cyan px-5 py-2 text-xs font-bold text-white hover:bg-brand-cyan-dark"
+                  >
+                    {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tambah Kategori"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Tambah Sub-kategori */}
+        {isSubModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h3 className="text-base font-bold text-brand-navy">Tambah Sub-kategori Penilaian</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsSubModalOpen(false)}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSubcategory} className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Kode Sub-kategori</label>
+                  <input
+                    type="text"
+                    required
+                    value={subFormData.code}
+                    onChange={(e) => setSubFormData({ ...subFormData, code: e.target.value })}
+                    placeholder="Contoh: ziyadah / sabiq / talaqi"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Nama Sub-kategori</label>
+                  <input
+                    type="text"
+                    required
+                    value={subFormData.name}
+                    onChange={(e) => setSubFormData({ ...subFormData, name: e.target.value })}
+                    placeholder="Contoh: Setoran Hafalan Baru (Ziyadah)"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="rankingCheck"
+                    checked={subFormData.includeInRanking}
+                    onChange={(e) => setSubFormData({ ...subFormData, includeInRanking: e.target.checked })}
+                    className="h-4 w-4 rounded text-brand-cyan focus:ring-brand-cyan"
+                  />
+                  <label htmlFor="rankingCheck" className="text-xs font-semibold text-brand-navy cursor-pointer">
+                    Hitung dalam ranking santri bulanan
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-brand-line">
+                  <button
+                    type="button"
+                    onClick={() => setIsSubModalOpen(false)}
+                    className="rounded-xl border border-brand-line px-4 py-2 text-xs font-bold text-brand-navy hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <Button
+                    type="submit"
+                    disabled={modalLoading}
+                    className="rounded-xl bg-brand-cyan px-5 py-2 text-xs font-bold text-white hover:bg-brand-cyan-dark"
+                  >
+                    {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tambah Sub-kategori"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         )}
