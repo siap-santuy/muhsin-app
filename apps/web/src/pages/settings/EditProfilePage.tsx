@@ -13,29 +13,28 @@ export function EditProfilePage() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadProfile() {
       try {
         const profile = await api.getMyProfile();
-        setName(profile.name);
-        setEmail(profile.email);
-        setPhone(profile.phone ?? "");
-      } catch {
-        // Fallback to store values
-        if (user) {
-          setName(user.name);
-          setEmail(user.email);
+        if (isMounted && profile) {
+          if (profile.name) setName(profile.name);
+          if (profile.email) setEmail(profile.email);
+          if (profile.phone) setPhone(profile.phone);
         }
-      } finally {
-        setFetching(false);
+      } catch {
+        // Silent fallback to local auth store values
       }
     }
     loadProfile();
-  }, [user]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -70,16 +69,6 @@ export function EditProfilePage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (fetching) {
-    return (
-      <SettingsPageShell title="Ubah Profile" subtitle="Memuat data profile...">
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
-        </div>
-      </SettingsPageShell>
-    );
   }
 
   return (
