@@ -31,6 +31,21 @@ describe("Raport Module UseCases", () => {
         capaian: "Sabiq Jilid 3 Hal 1-5",
       },
     },
+    detailTtq: {
+      ziyadah: 85.0,
+      murojaah: 87.0,
+      makhroj: 90.0,
+      mad: 92.0,
+      ghunnah: 93.0,
+      kelancaran: 95.0,
+    },
+    absensi: {
+      kehadiranRatio: "25/30",
+      tidakSetoranCount: 5,
+      sakitCount: 0,
+      izinCount: 0,
+      alpaCount: 0,
+    },
     mutabaah: [
       { label: "Tilawah", ratio: "25/30", grade: "A", color: "text-emerald-500" },
       { label: "Shalat Fardhu", ratio: "140/150", grade: "A", color: "text-brand-cyan" },
@@ -47,6 +62,9 @@ describe("Raport Module UseCases", () => {
     nilaiAkhir: 89.0,
     gradeAkhir: "B",
     arabicPredicate: "جيد جدا",
+    nilaiTtq: mockMonthly.nilaiTtq,
+    detailTtq: mockMonthly.detailTtq,
+    absensi: mockMonthly.absensi,
     kategoriList: [
       { name: "Tahfidz", grade: "B", score: 86, arabicPredicate: "جيد جدا" },
       { name: "Tahsin", grade: "A", score: 92, arabicPredicate: "ممتاز" },

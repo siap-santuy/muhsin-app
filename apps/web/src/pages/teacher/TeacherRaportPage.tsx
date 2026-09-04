@@ -83,7 +83,7 @@ export function TeacherRaportPage() {
   function getMonthStatus(offset: number) {
     if (isPastYear) return { isAvailable: true, status: "done" };
     if (offset < currentOffset) return { isAvailable: true, status: "done" };
-    if (offset === currentOffset) return { isAvailable: true, status: "ongoing" };
+    if (offset === currentOffset) return { isAvailable: false, status: "ongoing" };
     return { isAvailable: false, status: "none" };
   }
 
@@ -91,25 +91,36 @@ export function TeacherRaportPage() {
     if (isPastYear) return { isAvailable: true, status: "done" };
     const targetEndOffset = sem === 1 ? 5 : 11;
     if (currentOffset > targetEndOffset) return { isAvailable: true, status: "done" };
-    if (currentOffset === targetEndOffset) return { isAvailable: true, status: "ongoing" };
+    if (currentOffset >= (sem === 1 ? 0 : 6) && currentOffset <= targetEndOffset) {
+      return { isAvailable: false, status: "ongoing" };
+    }
     return { isAvailable: false, status: "none" };
   }
 
   const sem1 = getSemesterStatus(1);
   const sem2 = getSemesterStatus(2);
 
+  const activeMonthDef = ACADEMIC_MONTHS.find((m) => m.name === selectedMonth) ?? defaultMonth;
+  const activeMonthStatus = getMonthStatus(activeMonthDef.offset);
+  const activeSemesterStatus = getSemesterStatus(selectedSemester as 1 | 2);
+
   function handleSelectMonth(m: MonthDef) {
+    const { isAvailable } = getMonthStatus(m.offset);
+    if (!isAvailable) return;
     setSelectedMonth(m.name);
     setSelectedSemester(m.semester);
   }
 
   function handleSelectSemester(sem: 1 | 2) {
+    const { isAvailable } = getSemesterStatus(sem);
+    if (!isAvailable) return;
     setSelectedSemester(sem);
   }
 
   const selectedStudentName = students.find((s) => s.id === selectedStudentId)?.name ?? "Siswa Halaqah";
 
   function handleMonthlyClick() {
+    if (!activeMonthStatus.isAvailable) return;
     const params = new URLSearchParams({
       month: selectedMonth,
       year: selectedYear,
@@ -119,6 +130,7 @@ export function TeacherRaportPage() {
   }
 
   function handleSemesterClick() {
+    if (!activeSemesterStatus.isAvailable) return;
     const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
     const params = new URLSearchParams({
       semester: semName,
@@ -274,8 +286,13 @@ export function TeacherRaportPage() {
           {/* Action Cards */}
           <button
             type="button"
+            disabled={!activeMonthStatus.isAvailable}
             onClick={handleMonthlyClick}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-emerald-200 bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
+            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
+              !activeMonthStatus.isAvailable
+                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                : "border-emerald-200 bg-white hover:bg-brand-cyan/5"
+            }`}
           >
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
@@ -283,10 +300,12 @@ export function TeacherRaportPage() {
               </span>
               <div className="text-left">
                 <h2 className="text-base font-bold text-brand-navy">
-                  Input / Edit Raport Bulanan
+                  Lihat Raport Bulanan
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Siswa: {selectedStudentName} ({selectedMonth})
+                  {!activeMonthStatus.isAvailable
+                    ? `Bulan ${selectedMonth} sedang berjalan / terkunci`
+                    : `Siswa: ${selectedStudentName} (${selectedMonth})`}
                 </p>
               </div>
             </div>
@@ -295,8 +314,13 @@ export function TeacherRaportPage() {
 
           <button
             type="button"
+            disabled={!activeSemesterStatus.isAvailable}
             onClick={handleSemesterClick}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-brand-cyan/40 bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
+            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
+              !activeSemesterStatus.isAvailable
+                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                : "border-brand-cyan/40 bg-white hover:bg-brand-cyan/5"
+            }`}
           >
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-cyan/10 text-brand-cyan">
@@ -304,10 +328,12 @@ export function TeacherRaportPage() {
               </span>
               <div className="text-left">
                 <h2 className="text-base font-bold text-brand-navy">
-                  Input / Edit Raport Semester
+                  Lihat Raport Semester
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Siswa: {selectedStudentName} (Semester {selectedSemester === 1 ? "Ganjil" : "Genap"})
+                  {!activeSemesterStatus.isAvailable
+                    ? `Semester ${selectedSemester === 1 ? "Ganjil" : "Genap"} sedang berjalan / terkunci`
+                    : `Siswa: ${selectedStudentName} (Semester ${selectedSemester === 1 ? "Ganjil" : "Genap"})`}
                 </p>
               </div>
             </div>

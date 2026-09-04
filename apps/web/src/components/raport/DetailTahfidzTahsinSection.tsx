@@ -8,12 +8,12 @@ export interface DetailTahfidzTahsinProps {
 }
 
 export function DetailTahfidzTahsinSection({
-  ziyadah = 85.2,
-  murojaah = 85.2,
-  makhroj = 85.2,
-  mad = 85.2,
-  ghunnah = 85.2,
-  kelancaran = 85.2,
+  ziyadah = 0,
+  murojaah = 0,
+  makhroj = 0,
+  mad = 0,
+  ghunnah = 0,
+  kelancaran = 0,
 }: DetailTahfidzTahsinProps) {
   return (
     <div className="flex flex-col gap-4">

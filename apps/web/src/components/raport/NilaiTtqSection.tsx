@@ -13,17 +13,17 @@ export interface NilaiTtqSectionProps {
 }
 
 const DEFAULT_TAHFIDZ: TtqGradeItem = {
-  grade: "B",
-  score: "86.2/100",
-  arabicPredicate: "جيد جدا",
-  capaian: "Al Baqarah:12 - Al Imran:2",
+  grade: "-",
+  score: "0/100",
+  arabicPredicate: "-",
+  capaian: "-",
 };
 
 const DEFAULT_TAHSIN: TtqGradeItem = {
-  grade: "B",
-  score: "85.2/100",
-  arabicPredicate: "جيد جدا",
-  capaian: "Sabiq Jilid 3:162",
+  grade: "-",
+  score: "0/100",
+  arabicPredicate: "-",
+  capaian: "-",
 };
 
 export function NilaiTtqSection({

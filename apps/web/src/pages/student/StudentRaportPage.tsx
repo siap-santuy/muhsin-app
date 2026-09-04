@@ -62,7 +62,7 @@ export function StudentRaportPage({
   function getMonthStatus(offset: number) {
     if (isPastYear) return { isAvailable: true, status: "done" };
     if (offset < currentOffset) return { isAvailable: true, status: "done" };
-    if (offset === currentOffset) return { isAvailable: true, status: "ongoing" };
+    if (offset === currentOffset) return { isAvailable: false, status: "ongoing" };
     return { isAvailable: false, status: "none" };
   }
 
@@ -70,12 +70,20 @@ export function StudentRaportPage({
     if (isPastYear) return { isAvailable: true, status: "done" };
     const targetEndOffset = sem === 1 ? 5 : 11;
     if (currentOffset > targetEndOffset) return { isAvailable: true, status: "done" };
-    if (currentOffset === targetEndOffset) return { isAvailable: true, status: "ongoing" };
+    if (currentOffset >= (sem === 1 ? 0 : 6) && currentOffset <= targetEndOffset) {
+      return { isAvailable: false, status: "ongoing" };
+    }
     return { isAvailable: false, status: "none" };
   }
 
   const sem1 = getSemesterStatus(1);
   const sem2 = getSemesterStatus(2);
+
+  const activeMonthDef = ACADEMIC_MONTHS.find(
+    (m) => m.name === selectedMonth
+  ) ?? defaultMonth;
+  const activeMonthStatus = getMonthStatus(activeMonthDef.offset);
+  const activeSemesterStatus = getSemesterStatus(selectedSemester as 1 | 2);
 
   function handleSelectMonth(m: MonthDef) {
     const { isAvailable } = getMonthStatus(m.offset);
@@ -91,6 +99,7 @@ export function StudentRaportPage({
   }
 
   function handleMonthlyClick() {
+    if (!activeMonthStatus.isAvailable) return;
     if (onNavigateToMonthly) {
       onNavigateToMonthly(selectedMonth, selectedYear);
     } else {
@@ -100,6 +109,7 @@ export function StudentRaportPage({
   }
 
   function handleSemesterClick() {
+    if (!activeSemesterStatus.isAvailable) return;
     const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
     if (onNavigateToSemester) {
       onNavigateToSemester(selectedSemester, selectedYear);
@@ -281,8 +291,13 @@ export function StudentRaportPage({
           {/* Action Card: Raport Bulanan */}
           <button
             type="button"
+            disabled={!activeMonthStatus.isAvailable}
             onClick={handleMonthlyClick}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-emerald-300 bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
+            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
+              !activeMonthStatus.isAvailable
+                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                : "border-emerald-300 bg-white hover:bg-brand-cyan/5"
+            }`}
           >
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
@@ -293,7 +308,9 @@ export function StudentRaportPage({
                   Lihat Raport Bulanan
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Rekapitulasi pencapaian bulanan ({selectedMonth})
+                  {!activeMonthStatus.isAvailable
+                    ? `Bulan ${selectedMonth} sedang berjalan / terkunci`
+                    : `Rekapitulasi pencapaian bulanan (${selectedMonth})`}
                 </p>
               </div>
             </div>
@@ -303,8 +320,13 @@ export function StudentRaportPage({
           {/* Action Card: Raport Semester */}
           <button
             type="button"
+            disabled={!activeSemesterStatus.isAvailable}
             onClick={handleSemesterClick}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-brand-cyan/40 bg-white p-4 shadow-sm transition-all hover:bg-brand-cyan/5"
+            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
+              !activeSemesterStatus.isAvailable
+                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
+                : "border-brand-cyan/40 bg-white hover:bg-brand-cyan/5"
+            }`}
           >
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-cyan/10 text-brand-cyan">
@@ -315,7 +337,9 @@ export function StudentRaportPage({
                   Lihat Raport Semester
                 </h2>
                 <p className="text-xs font-medium text-brand-text-muted">
-                  Dokumen hasil akhir (Semester {selectedSemester})
+                  {!activeSemesterStatus.isAvailable
+                    ? `Semester ${selectedSemester} sedang berjalan / terkunci`
+                    : `Dokumen hasil akhir (Semester ${selectedSemester})`}
                 </p>
               </div>
             </div>

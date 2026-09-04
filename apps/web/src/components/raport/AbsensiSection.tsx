@@ -13,7 +13,7 @@ export interface AbsensiSectionProps {
 }
 
 const DEFAULT_DATA: AbsensiData = {
-  kehadiranRatio: "20/20",
+  kehadiranRatio: "0/30",
   tidakSetoranCount: 0,
   sakitCount: 0,
   izinCount: 0,

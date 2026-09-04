@@ -77,6 +77,8 @@ export function ParentMonthlyRaportPage({
 
   const student = raport?.student;
   const nilaiTtq = raport?.nilaiTtq;
+  const detailTtq = raport?.detailTtq;
+  const absensi = raport?.absensi;
   const mutabaah = raport?.mutabaah;
   const evaluasi = raport?.evaluasi;
 
@@ -115,7 +117,7 @@ export function ParentMonthlyRaportPage({
           )}
 
           {/* Detail Tahfidz & Tahsin Section */}
-          <DetailTahfidzTahsinSection />
+          <DetailTahfidzTahsinSection {...detailTtq} />
 
           {mutabaah ? (
             <MutabaahSection rows={mutabaah} />
@@ -124,10 +126,10 @@ export function ParentMonthlyRaportPage({
           )}
 
           {/* Absensi Siswa Section */}
-          <AbsensiSection />
+          <AbsensiSection data={absensi} />
 
           <EvaluasiSection
-            evaluationText={evaluasi}
+            evaluationText={evaluasi ?? "Belum ada evaluasi dari ustadz pembimbing untuk bulan ini."}
             pembimbingName={student?.pembimbingName}
           />
 

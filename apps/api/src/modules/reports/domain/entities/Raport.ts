@@ -1,3 +1,20 @@
+export interface RaportDetailTtq {
+  ziyadah: number;
+  murojaah: number;
+  makhroj: number;
+  mad: number;
+  ghunnah: number;
+  kelancaran: number;
+}
+
+export interface RaportAbsensi {
+  kehadiranRatio: string;
+  tidakSetoranCount: number;
+  sakitCount: number;
+  izinCount: number;
+  alpaCount: number;
+}
+
 export interface MonthlyRaportData {
   student: {
     id: string;
@@ -24,13 +41,15 @@ export interface MonthlyRaportData {
       capaian: string;
     };
   };
+  detailTtq: RaportDetailTtq;
+  absensi: RaportAbsensi;
   mutabaah: Array<{
     label: string;
     ratio: string;
     grade: string;
     color: string;
   }>;
-  evaluasi: string;
+  evaluasi: string | null;
 }
 
 export interface SemesterRaportData {
@@ -48,6 +67,22 @@ export interface SemesterRaportData {
   nilaiAkhir: number;
   gradeAkhir: string;
   arabicPredicate: string;
+  nilaiTtq: {
+    tahfidz: {
+      grade: string;
+      score: string;
+      arabicPredicate: string;
+      capaian: string;
+    };
+    tahsin: {
+      grade: string;
+      score: string;
+      arabicPredicate: string;
+      capaian: string;
+    };
+  };
+  detailTtq: RaportDetailTtq;
+  absensi: RaportAbsensi;
   kategoriList: Array<{
     name: string;
     grade: string;
@@ -60,5 +95,5 @@ export interface SemesterRaportData {
     grade: string;
     color: string;
   }>;
-  evaluasi: string;
+  evaluasi: string | null;
 }

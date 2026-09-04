@@ -77,6 +77,8 @@ export function StudentMonthlyRaportPage({
 
   const student = raport?.student;
   const nilaiTtq = raport?.nilaiTtq;
+  const detailTtq = raport?.detailTtq;
+  const absensi = raport?.absensi;
   const mutabaah = raport?.mutabaah;
   const evaluasi = raport?.evaluasi;
 
@@ -118,7 +120,7 @@ export function StudentMonthlyRaportPage({
           )}
 
           {/* Detail Tahfidz & Tahsin Section */}
-          <DetailTahfidzTahsinSection />
+          <DetailTahfidzTahsinSection {...detailTtq} />
 
           {/* Mutaba'ah Yaumiyyah Section */}
           {mutabaah ? (
@@ -128,11 +130,11 @@ export function StudentMonthlyRaportPage({
           )}
 
           {/* Absensi Siswa Section */}
-          <AbsensiSection />
+          <AbsensiSection data={absensi} />
 
           {/* Evaluasi Guru Pembimbing */}
           <EvaluasiSection
-            evaluationText={evaluasi}
+            evaluationText={evaluasi ?? "Belum ada evaluasi dari ustadz pembimbing untuk bulan ini."}
             pembimbingName={student?.pembimbingName}
           />
 

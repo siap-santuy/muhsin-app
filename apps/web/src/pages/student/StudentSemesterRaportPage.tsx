@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { AbsensiSection } from "@/components/raport/AbsensiSection";
+import { DetailTahfidzTahsinSection } from "@/components/raport/DetailTahfidzTahsinSection";
 import { EvaluasiSection } from "@/components/raport/EvaluasiSection";
 import { MutabaahSection } from "@/components/raport/MutabaahSection";
 import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
@@ -58,7 +59,10 @@ export function StudentSemesterRaportPage({
   }
 
   const student = raport?.student;
-  const nilaiAkhir = raport?.nilaiAkhir ?? 84.0;
+  const nilaiAkhir = raport?.nilaiAkhir ?? 0;
+  const nilaiTtq = raport?.nilaiTtq;
+  const detailTtq = raport?.detailTtq;
+  const absensi = raport?.absensi;
   const mutabaah = raport?.mutabaah;
   const evaluasi = raport?.evaluasi;
 
@@ -91,10 +95,20 @@ export function StudentSemesterRaportPage({
           />
 
           {/* Nilai TTQ Section */}
-          <NilaiTtqSection />
+          {nilaiTtq ? (
+            <NilaiTtqSection
+              tahfidz={nilaiTtq.tahfidz}
+              tahsin={nilaiTtq.tahsin}
+            />
+          ) : (
+            <NilaiTtqSection />
+          )}
 
           {/* Hasil Asesmen Sumatif TTQ Section */}
           <SumatifSection />
+
+          {/* Detail Tahfidz & Tahsin Section */}
+          <DetailTahfidzTahsinSection {...detailTtq} />
 
           {/* Mutaba'ah Yaumiyyah Section */}
           {mutabaah ? (
@@ -104,14 +118,14 @@ export function StudentSemesterRaportPage({
           )}
 
           {/* Absensi Siswa Section */}
-          <AbsensiSection />
+          <AbsensiSection data={absensi} />
 
           {/* Range Nilai & Nilai Akhir Section */}
           <RangeNilaiSection finalScore={nilaiAkhir} />
 
           {/* Evaluasi Guru Pembimbing */}
           <EvaluasiSection
-            evaluationText={evaluasi}
+            evaluationText={evaluasi ?? "Belum ada evaluasi dari ustadz pembimbing untuk semester ini."}
             pembimbingName={student?.pembimbingName}
             showSignatureLine
           />
