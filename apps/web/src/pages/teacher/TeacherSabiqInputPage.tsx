@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Save } from "lucide-react";
 import { formatLocalDate } from "@/utils/date";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
+import {
+  TTQHeader,
+  TTQCategoryTabs,
+  TTQScoreSlider,
+} from "@/components/teacher/TTQComponents";
 
 interface StudentOption {
   id: string;
@@ -12,20 +16,26 @@ interface StudentOption {
 }
 
 export function TeacherSabiqInputPage() {
+  const hash = window.location.hash;
+  const queryParams = new URLSearchParams(hash.split("?")[1] || "");
+  const routeDate = queryParams.get("date") || formatLocalDate(new Date());
+  const routeStudentId = queryParams.get("studentId") || sessionStorage.getItem("selectedStudentId") || "";
+
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [subcategoryId, setSubcategoryId] = useState<string>("");
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-  const [jilid, setJilid] = useState("Sabiq Jilid 3");
-  const [halamanMulai, setHalamanMulai] = useState("1");
-  const [halamanSelesai, setHalamanSelesai] = useState("5");
-  const [makhroj, setMakhroj] = useState("92");
-  const [tajwid, setTajwid] = useState("95");
-  const [kelancaran, setKelancaran] = useState("90");
-  const [fashohah, setFashohah] = useState("88");
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(routeStudentId);
+  const [jilidStart, setJilidStart] = useState("3");
+  const [halamanStart, setHalamanStart] = useState("100");
+  const [jilidEnd, setJilidEnd] = useState("3");
+  const [halamanEnd, setHalamanEnd] = useState("100");
+
+  const [makhraj, setMakhraj] = useState(85);
+  const [mad, setMad] = useState(90);
+  const [ghunnah, setGhunnah] = useState(80);
+  const [qolqolah, setQolqolah] = useState(80);
+
   const [catatan, setCatatan] = useState("");
-  const [statusKehadiran, setStatusKehadiran] = useState<"setoran" | "sakit" | "izin" | "alpa">("setoran");
-  const todayStr = formatLocalDate(new Date());
-  const [date, setDate] = useState(() => todayStr);
+  const [statusKehadiran, setStatusKehadiran] = useState<"Hadir" | "Izin" | "Sakit" | "Alpa">("Hadir");
 
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
@@ -41,10 +51,9 @@ export function TeacherSabiqInputPage() {
 
         setStudents(studentList);
 
-        const preselectedId = sessionStorage.getItem("selectedStudentId");
-        if (preselectedId && studentList.some((s) => s.id === preselectedId)) {
-          setSelectedStudentId(preselectedId);
-        } else if (studentList.length > 0) {
+        if (routeStudentId && studentList.some((s) => s.id === routeStudentId)) {
+          setSelectedStudentId(routeStudentId);
+        } else if (studentList.length > 0 && !selectedStudentId) {
           setSelectedStudentId(studentList[0].id);
         }
 
@@ -57,327 +66,237 @@ export function TeacherSabiqInputPage() {
           setSubcategoryId(categories[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat data awal");
+        setError(err instanceof Error ? err.message : "Gagal memuat form");
       } finally {
         setInitLoading(false);
       }
     }
     init();
-  }, []);
+  }, [routeStudentId]);
 
-  const selectedStudent = students.find((s) => s.id === selectedStudentId);
-
-  async function handleSave() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!selectedStudentId) {
-      const msg = "Pilih santri terlebih dahulu";
-      setError(msg);
-      toast.warning(msg);
+      toast.warning("Silakan pilih siswa terlebih dahulu");
       return;
     }
     if (!subcategoryId) {
-      const msg = "Kategori Sabiq tidak ditemukan";
-      setError(msg);
-      toast.warning(msg);
+      toast.error("Kategori Sabiq belum dikonfigurasi");
       return;
     }
 
-    setError(null);
     setLoading(true);
-
     try {
-      const savedEntry = await api.createSetoran({
+      await api.createSetoran({
         studentId: selectedStudentId,
-        subcategoryId: subcategoryId,
-        date: date,
-        referenceStart: { jilid, halaman: Number(halamanMulai) },
-        referenceEnd: { jilid, halaman: Number(halamanSelesai) },
+        subcategoryId,
+        date: routeDate,
         scores: {
-          makhroj: Number(makhroj),
-          tajwid: Number(tajwid),
-          kelancaran: Number(kelancaran),
-          fashohah: Number(fashohah),
+          makhraj: Number(makhraj),
+          mad: Number(mad),
+          ghunnah: Number(ghunnah),
+          qolqolah: Number(qolqolah),
         },
-        keterangan: statusKehadiran !== "setoran" ? statusKehadiran : catatan || null,
-        scoreFieldKeys: ["makhroj", "tajwid", "kelancaran", "fashohah"],
+        scoreFieldKeys: ["makhraj", "mad", "ghunnah", "qolqolah"],
+        referenceStart: {
+          jilid: Number(jilidStart),
+          halaman: Number(halamanStart),
+        },
+        referenceEnd: {
+          jilid: Number(jilidEnd),
+          halaman: Number(halamanEnd),
+        },
+        keterangan: catatan ? `[${statusKehadiran}] ${catatan}` : `[${statusKehadiran}]`,
       });
 
-      sessionStorage.setItem("lastSetoranId", savedEntry.id);
-      toast.success("Setoran Sabiq berhasil disimpan!");
-      setTimeout(() => {
-        window.location.hash = "#/ziyadah-view";
-      }, 800);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Gagal mencatat setoran";
-      setError(msg);
-      toast.warning(msg);
+      toast.success("Penilaian Sabiq berhasil disimpan");
+
+      sessionStorage.setItem("selectedStudentId", selectedStudentId);
+      window.location.hash = `#/sabiq-view?studentId=${selectedStudentId}&date=${routeDate}`;
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan sistem");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleBack() {
-    window.location.hash = "#/dashboard";
-  }
-
   if (initLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-page">
-        <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
+      <div className="flex min-h-screen items-center justify-center bg-brand-page">
+        <Loader2 className="h-8 w-8 animate-spin text-[#22bad0]" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col bg-brand-page">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Kembali"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
-        >
-          <ArrowLeft className="h-4 w-4 text-brand-cyan" />
-        </button>
-        <h1 className="text-lg font-bold text-brand-cyan">
-          Input Sabiq (Tahsin)
-        </h1>
-        <div className="h-10 w-10" />
-      </div>
+    <div className="min-h-screen bg-brand-page px-4 pb-12">
+      <div className="mx-auto max-w-md">
+        <TTQHeader date={routeDate} />
 
-      {/* Main Body */}
-      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-1">
-        <div className="flex flex-col gap-4">
-          {error && (
-            <div className="rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-600">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600 border border-red-200">
+            {error}
+          </div>
+        )}
 
-          {/* Pilih Santri Card */}
-          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <label className="text-xs font-bold text-brand-navy">
-              Pilih Santri Bimbingan
-            </label>
-            <div className="relative mt-2">
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-3 pl-3 pr-9 text-xs font-bold text-brand-navy outline-none focus:border-amber-500"
-              >
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.className ?? "Kelas TTQ"})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* 1. Dropdown Siswa */}
+          <div className="relative">
+            <select
+              value={selectedStudentId}
+              onChange={(e) => setSelectedStudentId(e.target.value)}
+              className="w-full appearance-none rounded-2xl border border-brand-line bg-white py-3 pl-4 pr-10 text-xs font-semibold text-brand-navy outline-none shadow-xs focus:border-brand-cyan"
+            >
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.className ? `(${s.className})` : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
 
-            {selectedStudent && (
-              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-amber-50 p-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-xs font-extrabold text-amber-700">
-                  {selectedStudent.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-brand-navy">
-                    {selectedStudent.name}
-                  </p>
-                  <p className="text-[10px] text-brand-text-muted">
-                    {selectedStudent.className ?? "Kelas Halaqah"}
-                  </p>
+          {/* 2. Dropdown Status Kehadiran */}
+          <div className="relative">
+            <select
+              value={statusKehadiran}
+              onChange={(e) => setStatusKehadiran(e.target.value as any)}
+              className="w-full appearance-none rounded-2xl border border-brand-line bg-white py-3 pl-4 pr-10 text-xs font-semibold text-brand-navy outline-none shadow-xs focus:border-brand-cyan"
+            >
+              <option value="Hadir">Hadir</option>
+              <option value="Izin">Izin</option>
+              <option value="Sakit">Sakit</option>
+              <option value="Alpa">Alpa</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
+
+          {/* 3. Segmented Tabs Category */}
+          <TTQCategoryTabs
+            activeCategory="sabiq"
+            mode="input"
+            studentId={selectedStudentId}
+            date={routeDate}
+          />
+
+          {/* 4. Form Awal & Akhir Sabiq (Jilid & Halaman) */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <div>
+                <label className="text-[11px] font-bold text-brand-navy">Awal Jilid</label>
+                <div className="relative mt-1">
+                  <select
+                    value={jilidStart}
+                    onChange={(e) => setJilidStart(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-brand-line bg-white py-2 pl-3 pr-7 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                      <option key={j} value={j}>
+                        {j}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                 </div>
               </div>
-            )}
-          </section>
 
-          {/* Tanggal & Kehadiran Card */}
-          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-brand-navy">
-                Tanggal Setoran
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="rounded-xl border border-brand-line bg-gray-50/50 px-3 py-1.5 text-xs font-semibold text-brand-navy outline-none focus:border-amber-500"
+              <div>
+                <label className="text-[11px] font-bold text-brand-navy">Halaman</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={halamanStart}
+                  onChange={(e) => setHalamanStart(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-brand-navy">Akhir Jilid</label>
+                <div className="relative mt-1">
+                  <select
+                    value={jilidEnd}
+                    onChange={(e) => setJilidEnd(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-brand-line bg-white py-2 pl-3 pr-7 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                      <option key={j} value={j}>
+                        {j}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-brand-navy">Halaman</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={halamanEnd}
+                  onChange={(e) => setHalamanEnd(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Card Penilaian Range */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+            <h3 className="mb-4 text-xs font-bold text-brand-navy">Penilaian</h3>
+            <div className="flex flex-col gap-4">
+              <TTQScoreSlider
+                label="Makhraj"
+                value={makhraj}
+                onChange={setMakhraj}
+              />
+              <TTQScoreSlider
+                label="Mad"
+                value={mad}
+                onChange={setMad}
+              />
+              <TTQScoreSlider
+                label="Ghunnah"
+                value={ghunnah}
+                onChange={setGhunnah}
+              />
+              <TTQScoreSlider
+                label="Qolqolah"
+                value={qolqolah}
+                onChange={setQolqolah}
               />
             </div>
+          </div>
 
-            <div className="mt-3">
-              <label className="text-[11px] font-semibold text-brand-text-muted">
-                Status Kehadiran
-              </label>
-              <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-                {[
-                  { id: "setoran", label: "Setoran" },
-                  { id: "sakit", label: "Sakit" },
-                  { id: "izin", label: "Izin" },
-                  { id: "alpa", label: "Alpa" },
-                ].map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setStatusKehadiran(st.id as any)}
-                    className={`rounded-xl py-2 text-xs font-bold transition-all border ${
-                      statusKehadiran === st.id
-                        ? "bg-amber-600 text-white border-amber-600 shadow-sm"
-                        : "bg-gray-50 text-brand-navy border-brand-line/60 hover:bg-gray-100"
-                    }`}
-                  >
-                    {st.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Materi Sabiq Card */}
-          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 border-b border-brand-line/40 pb-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <h2 className="text-sm font-bold text-brand-navy">
-                Materi Sabiq (Buku / Jilid)
-              </h2>
-            </div>
-
-            <div className="mt-3 flex flex-col gap-3">
-              <div>
-                <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
-                  Jilid / Buku
-                </label>
-                <input
-                  type="text"
-                  value={jilid}
-                  onChange={(e) => setJilid(e.target.value)}
-                  placeholder="Contoh: Sabiq Jilid 3"
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
-                    Halaman Mulai
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={halamanMulai}
-                    onChange={(e) => setHalamanMulai(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 p-2.5 text-center text-xs font-semibold text-brand-navy outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
-                    Halaman Selesai
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={halamanSelesai}
-                    onChange={(e) => setHalamanSelesai(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 p-2.5 text-center text-xs font-semibold text-brand-navy outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Penilaian Aspek (Scores) Card */}
-          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-bold text-brand-navy mb-3">
-              Penilaian Aspek (Skala 0 - 100)
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">Makhraj</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={makhroj}
-                  onChange={(e) => setMakhroj(e.target.value)}
-                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-amber-700 outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">Tajwid</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={tajwid}
-                  onChange={(e) => setTajwid(e.target.value)}
-                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-amber-700 outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">Kelancaran</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={kelancaran}
-                  onChange={(e) => setKelancaran(e.target.value)}
-                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-amber-700 outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-navy">Fashohah</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={fashohah}
-                  onChange={(e) => setFashohah(e.target.value)}
-                  className="w-16 rounded-xl border border-brand-line bg-gray-50/50 py-1.5 text-center text-xs font-bold text-amber-700 outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Catatan / Evaluasi */}
-          <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+          {/* 6. Catatan Input */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
             <label className="text-xs font-bold text-brand-navy">
-              Catatan &amp; Evaluasi Guru Pembimbing
+              Catatan (Opsional)
             </label>
             <textarea
               rows={3}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Contoh: Bacaan tartil, perhatikan huruf idgham..."
-              className="mt-2 w-full rounded-xl border border-brand-line bg-gray-50/50 p-3 text-xs font-medium text-brand-navy outline-none placeholder:text-gray-400 focus:border-amber-500"
+              placeholder="Tambahkan catatan evaluasi santri..."
+              className="mt-2 w-full rounded-xl border border-brand-line p-3 text-xs text-brand-navy outline-none placeholder:text-gray-400 focus:border-brand-cyan"
             />
-          </section>
-        </div>
-      </main>
+          </div>
 
-      {/* Sticky Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 flex gap-3 border-t border-brand-line bg-white px-4 py-3 shadow-lg">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleBack}
-          disabled={loading}
-          className="h-11 flex-1 rounded-xl border-brand-line text-xs font-bold text-brand-navy hover:bg-gray-50"
-        >
-          BATAL
-        </Button>
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={loading}
-          className="h-11 flex-1 rounded-xl bg-amber-600 font-bold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "SIMPAN SETORAN"}
-        </Button>
+          {/* 7. Action Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#00c950] hover:bg-[#00b046] active:scale-[0.99] py-3.5 text-xs font-extrabold tracking-wider text-white shadow-sm transition-all disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            <span>SIMPAN PENILAIAN</span>
+          </button>
+        </form>
       </div>
     </div>
   );

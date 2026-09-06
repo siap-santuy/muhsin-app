@@ -19,12 +19,16 @@ export function createStudentRoutes(deps: StudentRoutesDeps) {
     async (c) => {
       const user = c.get("user");
       const teacherId = c.req.query("teacherId");
+      const date = c.req.query("date");
+      const classId = c.req.query("classId");
 
       const students = await deps.getStudentsUseCase.execute({
         schoolId: user.schoolId,
         teacherId,
         role: user.role,
         userId: user.userId,
+        date,
+        classId,
       });
 
       return c.json({ data: students, error: null, meta: null }, 200);

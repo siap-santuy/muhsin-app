@@ -22,10 +22,27 @@ export interface StudentDashboardSummary {
 export interface TeacherDashboardSummary {
   teacherName: string;
   totalStudents: number;
+  totalClassesToday?: number;
+  completedClassesToday?: number;
+  pendingClassesToday?: number;
   setorHariIniCount: number;
   belumSetorCount: number;
   className: string;
   konsistensiIbadahPercent?: number;
+  classProgress?: Array<{
+    badge: string;
+    badgeBg: string;
+    badgeText: string;
+    name: string;
+    percentage: number;
+    progressColor: string;
+    targetLabel: string;
+  }>;
+  attentionStudents?: Array<{
+    name: string;
+    className: string;
+    grade: string;
+  }>;
   todayBreakdown?: {
     ziyadahCount: number;
     murojaahCount: number;

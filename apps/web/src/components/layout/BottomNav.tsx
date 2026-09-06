@@ -15,7 +15,7 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
 
 export const TEACHER_NAV_ITEMS: NavItem[] = [
   { label: "Beranda", icon: Home },
-  { label: "Siswa", icon: Users },
+  { label: "Class", icon: Users },
   { label: "Raport", icon: FileText },
   { label: "Profil", icon: User },
 ];

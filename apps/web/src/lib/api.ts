@@ -441,7 +441,11 @@ class ApiClient {
     return this.request<{ message: string }>("PATCH", `/users/change-password`, input);
   }
 
-  async getStudents(teacherId?: string): Promise<Array<{
+  async getStudents(options?: string | {
+    teacherId?: string;
+    date?: string;
+    classId?: string;
+  }): Promise<Array<{
     id: string;
     name: string;
     email: string;
@@ -451,10 +455,25 @@ class ApiClient {
     level: number;
     totalExp: number;
     currentStreak: number;
+    hasSetoranOnDate?: boolean;
+    lastActivity?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+    } | null;
   }>> {
-    const url = teacherId
-      ? `/students?teacherId=${teacherId}`
-      : `/students`;
+    const params = new URLSearchParams();
+    if (typeof options === "string") {
+      params.set("teacherId", options);
+    } else if (options) {
+      if (options.teacherId) params.set("teacherId", options.teacherId);
+      if (options.date) params.set("date", options.date);
+      if (options.classId) params.set("classId", options.classId);
+    }
+    const qs = params.toString();
+    const url = qs ? `/students?${qs}` : `/students`;
     return this.request("GET", url);
   }
 

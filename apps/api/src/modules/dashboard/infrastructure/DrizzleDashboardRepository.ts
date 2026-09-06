@@ -2,6 +2,7 @@ import type { Db } from "../../../db/client";
 import {
   users,
   classes,
+  teacherClasses,
   studentClassEnrollment,
   studentTeacherMapping,
   parentStudentMapping,
@@ -135,12 +136,48 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       .where(and(eq(users.id, teacherId), eq(users.schoolId, schoolId)))
       .limit(1);
 
+    // Mapped classes
+    const assignedClasses = await this.db
+      .select({
+        id: classes.id,
+        name: classes.name,
+      })
+      .from(teacherClasses)
+      .innerJoin(classes, eq(classes.id, teacherClasses.classId))
+      .where(
+        and(
+          eq(teacherClasses.teacherId, teacherId),
+          eq(teacherClasses.schoolId, schoolId)
+        )
+      );
+
+    let teacherClassList = assignedClasses;
+    if (teacherClassList.length === 0) {
+      const fallbackClasses = await this.db
+        .selectDistinct({
+          id: classes.id,
+          name: classes.name,
+        })
+        .from(studentTeacherMapping)
+        .innerJoin(classes, eq(classes.id, studentTeacherMapping.classId))
+        .where(
+          and(
+            eq(studentTeacherMapping.teacherId, teacherId),
+            eq(studentTeacherMapping.schoolId, schoolId)
+          )
+        );
+      teacherClassList = fallbackClasses;
+    }
+
     const studentMappings = await this.db
       .select({
         studentId: studentTeacherMapping.studentId,
+        studentName: users.name,
+        classId: studentTeacherMapping.classId,
         className: classes.name,
       })
       .from(studentTeacherMapping)
+      .innerJoin(users, eq(users.id, studentTeacherMapping.studentId))
       .leftJoin(classes, eq(classes.id, studentTeacherMapping.classId))
       .where(
         and(
@@ -152,7 +189,6 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     const totalStudents = studentMappings.length;
     const today = new Date().toISOString().slice(0, 10);
     const currentMonth = today.slice(0, 7);
-    const studentIds = studentMappings.map((s) => s.studentId);
 
     const todaySetoran = await this.db
       .select({
@@ -180,20 +216,90 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       }
     }
 
-    const uniqueSetorHariIni = new Set(todaySetoran.map((s) => s.studentId)).size;
+    const studentsWhoSetorToday = new Set(todaySetoran.map((s) => s.studentId));
+    const uniqueSetorHariIni = studentsWhoSetorToday.size;
+    const belumSetorCount = Math.max(0, totalStudents - uniqueSetorHariIni);
+
+    const completedClassIds = new Set<string>();
+    for (const sm of studentMappings) {
+      if (sm.classId && studentsWhoSetorToday.has(sm.studentId)) {
+        completedClassIds.add(sm.classId);
+      }
+    }
+
+    const totalClassesToday = teacherClassList.length;
+    const completedClassesToday = completedClassIds.size;
+
+    // Monthly setoran per class for classProgress
+    const monthlySetoran = await this.db
+      .select({
+        studentId: setoranEntries.studentId,
+      })
+      .from(setoranEntries)
+      .where(
+        and(
+          eq(setoranEntries.teacherId, teacherId),
+          eq(setoranEntries.schoolId, schoolId),
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${currentMonth}`
+        )
+      );
+
+    const monthlyActiveStudents = new Set(monthlySetoran.map((s) => s.studentId));
+
+    const badgeThemes = [
+      { bg: "bg-brand-cyan/10", text: "text-brand-cyan-dark", progress: "bg-brand-cyan" },
+      { bg: "bg-purple-50", text: "text-purple-600", progress: "bg-purple-600" },
+      { bg: "bg-amber-50", text: "text-amber-600", progress: "bg-amber-500" },
+      { bg: "bg-emerald-50", text: "text-emerald-600", progress: "bg-emerald-500" },
+    ];
+
+    const classProgress = teacherClassList.map((cls, idx) => {
+      const inClass = studentMappings.filter((s) => s.classId === cls.id);
+      const totalInClass = inClass.length;
+      const activeInClass = inClass.filter((s) => monthlyActiveStudents.has(s.studentId)).length;
+      const percentage = totalInClass > 0 ? Math.min(100, Math.round((activeInClass / totalInClass) * 100)) : 0;
+      const theme = badgeThemes[idx % badgeThemes.length];
+      const badge = cls.name.split(" ")[0] || cls.name.slice(0, 4);
+
+      return {
+        badge,
+        badgeBg: theme.bg,
+        badgeText: theme.text,
+        name: cls.name,
+        percentage,
+        progressColor: theme.progress,
+        targetLabel: `${activeInClass}/${totalInClass} Santri Aktif`,
+      };
+    });
+
+    const attentionStudents: Array<{ name: string; className: string; grade: string }> = [];
+    for (const s of studentMappings) {
+      if (!studentsWhoSetorToday.has(s.studentId)) {
+        attentionStudents.push({
+          name: s.studentName ?? "Santri",
+          className: s.className ?? "Kelas TTQ",
+          grade: "Belum Setor",
+        });
+      }
+    }
 
     return {
       teacherName: teacherRows[0]?.name ?? "Ustadz",
-      totalStudents: totalStudents || 20,
-      setorHariIniCount: uniqueSetorHariIni || (ziyadahCount + murojaahCount + tahsinCount) || 42,
-      belumSetorCount: Math.max(0, (totalStudents || 20) - (uniqueSetorHariIni || 0)),
-      className: studentMappings[0]?.className ?? "Zubair bin Awwam",
-      konsistensiIbadahPercent: 92,
+      totalStudents,
+      totalClassesToday,
+      completedClassesToday,
+      pendingClassesToday: Math.max(0, totalClassesToday - completedClassesToday),
+      setorHariIniCount: uniqueSetorHariIni,
+      belumSetorCount,
+      className: teacherClassList[0]?.name ?? studentMappings[0]?.className ?? "-",
+      konsistensiIbadahPercent: totalStudents > 0 ? Math.round((uniqueSetorHariIni / totalStudents) * 100) : 0,
+      classProgress,
+      attentionStudents: attentionStudents.slice(0, 5),
       todayBreakdown: {
-        ziyadahCount: ziyadahCount || 18,
-        murojaahCount: murojaahCount || 15,
-        tahsinCount: tahsinCount || 9,
-        totalTarget: totalStudents || 20,
+        ziyadahCount,
+        murojaahCount,
+        tahsinCount,
+        totalTarget: totalStudents,
       },
     };
   }

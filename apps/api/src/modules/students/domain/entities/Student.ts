@@ -10,4 +10,12 @@ export interface StudentListItem {
   level: number;
   totalExp: number;
   currentStreak: number;
+  hasSetoranOnDate?: boolean;
+  lastActivity?: {
+    label: string;
+    date: string;
+    grade: string;
+    subcategoryCode?: string;
+    setoranId?: string;
+  } | null;
 }

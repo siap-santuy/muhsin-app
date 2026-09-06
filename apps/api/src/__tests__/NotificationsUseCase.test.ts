@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "vitest";
 import { GetNotificationsUseCase } from "../modules/notifications/application/use-cases/GetNotificationsUseCase";
 import { MarkNotificationReadUseCase } from "../modules/notifications/application/use-cases/MarkNotificationReadUseCase";
 import { MarkAllNotificationsReadUseCase } from "../modules/notifications/application/use-cases/MarkAllNotificationsReadUseCase";

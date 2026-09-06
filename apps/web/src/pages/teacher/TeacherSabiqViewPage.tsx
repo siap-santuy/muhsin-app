@@ -1,33 +1,52 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Edit2, Loader2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, Edit, Loader2 } from "lucide-react";
+import { formatLocalDate } from "@/utils/date";
 import { api } from "@/lib/api";
+import {
+  TTQHeader,
+  TTQCategoryTabs,
+} from "@/components/teacher/TTQComponents";
+
+interface StudentOption {
+  id: string;
+  name: string;
+  className: string | null;
+}
 
 export function TeacherSabiqViewPage() {
+  const hash = window.location.hash;
+  const queryParams = new URLSearchParams(hash.split("?")[1] || "");
+  const routeDate = queryParams.get("date") || formatLocalDate(new Date());
+  const routeStudentId = queryParams.get("studentId") || sessionStorage.getItem("selectedStudentId") || "";
+
+  const [students, setStudents] = useState<StudentOption[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(routeStudentId);
   const [entry, setEntry] = useState<any>(null);
-  const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
+    async function init() {
       try {
-        const lastId = sessionStorage.getItem("lastSetoranId");
-        if (lastId) {
-          const data = await api.getSetoranById(lastId);
-          setEntry(data);
+        const studentList = await api.getStudents();
+        setStudents(studentList);
 
-          if (data.studentId) {
-            const s = await api.getStudentById(data.studentId);
-            setStudent(s);
-          }
-        } else {
-          const list = await api.getSetoranHistory();
-          if (list.length > 0) {
-            setEntry(list[0]);
-            const s = await api.getStudentById(list[0].studentId);
-            setStudent(s);
-          }
+        const currentId = routeStudentId || (studentList[0] ? studentList[0].id : "");
+        setSelectedStudentId(currentId);
+
+        if (currentId) {
+          const categories = await api.getAssessmentCategories();
+          const sabiq = categories.find(
+            (c) => c.code === "sabiq" || c.name.toLowerCase().includes("sabiq")
+          );
+
+          const history = await api.getSetoranHistory({
+            studentId: currentId,
+            subcategoryId: sabiq?.id,
+          });
+
+          const found = history.find((h: any) => h.date === routeDate) || history[0];
+          setEntry(found || null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat detail sabiq");
@@ -35,114 +54,169 @@ export function TeacherSabiqViewPage() {
         setLoading(false);
       }
     }
-    load();
-  }, []);
+    init();
+  }, [routeStudentId, routeDate]);
+
+  function handleStudentChange(newId: string) {
+    setSelectedStudentId(newId);
+    sessionStorage.setItem("selectedStudentId", newId);
+    window.location.hash = `#/sabiq-view?studentId=${newId}&date=${routeDate}`;
+  }
+
+  function handleEdit() {
+    window.location.hash = `#/sabiq-input?studentId=${selectedStudentId}&date=${routeDate}`;
+  }
+
+  const jilidStart = entry?.referenceStart?.jilid ?? 3;
+  const halamanStart = entry?.referenceStart?.halaman ?? 100;
+  const jilidEnd = entry?.referenceEnd?.jilid ?? 3;
+  const halamanEnd = entry?.referenceEnd?.halaman ?? 100;
+
+  const makhrajScore = entry?.scores?.makhraj ?? 85;
+  const madScore = entry?.scores?.mad ?? 90;
+  const ghunnahScore = entry?.scores?.ghunnah ?? 80;
+  const qolqolahScore = entry?.scores?.qolqolah ?? 80;
+
+  let rawCatatan = entry?.keterangan || "";
+  let statusKehadiran = "Hadir";
+  if (rawCatatan.startsWith("[")) {
+    const match = rawCatatan.match(/^\[(.*?)\]\s*(.*)$/);
+    if (match) {
+      statusKehadiran = match[1] || "Hadir";
+      rawCatatan = match[2] || "";
+    }
+  }
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-page">
-        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+      <div className="flex min-h-screen items-center justify-center bg-brand-page">
+        <Loader2 className="h-8 w-8 animate-spin text-[#22bad0]" />
       </div>
     );
   }
 
-  const studentName = student?.name ?? "Siswa";
-  const className = student?.className ?? "";
-  const jilid = entry?.referenceStart?.jilid ?? "Sabiq";
-  const halMulai = entry?.referenceStart?.halaman ?? 1;
-  const halSelesai = entry?.referenceEnd?.halaman ?? 1;
-  const scores = entry?.scores ?? {};
-  const catatan = entry?.keterangan ?? "Tidak ada catatan.";
-  const dateStr = entry?.date ?? new Date().toISOString().slice(0, 10);
-
   return (
-    <div className="flex h-screen flex-col bg-brand-page">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
-        <button
-          type="button"
-          onClick={() => (window.location.hash = "#/students")}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10"
-        >
-          <ArrowLeft className="h-4 w-4 text-purple-600" />
-        </button>
-        <h1 className="text-xl font-bold text-purple-600">Detail Sabiq (Tahsin)</h1>
-        <div className="h-10 w-10" />
-      </div>
+    <div className="min-h-screen bg-brand-page px-4 pb-12">
+      <div className="mx-auto max-w-md">
+        <TTQHeader date={routeDate} />
 
-      <main className="flex-1 overflow-y-auto px-4 pb-12 pt-1">
+        {error && (
+          <div className="mb-4 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600 border border-red-200">
+            {error}
+          </div>
+        )}
+
         <div className="flex flex-col gap-4">
-          {error ? (
-            <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
-              {error}
-            </div>
-          ) : null}
+          {/* 1. Dropdown Siswa */}
+          <div className="relative">
+            <select
+              value={selectedStudentId}
+              onChange={(e) => handleStudentChange(e.target.value)}
+              className="w-full appearance-none rounded-2xl border border-brand-line bg-white py-3 pl-4 pr-10 text-xs font-semibold text-brand-navy outline-none shadow-xs focus:border-brand-cyan"
+            >
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.className ? `(${s.className})` : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
 
-          {/* Student Info Card */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-purple-50 text-purple-600">
-              <Sparkles className="h-7 w-7" />
-            </div>
-            <h2 className="mt-2 text-base font-bold text-brand-navy">{studentName}</h2>
-            <p className="text-xs text-brand-text-muted">{className ? `Kelas: ${className}` : ""}</p>
-            <span className="mt-2 inline-block rounded-full bg-purple-50 px-3 py-0.5 text-[10px] font-bold text-purple-600 border border-purple-200">
-              Sabiq Terverifikasi
+          {/* 2. Status Kehadiran Pill */}
+          <div className="flex justify-end">
+            <span className="rounded-full border border-emerald-400 bg-emerald-50 px-3.5 py-1 text-xs font-bold text-emerald-600">
+              {statusKehadiran}
             </span>
           </div>
 
-          {/* Details Card */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
-              <span className="text-xs font-bold text-brand-navy">Tanggal Setoran</span>
-              <span className="text-xs font-bold text-purple-600">{dateStr}</span>
-            </div>
+          {/* 3. Segmented Tabs Category */}
+          <TTQCategoryTabs
+            activeCategory="sabiq"
+            mode="view"
+            studentId={selectedStudentId}
+            date={routeDate}
+          />
 
-            <div className="flex items-center justify-between border-b border-brand-line/40 pb-2">
-              <span className="text-xs font-bold text-brand-navy">Materi Sabiq</span>
-              <span className="text-xs font-bold text-brand-navy">
-                {jilid} (Hal: {halMulai}-{halSelesai})
-              </span>
-            </div>
+          {/* 4. Detail Jilid & Halaman Sabiq */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <div>
+                <p className="text-[11px] font-bold text-brand-navy">Awal Jilid</p>
+                <div className="mt-1 flex items-center justify-between rounded-xl border border-brand-line bg-gray-50/70 py-2.5 px-3">
+                  <span className="text-xs font-bold text-brand-navy">{jilidStart}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                </div>
+              </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold text-brand-navy">Makhroj</p>
-                <p className="text-lg font-extrabold text-purple-600">{scores.makhroj ?? 0}</p>
+              <div>
+                <p className="text-[11px] font-bold text-brand-navy">Halaman</p>
+                <div className="mt-1 flex items-center rounded-xl border border-brand-line bg-gray-50/70 py-2.5 px-3">
+                  <span className="text-xs font-bold text-brand-navy">{halamanStart}</span>
+                </div>
               </div>
-              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold text-brand-navy">Tajwid</p>
-                <p className="text-lg font-extrabold text-purple-600">{scores.tajwid ?? 0}</p>
+
+              <div>
+                <p className="text-[11px] font-bold text-brand-navy">Akhir Jilid</p>
+                <div className="mt-1 flex items-center justify-between rounded-xl border border-brand-line bg-gray-50/70 py-2.5 px-3">
+                  <span className="text-xs font-bold text-brand-navy">{jilidEnd}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                </div>
               </div>
-              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold text-brand-navy">Kelancaran</p>
-                <p className="text-lg font-extrabold text-purple-600">{scores.kelancaran ?? 0}</p>
-              </div>
-              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold text-brand-navy">Fashohah</p>
-                <p className="text-lg font-extrabold text-purple-600">{scores.fashohah ?? 0}</p>
+
+              <div>
+                <p className="text-[11px] font-bold text-brand-navy">Halaman</p>
+                <div className="mt-1 flex items-center rounded-xl border border-brand-line bg-gray-50/70 py-2.5 px-3">
+                  <span className="text-xs font-bold text-brand-navy">{halamanEnd}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Catatan Card */}
-          <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 shadow-sm">
-            <h3 className="text-xs font-bold text-brand-navy">Catatan Evaluasi Guru</h3>
-            <p className="mt-1 text-xs italic text-brand-navy">
-              &ldquo;{catatan}&rdquo;
+          {/* 5. Card Penilaian */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+            <h3 className="mb-3 text-xs font-bold text-brand-navy">Penilaian</h3>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-xs font-semibold text-brand-navy">Makhraj</span>
+                <span className="text-sm font-extrabold text-[#22bad0]">{makhrajScore}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-xs font-semibold text-brand-navy">Mad</span>
+                <span className="text-sm font-extrabold text-[#22bad0]">{madScore}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-xs font-semibold text-brand-navy">Ghunnah</span>
+                <span className="text-sm font-extrabold text-[#22bad0]">{ghunnahScore}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs font-semibold text-brand-navy">Qolqolah</span>
+                <span className="text-sm font-extrabold text-[#22bad0]">{qolqolahScore}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Catatan Pembimbing Box */}
+          <div className="rounded-2xl border-l-4 border-[#f5a623] bg-[#fffaf0] p-4 shadow-xs">
+            <p className="text-xs italic text-brand-navy leading-relaxed">
+              &quot;{rawCatatan || "Ananda sudah memahami hukum mad dan makharijul huruf dengan baik."}&quot;
+            </p>
+            <p className="mt-2 text-[11px] font-bold text-brand-navy">
+              - Ustadz Pembimbing
             </p>
           </div>
 
-          {/* Edit Button */}
-          <Button
+          {/* 7. Action Button: Ubah Penilaian */}
+          <button
             type="button"
-            variant="outline"
-            onClick={() => (window.location.hash = "#/sabiq-input")}
-            className="h-11 w-full rounded-xl border-2 border-purple-500 text-xs font-bold text-purple-600 hover:bg-purple-50"
+            onClick={handleEdit}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3.5 text-xs font-extrabold tracking-wider text-white shadow-sm transition-all"
           >
-            <Edit2 className="mr-2 h-4 w-4" /> INPUT SABIQ LAIN
-          </Button>
+            <Edit className="h-4 w-4" />
+            <span>UBAH PENILAIAN</span>
+          </button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

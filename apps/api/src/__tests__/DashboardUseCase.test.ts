@@ -27,9 +27,30 @@ describe("GetDashboardSummaryUseCase", () => {
   const mockTeacherDash: TeacherDashboardSummary = {
     teacherName: "Ustadz Arai",
     totalStudents: 15,
+    totalClassesToday: 2,
+    completedClassesToday: 1,
+    pendingClassesToday: 1,
     setorHariIniCount: 12,
     belumSetorCount: 3,
     className: "VII Abu Bakar",
+    classProgress: [
+      {
+        badge: "VII",
+        badgeBg: "bg-brand-cyan/10",
+        badgeText: "text-brand-cyan-dark",
+        name: "VII Abu Bakar",
+        percentage: 80,
+        progressColor: "bg-brand-cyan",
+        targetLabel: "12/15 Santri Aktif",
+      },
+    ],
+    attentionStudents: [
+      {
+        name: "Siswa Z",
+        className: "VII Abu Bakar",
+        grade: "Belum Setor",
+      },
+    ],
   };
 
   const mockParentDash: ParentDashboardSummary = {
@@ -80,8 +101,13 @@ describe("GetDashboardSummaryUseCase", () => {
       role: "teacher",
       schoolId: "s-1",
     });
-    expect((result as TeacherDashboardSummary).teacherName).toBe("Ustadz Arai");
-    expect((result as TeacherDashboardSummary).totalStudents).toBe(15);
+    const teacherSummary = result as TeacherDashboardSummary;
+    expect(teacherSummary.teacherName).toBe("Ustadz Arai");
+    expect(teacherSummary.totalStudents).toBe(15);
+    expect(teacherSummary.totalClassesToday).toBe(2);
+    expect(teacherSummary.completedClassesToday).toBe(1);
+    expect(teacherSummary.classProgress).toHaveLength(1);
+    expect(teacherSummary.attentionStudents).toHaveLength(1);
   });
 
   it("routes correctly for parent role", async () => {
