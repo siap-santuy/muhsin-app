@@ -31,6 +31,11 @@ const FAQS: FaqItem[] = [
     role: ["teacher"],
   },
   {
+    question: "Bagaimana cara memasang / mengunduh aplikasi di HP?",
+    answer: "Untuk Android/Chrome: Klik tombol 'Unduh' yang muncul di aplikasi atau menu titik tiga browser lalu pilih 'Install App' / 'Tambahkan ke Layar Utama'. Untuk iOS Safari: Klik tombol Share (ikon kotak panah ke atas) lalu pilih 'Add to Home Screen' (Tambah ke Layar Utama).",
+    role: ["student", "parent", "teacher"],
+  },
+  {
     question: "Bagaimana cara mencetak / mendownload Raport Bulanan?",
     answer: "Buka menu Raport, pilih bulan atau semester yang diinginkan, kemudian klik tombol 'UNDUH RAPORT' di bagian bawah halaman untuk mencetak atau menyimpan format PDF.",
     role: ["student", "parent", "teacher"],

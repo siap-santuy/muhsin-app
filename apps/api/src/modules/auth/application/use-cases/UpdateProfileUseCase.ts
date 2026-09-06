@@ -23,6 +23,9 @@ export class UpdateProfileUseCase {
       email: input.email,
       phone: input.phone ?? null,
       avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : user.avatarUrl,
+      gender: input.gender !== undefined ? input.gender : user.gender,
+      birthPlace: input.birthPlace !== undefined ? input.birthPlace : user.birthPlace,
+      birthDate: input.birthDate !== undefined ? input.birthDate : user.birthDate,
     });
 
     return {
@@ -33,6 +36,9 @@ export class UpdateProfileUseCase {
       email: updated.email,
       phone: updated.phone,
       avatarUrl: updated.avatarUrl ?? null,
+      gender: updated.gender ?? null,
+      birthPlace: updated.birthPlace ?? null,
+      birthDate: updated.birthDate ?? null,
       createdAt: updated.createdAt.toISOString(),
     };
   }

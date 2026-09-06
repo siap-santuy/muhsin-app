@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
+import { PWAInstallProfileItem } from "@/components/pwa/PWAInstallPrompt";
 import type { UserProfile } from "@muhsin/shared";
 
 interface ParentProfilePageProps {
@@ -86,6 +87,7 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
               AKUN
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
+              <PWAInstallProfileItem />
               {[
                 { icon: UserCog, label: "Ubah Profile", route: "#/edit-profile" },
                 { icon: Lock, label: "Ubah Password", route: "#/change-password" },

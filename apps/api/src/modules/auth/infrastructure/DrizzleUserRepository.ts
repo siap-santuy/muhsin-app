@@ -79,6 +79,9 @@ export class DrizzleUserRepository implements IUserRepository {
       passwordHash: row.passwordHash,
       phone: row.phone,
       avatarUrl: row.avatarUrl,
+      gender: row.gender,
+      birthPlace: row.birthPlace,
+      birthDate: row.birthDate,
       createdAt: row.createdAt,
     };
   }

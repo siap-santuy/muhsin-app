@@ -10,5 +10,8 @@ export interface User {
   passwordHash: string;
   phone: string | null;
   avatarUrl?: string | null;
+  gender?: string | null;
+  birthPlace?: string | null;
+  birthDate?: string | null;
   createdAt: Date;
 }

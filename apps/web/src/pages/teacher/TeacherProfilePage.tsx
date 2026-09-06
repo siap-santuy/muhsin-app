@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
+import { PWAInstallProfileItem } from "@/components/pwa/PWAInstallPrompt";
 import type { UserProfile } from "@muhsin/shared";
 
 interface TeacherProfilePageProps {
@@ -49,7 +50,7 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
   const avatarUrl =
     profile?.avatarUrl ||
     storeUser?.avatarUrl ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80";
+    "https://i.pinimg.com/736x/0a/aa/f6/0aaaf68b00bf54b01ae506c8bbe03622.jpg";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -86,6 +87,7 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
               PENGATURAN AKUN
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
+              <PWAInstallProfileItem />
               {[
                 { icon: UserCog, label: "Ubah Profile", route: "#/edit-profile" },
                 { icon: Lock, label: "Ubah Password", route: "#/change-password" },

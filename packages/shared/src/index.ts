@@ -30,6 +30,9 @@ export const authUserSchema = z.object({
   email: z.string().email(),
   username: z.string().nullable().optional(),
   avatarUrl: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  birthPlace: z.string().nullable().optional(),
+  birthDate: z.string().nullable().optional(),
 });
 export type AuthUser = z.infer<typeof authUserSchema>;
 
@@ -97,6 +100,9 @@ export const updateProfileInputSchema = z.object({
   email: z.string().email(),
   phone: z.string().max(30).optional().nullable(),
   avatarUrl: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+  birthPlace: z.string().max(100).optional().nullable(),
+  birthDate: z.string().optional().nullable(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 
@@ -114,6 +120,9 @@ export const userProfileSchema = z.object({
   email: z.string(),
   username: z.string().nullable().optional(),
   avatarUrl: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  birthPlace: z.string().nullable().optional(),
+  birthDate: z.string().nullable().optional(),
   phone: z.string().nullable(),
   createdAt: z.string(),
 });

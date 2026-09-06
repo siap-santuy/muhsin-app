@@ -15,6 +15,9 @@ export function EditProfilePage() {
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthPlace, setBirthPlace] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>(user?.avatarUrl || DEFAULT_AVATAR);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,6 +34,9 @@ export function EditProfilePage() {
           if (profile.name) setName(profile.name);
           if (profile.email) setEmail(profile.email);
           if (profile.phone) setPhone(profile.phone);
+          if (profile.gender) setGender(profile.gender);
+          if (profile.birthPlace) setBirthPlace(profile.birthPlace);
+          if (profile.birthDate) setBirthDate(profile.birthDate);
           if (profile.avatarUrl) setAvatarUrl(profile.avatarUrl);
         }
       } catch {
@@ -52,8 +58,8 @@ export function EditProfilePage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5MB");
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 2MB");
       return;
     }
 
@@ -104,6 +110,9 @@ export function EditProfilePage() {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
+        gender: gender || null,
+        birthPlace: birthPlace.trim() || null,
+        birthDate: birthDate || null,
         avatarUrl,
       });
 
@@ -116,6 +125,9 @@ export function EditProfilePage() {
               name: updated.name,
               email: updated.email,
               avatarUrl: updated.avatarUrl ?? avatarUrl,
+              gender: updated.gender ?? gender,
+              birthPlace: updated.birthPlace ?? birthPlace,
+              birthDate: updated.birthDate ?? birthDate,
             }
           : null,
       }));
@@ -165,7 +177,7 @@ export function EditProfilePage() {
             </button>
           </div>
           <p className="mt-2 text-[11px] text-brand-text-muted">
-            Klik kamera untuk mengunggah foto baru
+            Klik kamera untuk mengunggah foto baru (maks. 2MB)
           </p>
         </div>
 
@@ -177,7 +189,7 @@ export function EditProfilePage() {
         ) : null}
 
         {/* Input Fields */}
-        <div className="space-y-3 rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+        <div className="space-y-3.5 rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
           <div>
             <label className="text-xs font-bold text-brand-navy">Nama Lengkap</label>
             <input
@@ -185,7 +197,7 @@ export function EditProfilePage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white"
+              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
             />
           </div>
 
@@ -196,7 +208,7 @@ export function EditProfilePage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white"
+              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
             />
           </div>
 
@@ -207,15 +219,51 @@ export function EditProfilePage() {
               value={phone}
               placeholder="08xxxxxxxxxx"
               onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white"
+              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-brand-navy">Jenis Kelamin</label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
+            >
+              <option value="">Pilih Jenis Kelamin</option>
+              <option value="Ikhwan">Ikhwan (Laki-laki)</option>
+              <option value="Akhwat">Akhwat (Perempuan)</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-brand-navy">Tempat Lahir</label>
+              <input
+                type="text"
+                placeholder="Kota/Kabupaten"
+                value={birthPlace}
+                onChange={(e) => setBirthPlace(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-brand-navy">Tanggal Lahir</label>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan focus:bg-white transition-all"
+              />
+            </div>
           </div>
         </div>
 
         <Button
           type="submit"
           disabled={loading}
-          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
+          className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60 transition-all"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -90,8 +90,34 @@ interface ExcelStudentRow {
   fullname?: string;
   username?: string;
   password?: string;
+  gender?: string;
+  birth_place?: string;
+  birth_date?: string | number;
   class?: string;
   teacher?: string;
+}
+
+function parseBirthDateToPassword(birthDate: unknown): string | null {
+  if (!birthDate) return null;
+  const str = String(birthDate).trim();
+  const matchIso = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (matchIso) {
+    const yyyy = matchIso[1];
+    const mm = matchIso[2].padStart(2, "0");
+    const dd = matchIso[3].padStart(2, "0");
+    return `${dd}${mm}${yyyy}`;
+  }
+  const matchId = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (matchId) {
+    const dd = matchId[1].padStart(2, "0");
+    const mm = matchId[2].padStart(2, "0");
+    const yyyy = matchId[3];
+    return `${dd}${mm}${yyyy}`;
+  }
+  if (/^\d{8}$/.test(str)) {
+    return str;
+  }
+  return null;
 }
 
 interface ExcelTeacherRow {
@@ -317,7 +343,7 @@ async function main() {
     if (!row.teacher) continue;
     const teacherName = row.teacher.trim();
     const kode = (row.kode || "guru").trim().toLowerCase();
-    const email = `${kode}@teacher.alfitrah.sch.id`;
+    const email = `${kode}@alfitrah.sch.id`;
 
     let teacherUser = (
       await db
@@ -347,13 +373,22 @@ async function main() {
     teacherMap.set(teacherName, teacherUser.id);
   }
 
-  // 5.3 Student password map
+  // 5.3 Student password & profile map (derived from birth_date as 8 digits ddmmyyyy)
   const studentSheet = workbook.Sheets["student"];
   const studentRows: ExcelStudentRow[] = xlsx.utils.sheet_to_json(studentSheet);
   const studentPasswordMap = new Map<string, string>();
+  const studentInfoMap = new Map<string, { gender?: string; birthPlace?: string; birthDate?: string }>();
+
   for (const s of studentRows) {
-    if (s.username && s.password) {
-      studentPasswordMap.set(s.username.trim(), s.password.trim());
+    if (s.username) {
+      const birthDatePwd = parseBirthDateToPassword(s.birth_date);
+      const chosenPassword = birthDatePwd || (s.password ? s.password.trim() : DEFAULT_PASSWORD);
+      studentPasswordMap.set(s.username.trim(), chosenPassword);
+      studentInfoMap.set(s.username.trim(), {
+        gender: s.gender ? String(s.gender).trim() : undefined,
+        birthPlace: s.birth_place ? String(s.birth_place).trim() : undefined,
+        birthDate: s.birth_date ? String(s.birth_date).trim() : undefined,
+      });
     }
   }
 
@@ -383,16 +418,17 @@ async function main() {
     // Determine unique email
     let email = row.email ? String(row.email).trim().toLowerCase() : "";
     if (!email || usedEmails.has(email)) {
-      email = `${username}@student.alfitrah.sch.id`;
+      email = `${username}@alfitrah.sch.id`;
     }
     if (usedEmails.has(email)) {
-      email = `${username}.${Math.floor(Math.random() * 899 + 100)}@student.alfitrah.sch.id`;
+      email = `${username}.${Math.floor(Math.random() * 899 + 100)}@alfitrah.sch.id`;
     }
     usedEmails.add(email);
 
-    // Password
+    // Password & Extra Info
     const rawPassword = studentPasswordMap.get(username) || DEFAULT_PASSWORD;
     const pwdHash = await hash(rawPassword);
+    const extraInfo = studentInfoMap.get(username);
 
     let student = (
       await db
@@ -419,11 +455,25 @@ async function main() {
             username,
             email,
             passwordHash: pwdHash,
+            gender: extraInfo?.gender || null,
+            birthPlace: extraInfo?.birthPlace || null,
+            birthDate: extraInfo?.birthDate || null,
             phone: null,
           })
           .returning()
       )[0];
       studentCount++;
+    } else {
+      // Keep student passwordHash & profile updated
+      await db
+        .update(users)
+        .set({
+          passwordHash: pwdHash,
+          gender: extraInfo?.gender || student.gender || null,
+          birthPlace: extraInfo?.birthPlace || student.birthPlace || null,
+          birthDate: extraInfo?.birthDate || student.birthDate || null,
+        })
+        .where(eq(users.id, student.id));
     }
     studentMap.set(username, student);
 
@@ -640,7 +690,7 @@ async function main() {
   console.log(`\nDemo Credentials:`);
   console.log(`- Koordinator: ${KOORDINATOR_EMAIL} / ${DEFAULT_PASSWORD}`);
   console.log(`- Guru (Contoh): asa@teacher.alfitrah.sch.id / ${DEFAULT_PASSWORD}`);
-  console.log(`- Siswa (Contoh): abdulpradipta@student.alfitrah.sch.id / abdulpradipta2026`);
+  console.log(`- Siswa (Contoh): nengdara.hdr@gmail.com / 15042014 (DDMMYYYY tgl lahir)`);
   console.log(`- Ortu (Contoh): ortu_daraindahpertiwi / ${DEFAULT_PASSWORD}`);
 }
 
