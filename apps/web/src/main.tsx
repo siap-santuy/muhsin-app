@@ -45,6 +45,7 @@ import { ChangePasswordPage } from "@/pages/settings/ChangePasswordPage";
 import { EditProfilePage } from "@/pages/settings/EditProfilePage";
 import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
+import { MobileAppShell } from "@/components/layout/MobileAppShell";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
@@ -68,28 +69,11 @@ function useHashRoute(): string {
   return route;
 }
 
-function App() {
-  const [ready, setReady] = useState(false);
-  const route = useHashRoute();
-  const user = useAuthStore((s) => s.user);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 1800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!ready) {
-    return <SplashScreen />;
-  }
-
-  if (!user) {
-    return <LoginPage />;
-  }
-
-  const rawHash = route.replace("#/", "").replace("#", "");
-  const [path, queryString] = rawHash.split("?");
-  const searchParams = new URLSearchParams(queryString || "");
-
+function renderContent(
+  user: any,
+  path: string,
+  searchParams: URLSearchParams
+): React.ReactNode {
   // Common App Shell & Settings Routes (All Roles)
   switch (path) {
     case "notifications":
@@ -222,23 +206,6 @@ function App() {
     }
   }
 
-  // Role: KOORDINATOR TTQ
-  if (user.role === "koordinator_ttq") {
-    switch (path) {
-      case "students":
-        return <KoorStudentPage />;
-      case "teachers":
-        return <KoorTeacherPage />;
-      case "kurikulum":
-        return <KoorKurikulumPage />;
-      case "munaqosah":
-        return <KoorMunaqosahPage />;
-      case "dashboard":
-      default:
-        return <KoorDashboardPage />;
-    }
-  }
-
   // Fallback / Other roles
   return (
     <div className="flex min-h-screen items-center justify-center bg-white">
@@ -252,6 +219,59 @@ function App() {
         </p>
       </div>
     </div>
+  );
+}
+
+function App() {
+  const [ready, setReady] = useState(false);
+  const route = useHashRoute();
+  const user = useAuthStore((s) => s.user);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!ready) {
+    return <SplashScreen />;
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  const rawHash = route.replace("#/", "").replace("#", "");
+  const [path, queryString] = rawHash.split("?");
+  const searchParams = new URLSearchParams(queryString || "");
+
+  // Role: KOORDINATOR TTQ (Full Desktop Shell Layout)
+  if (user.role === "koordinator_ttq") {
+    switch (path) {
+      case "students":
+        return <KoorStudentPage />;
+      case "teachers":
+        return <KoorTeacherPage />;
+      case "kurikulum":
+        return <KoorKurikulumPage />;
+      case "munaqosah":
+        return <KoorMunaqosahPage />;
+      case "notifications":
+        return <NotificationPage />;
+      case "edit-profile":
+        return <EditProfilePage />;
+      case "change-password":
+        return <ChangePasswordPage />;
+      case "dashboard":
+      default:
+        return <KoorDashboardPage />;
+    }
+  }
+
+  // Roles: STUDENT, PARENT, TEACHER (Locked to mobile frame max-w-[430px])
+  return (
+    <MobileAppShell>
+      {renderContent(user, path, searchParams)}
+    </MobileAppShell>
   );
 }
 

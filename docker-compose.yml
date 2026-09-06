@@ -6,15 +6,14 @@ services:
     container_name: muhsin_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USER:-muhsin_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-muhsin_secure_password_123}
       POSTGRES_DB: ${DB_NAME:-muhsin_db}
-    ports:
-      - "5432:5432"
+    # No ports exposed to internet: completely private inside Docker network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-muhsin_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-muhsin_admin} -d ${DB_NAME:-muhsin_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,8 +22,7 @@ services:
     image: redis:7-alpine
     container_name: muhsin_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # No ports exposed to internet: completely private inside Docker network
     volumes:
       - redis_data:/data
 
@@ -35,12 +33,16 @@ services:
     container_name: muhsin_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-muhsin_db}
+      DATABASE_URL: postgres://${DB_USER:-muhsin_admin}:${DB_PASSWORD:-muhsin_secure_password_123}@postgres:5432/${DB_NAME:-muhsin_db}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-muhsin-super-secret-jwt-key}
-      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-change-me-production-secret-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-production-refresh-secret-min-32-chars}
+      ACCESS_TOKEN_TTL: 900
+      REFRESH_TOKEN_TTL: 604800
+      PORT: 3001
+    # Only bind to host localhost (reverse-proxied by Nginx/Caddy on VPS)
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,10 +53,14 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: https://api.muhsin.id
+        VITE_DEFAULT_SCHOOL_SLUG: alfitrah
     container_name: muhsin_web
     restart: unless-stopped
+    # Only bind to host localhost (reverse-proxied by Nginx/Caddy on VPS)
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - api
 

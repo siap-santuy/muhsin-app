@@ -1,26 +1,28 @@
-# Multi-stage Dockerfile for MuhsinApp API (Hono)
+# Production Dockerfile for MuhsinApp API (Bun + Hono)
+FROM oven/bun:1-alpine AS base
 
-FROM node:20-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-
-FROM base AS builder
 WORKDIR /app
-COPY pnpm-lock.yaml* package.json* ./
+
+# Copy root package files and lockfile
+COPY package.json bun.lock ./
+
+# Copy packages and apps manifests
+COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+
+# Install dependencies using bun workspace
+RUN bun install --frozen-lockfile
+
+# Copy source code
 COPY packages/ ./packages/
-RUN pnpm install --frozen-lockfile || pnpm install
+COPY apps/api/ ./apps/api/
 
-COPY . .
-RUN pnpm --filter @muhsin/api build
+# Build shared package if needed
+WORKDIR /app/apps/api
 
-FROM base AS runner
-WORKDIR /app
+EXPOSE 3001
+
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/
+ENV PORT=3001
 
-EXPOSE 3000
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["bun", "run", "src/index.ts"]

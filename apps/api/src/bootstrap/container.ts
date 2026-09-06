@@ -148,21 +148,33 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use(
     "*",
     cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:3001",
-        "https://muhsin.app",
-        "https://www.muhsin.app",
-        "https://stage-muhsin.app",
-        "https://www.stage-muhsin.app",
-        "https://bthqffp6-5173.asse.devtunnels.ms",
-        "https://bthqffp6-5174.asse.devtunnels.ms",
-        "https://bthqffp6-5175.asse.devtunnels.ms",
-        "https://bthqffp6-5176.asse.devtunnels.ms",
-        "https://bthqffp6-5179.asse.devtunnels.ms",
-        "https://bthqffp6-3001.asse.devtunnels.ms/",
-      ],
+      origin: (origin) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return "*";
+
+        const allowedExact = [
+          "http://localhost:5173",
+          "http://localhost:5174",
+          "http://localhost:3001",
+          "https://muhsin.id",
+          "https://www.muhsin.id",
+          "https://api.muhsin.id",
+        ];
+
+        if (allowedExact.includes(origin)) return origin;
+
+        // Allow all subdomains of muhsin.id (e.g. alfitrah.muhsin.id)
+        if (/^https:\/\/([a-z0-9-]+\.)*muhsin\.id$/i.test(origin)) {
+          return origin;
+        }
+
+        // Allow devtunnels / local testing domains
+        if (/^https:\/\/[a-z0-9-]+\.asse\.devtunnels\.ms$/i.test(origin)) {
+          return origin;
+        }
+
+        return null;
+      },
       credentials: true,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
