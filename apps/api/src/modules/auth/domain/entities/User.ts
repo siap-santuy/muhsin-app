@@ -9,5 +9,6 @@ export interface User {
   email: string;
   passwordHash: string;
   phone: string | null;
+  avatarUrl?: string | null;
   createdAt: Date;
 }

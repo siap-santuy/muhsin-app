@@ -16,6 +16,7 @@ export class GetProfileUseCase {
       username: user.username,
       email: user.email,
       phone: user.phone,
+      avatarUrl: user.avatarUrl ?? null,
       createdAt: user.createdAt.toISOString(),
     };
   }

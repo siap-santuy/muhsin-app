@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Camera, Check, Loader2, Save } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { Button } from "@/components/ui/button";
@@ -6,15 +6,21 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80";
+
 export function EditProfilePage() {
   const user = useAuthStore((s) => s.user);
 
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(user?.avatarUrl || DEFAULT_AVATAR);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -25,6 +31,7 @@ export function EditProfilePage() {
           if (profile.name) setName(profile.name);
           if (profile.email) setEmail(profile.email);
           if (profile.phone) setPhone(profile.phone);
+          if (profile.avatarUrl) setAvatarUrl(profile.avatarUrl);
         }
       } catch {
         // Silent fallback to local auth store values
@@ -36,6 +43,57 @@ export function EditProfilePage() {
     };
   }, []);
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Harap pilih file gambar (JPG/PNG/WEBP)");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Client-side downscale & compress to web-ready JPEG (max 320x320)
+        const canvas = document.createElement("canvas");
+        const maxDim = 320;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          setAvatarUrl(compressedDataUrl);
+          toast.success("Foto profil dipilih. Klik Simpan Perubahan.");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -46,13 +104,19 @@ export function EditProfilePage() {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
+        avatarUrl,
       });
 
       // Update auth store with new user data
       useAuthStore.setState((state) => ({
         ...state,
         user: state.user
-          ? { ...state.user, name: updated.name, email: updated.email }
+          ? {
+              ...state.user,
+              name: updated.name,
+              email: updated.email,
+              avatarUrl: updated.avatarUrl ?? avatarUrl,
+            }
           : null,
       }));
 
@@ -74,17 +138,28 @@ export function EditProfilePage() {
   return (
     <SettingsPageShell title="Ubah Profile" subtitle="Perbarui informasi akun Anda">
       <form onSubmit={handleSave} className="flex flex-col gap-4">
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
         {/* Avatar Upload */}
         <div className="flex flex-col items-center justify-center pt-2">
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
+              src={avatarUrl}
               alt="Avatar"
-              className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm"
+              className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm bg-gray-100"
             />
             <button
               type="button"
-              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand-cyan text-white shadow-md hover:bg-brand-cyan-dark"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand-cyan text-white shadow-md hover:bg-brand-cyan-dark transition-all active:scale-95"
+              aria-label="Pilih Foto Profil"
             >
               <Camera className="h-4 w-4" />
             </button>

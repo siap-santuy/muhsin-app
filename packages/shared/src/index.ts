@@ -29,6 +29,7 @@ export const authUserSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   username: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 export type AuthUser = z.infer<typeof authUserSchema>;
 
@@ -95,6 +96,7 @@ export const updateProfileInputSchema = z.object({
   name: z.string().min(1).max(255),
   email: z.string().email(),
   phone: z.string().max(30).optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 
@@ -111,6 +113,7 @@ export const userProfileSchema = z.object({
   name: z.string(),
   email: z.string(),
   username: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
   phone: z.string().nullable(),
   createdAt: z.string(),
 });

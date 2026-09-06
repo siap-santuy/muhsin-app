@@ -65,7 +65,7 @@ describe("Profile UseCases", () => {
     );
   });
 
-  it("UpdateProfileUseCase updates name, email, phone", async () => {
+  it("UpdateProfileUseCase updates name, email, phone, avatarUrl", async () => {
     let current = makeMockUser();
     const userRepo: IUserRepository = {
       findByEmail: async (email) => (email === current.email ? current : null),
@@ -84,11 +84,13 @@ describe("Profile UseCases", () => {
       name: "Ahmad Baru",
       email: "ahmad.baru@sekolah.sch.id",
       phone: "08999999999",
+      avatarUrl: "data:image/jpeg;base64,mockdata",
     });
 
     expect(result.name).toBe("Ahmad Baru");
     expect(result.email).toBe("ahmad.baru@sekolah.sch.id");
     expect(result.phone).toBe("08999999999");
+    expect(result.avatarUrl).toBe("data:image/jpeg;base64,mockdata");
   });
 
   it("UpdateProfileUseCase throws EmailAlreadyUsedError if duplicate in same tenant", async () => {

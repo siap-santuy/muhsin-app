@@ -22,6 +22,7 @@ export class UpdateProfileUseCase {
       name: input.name,
       email: input.email,
       phone: input.phone ?? null,
+      avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : user.avatarUrl,
     });
 
     return {
@@ -31,6 +32,7 @@ export class UpdateProfileUseCase {
       name: updated.name,
       email: updated.email,
       phone: updated.phone,
+      avatarUrl: updated.avatarUrl ?? null,
       createdAt: updated.createdAt.toISOString(),
     };
   }

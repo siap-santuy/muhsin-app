@@ -294,9 +294,17 @@ export function KoorShell({
               onClick={() => (window.location.hash = "#/edit-profile")}
               className="hidden cursor-pointer items-center gap-2.5 rounded-full border border-brand-line/60 bg-white py-1 pl-1 pr-3 shadow-sm hover:border-brand-cyan sm:flex"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-navy text-[11px] font-bold text-white">
-                {userName.charAt(0)}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={userName}
+                  className="h-7 w-7 rounded-full object-cover border border-brand-cyan"
+                />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-navy text-[11px] font-bold text-white">
+                  {userName.charAt(0)}
+                </div>
+              )}
               <span className="text-xs font-semibold text-brand-navy">
                 {userName}
               </span>

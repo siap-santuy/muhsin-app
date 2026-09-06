@@ -46,6 +46,10 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
 
   const name = profile?.name ?? storeUser?.name ?? "Siswa";
   const email = profile?.email ?? storeUser?.email ?? "";
+  const avatarUrl =
+    profile?.avatarUrl ||
+    storeUser?.avatarUrl ||
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -57,9 +61,9 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
           <div className="flex flex-col items-center text-center">
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
+                src={avatarUrl}
                 alt={name}
-                className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm"
+                className="h-24 w-24 rounded-full border-4 border-brand-cyan object-cover shadow-sm bg-gray-100"
               />
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-amber px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
                 Lv. 1
