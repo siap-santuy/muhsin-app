@@ -143,6 +143,7 @@ async function main() {
       await db
         .insert(schools)
         .values({
+          slug: "alfitrah",
           name: SCHOOL_NAME,
           jenjang: "SMP",
           npsn: "00000001",
@@ -151,7 +152,13 @@ async function main() {
         })
         .returning()
     )[0];
-    console.log(`[seed] created school: ${school.name}`);
+    console.log(`[seed] created school: ${school.name} (slug: alfitrah)`);
+  } else {
+    // Ensure slug is set
+    await db
+      .update(schools)
+      .set({ slug: "alfitrah" })
+      .where(eq(schools.id, school.id));
   }
 
   // 2. Academic Period

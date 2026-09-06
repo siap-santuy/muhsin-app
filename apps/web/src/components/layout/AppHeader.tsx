@@ -2,31 +2,38 @@ import { useEffect } from "react";
 import { Bell } from "lucide-react";
 import { TopAppBar } from "./TopAppBar";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useTenantStore } from "@/store/tenantStore";
 
 export function AppHeader() {
   const unreadCount = useNotificationStore(
     (s) => s.notifications.filter((n) => !n.read).length
   );
   const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
+  const school = useTenantStore((s) => s.school);
+  const resolveTenant = useTenantStore((s) => s.resolveTenant);
 
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
+    if (!school) {
+      resolveTenant();
+    }
+  }, [fetchNotifications, school, resolveTenant]);
+
+  const schoolName = school?.name || "SMP Islam Terpadu AL FITRAH";
 
   return (
     <TopAppBar
       left={
         <>
           <img
-            src="/brand/logo_combo.svg"
-            alt="Logo SMP Islam Terpadu Al Fitrah"
+            src={school?.logoUrl || "/brand/logo_combo.svg"}
+            alt={`Logo ${schoolName}`}
             className="w-26 rounded-lg object-contain"
           />
-          <div className="">
-            <p className="text-lg font-bold text-brand-navy">
-              SMP Islam Terpadu
+          <div>
+            <p className="text-base font-bold text-brand-navy leading-tight line-clamp-2">
+              {schoolName}
             </p>
-            <p className="text-lg font-bold text-brand-navy">AL FITRAH</p>
           </div>
         </>
       }

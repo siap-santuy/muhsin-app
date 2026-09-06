@@ -43,6 +43,13 @@
       "when": 1788711177174,
       "tag": "0005_aberrant_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788712215414,
+      "tag": "0006_illegal_payback",
+      "breakpoints": true
     }
   ]
 }

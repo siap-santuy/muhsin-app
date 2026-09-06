@@ -13,6 +13,7 @@ import {
   getOfflineQueue,
   removeFromOfflineQueue,
 } from "./offlineQueue";
+import { getActiveSchoolId } from "@/store/tenantStore";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 export const SCHOOL_ID = import.meta.env.VITE_SCHOOL_ID || "school-default-id";
@@ -25,10 +26,10 @@ function getOfflineCacheKey(endpoint: string): string {
     const raw = localStorage.getItem("muhsin-auth");
     const user = raw ? JSON.parse(raw)?.state?.user : null;
     const userId = user?.id || "guest";
-    const schoolId = user?.schoolId || SCHOOL_ID;
+    const schoolId = user?.schoolId || getActiveSchoolId();
     return `${OFFLINE_CACHE_PREFIX}${schoolId}_${userId}_${endpoint}`;
   } catch {
-    return `${OFFLINE_CACHE_PREFIX}${SCHOOL_ID}_guest_${endpoint}`;
+    return `${OFFLINE_CACHE_PREFIX}${getActiveSchoolId()}_guest_${endpoint}`;
   }
 }
 
@@ -251,7 +252,7 @@ class ApiClient {
         endpoint: "/daily-ibadah/draft",
         method: "POST",
         body: input,
-        schoolId: user?.schoolId || SCHOOL_ID,
+        schoolId: user?.schoolId || getActiveSchoolId(),
         userId: user?.id || "guest",
       });
       saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
@@ -278,7 +279,7 @@ class ApiClient {
         endpoint: "/daily-ibadah/submit",
         method: "POST",
         body: input,
-        schoolId: user?.schoolId || SCHOOL_ID,
+        schoolId: user?.schoolId || getActiveSchoolId(),
         userId: user?.id || "guest",
       });
       saveToOfflineCache(`/daily-ibadah?date=${input.date}`, {
@@ -299,7 +300,7 @@ class ApiClient {
         endpoint: "/setoran",
         method: "POST",
         body: input,
-        schoolId: user?.schoolId || SCHOOL_ID,
+        schoolId: user?.schoolId || getActiveSchoolId(),
         userId: user?.id || "guest",
       });
       return { success: true, offlineQueued: true, id: `offline_${Date.now()}` };

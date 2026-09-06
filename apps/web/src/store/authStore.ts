@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { api, SCHOOL_ID } from "@/lib/api";
+import { api } from "@/lib/api";
+import { getActiveSchoolId } from "@/store/tenantStore";
 import type { LoginInput, AuthUser } from "@muhsin/shared";
 
 interface AuthState {
@@ -17,8 +18,9 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       user: null,
-      login: async (identifier, password, schoolId = SCHOOL_ID) => {
-        const input: LoginInput = { identifier: identifier.trim(), password, schoolId };
+      login: async (identifier, password, schoolId) => {
+        const targetSchoolId = schoolId || getActiveSchoolId();
+        const input: LoginInput = { identifier: identifier.trim(), password, schoolId: targetSchoolId };
         const result = await api.login(input);
         localStorage.setItem("access_token", result.accessToken);
         set({

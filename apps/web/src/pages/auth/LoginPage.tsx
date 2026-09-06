@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useTenantStore } from "@/store/tenantStore";
 import { Button } from "@/components/ui/button";
 
 export function LoginPage() {
   const login = useAuthStore((s) => s.login);
+  const school = useTenantStore((s) => s.school);
+  const resolveTenant = useTenantStore((s) => s.resolveTenant);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    resolveTenant();
+  }, [resolveTenant]);
 
   const canSubmit = email.trim().length > 0 && password.length > 0 && !loading;
 
@@ -18,7 +26,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, school?.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login gagal");
     } finally {
@@ -29,14 +37,15 @@ export function LoginPage() {
   const headerContent = (
     <div className="flex flex-col items-center text-center">
       <img
-        src="/brand/TTQ_Logo.png"
-        alt="Logo TTQ Al Fitrah"
+        src={school?.logoUrl || "/brand/TTQ_Logo.png"}
+        alt={school?.name || "Logo TTQ Al Fitrah"}
         className="h-48 w-48 object-contain md:h-52 md:w-52"
       />
       <div className="font-extrabold leading-snug tracking-wide text-[#0C2B50]">
         <p className="text-xl uppercase md:text-lg">TAHSIN TAHFIZH QURAN</p>
-        <p className="text-xl uppercase md:text-lg">SMP ISLAM TERPADU</p>
-        <p className="text-xl uppercase md:text-lg">AL FITRAH</p>
+        <p className="text-xl uppercase md:text-lg">
+          {school?.name ? school.name.toUpperCase() : "SMP ISLAM TERPADU AL FITRAH"}
+        </p>
       </div>
     </div>
   );

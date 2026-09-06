@@ -11,10 +11,12 @@ export type UserRole = (typeof userRole)[number];
 
 export const schools = pgTable("schools", {
   id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").unique(),
   name: text("name").notNull(),
   jenjang: text("jenjang", { enum: schoolJenjang }).notNull(),
   npsn: text("npsn"),
   address: text("address"),
+  logoUrl: text("logo_url"),
   // FKs tanpa .references() untuk hindari import sirkular tenancy↔periods;
   // referensi didaftarkan di migration (FK ke academic_periods.id).
   activeAcademicPeriodId: uuid("active_academic_period_id"),

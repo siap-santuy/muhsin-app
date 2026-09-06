@@ -87,9 +87,11 @@ import { createNotificationRoutes } from "../modules/notifications/presentation/
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
+import { createPublicSchoolRoutes } from "../modules/schools/presentation/routes";
 import { errorHandler } from "../middleware/error-handler";
 
 export interface ContainerDeps {
+  db: Db;
   loginUseCase: LoginUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
   getProfileUseCase: GetProfileUseCase;
@@ -167,8 +169,9 @@ export function createApp(deps: ContainerDeps): Hono {
     })
   );
 
-  // Public auth routes
+  // Public auth & school routes
   app.route("/auth", buildAuthRoutes(deps));
+  app.route("/schools", createPublicSchoolRoutes(deps.db));
 
   // Protected middleware for all /api/* routes
   const protectedAuth = authMiddleware(deps.tokenService);
@@ -368,6 +371,7 @@ export function buildContainer() {
 
   return {
     app: createApp({
+      db,
       loginUseCase,
       refreshTokenUseCase,
       getProfileUseCase,
