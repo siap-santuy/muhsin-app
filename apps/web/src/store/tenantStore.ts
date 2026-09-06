@@ -19,6 +19,10 @@ interface TenantState {
   setSchool: (school: SchoolTenant) => void;
 }
 
+// In-flight singleton promise to avoid race condition / duplicate simultaneous requests
+let inFlightResolvePromise: Promise<SchoolTenant | null> | null = null;
+let lastResolvedSlug: string | null = null;
+
 export function detectSchoolSlugFromUrl(): string {
   if (typeof window === "undefined") return "alfitrah";
 
@@ -54,27 +58,62 @@ export const useTenantStore = create<TenantState>()(
       setSchool: (school) => set({ school }),
       resolveTenant: async (overrideSlug?: string) => {
         const slug = overrideSlug || detectSchoolSlugFromUrl();
+
+        // If already resolved and matches current slug, return immediately
+        const current = get().school;
+        if (current && current.slug === slug && lastResolvedSlug === slug) {
+          return current;
+        }
+
+        // Return ongoing in-flight promise if identical slug is being resolved
+        if (inFlightResolvePromise && lastResolvedSlug === slug) {
+          return inFlightResolvePromise;
+        }
+
+        lastResolvedSlug = slug;
         set({ isLoading: true, error: null });
 
-        try {
-          const res = await fetch(`${API_BASE}/schools/public/${slug}`);
-          if (!res.ok) {
-            throw new Error("Sekolah tidak ditemukan");
+        inFlightResolvePromise = (async () => {
+          try {
+            const res = await fetch(`${API_BASE}/schools/public/${slug}`);
+            if (!res.ok) {
+              throw new Error("Sekolah tidak ditemukan");
+            }
+            const json = await res.json();
+            const schoolData: SchoolTenant = json.data;
+            set({ school: schoolData, isLoading: false, error: null });
+            return schoolData;
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : "Gagal memuat profil sekolah";
+            set({ error: msg, isLoading: false });
+            return get().school;
+          } finally {
+            inFlightResolvePromise = null;
           }
-          const json = await res.json();
-          const schoolData: SchoolTenant = json.data;
-          set({ school: schoolData, isLoading: false, error: null });
-          return schoolData;
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : "Gagal memuat profil sekolah";
-          set({ error: msg, isLoading: false });
-          return get().school;
-        }
+        })();
+
+        return inFlightResolvePromise;
       },
     }),
     { name: "muhsin-tenant" }
   )
 );
+
+export async function ensureActiveSchoolId(overrideSlug?: string): Promise<string> {
+  const store = useTenantStore.getState();
+  const targetSlug = overrideSlug || detectSchoolSlugFromUrl();
+
+  if (store.school?.id && store.school.slug === targetSlug) {
+    return store.school.id;
+  }
+
+  const resolved = await store.resolveTenant(targetSlug);
+  if (resolved?.id) {
+    return resolved.id;
+  }
+
+  return getActiveSchoolId();
+}
 
 export function getActiveSchoolId(): string {
   const store = useTenantStore.getState();

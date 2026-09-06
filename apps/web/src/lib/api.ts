@@ -162,6 +162,8 @@ async function handleResponse<T = any>(res: Response, retryFn?: (newToken: strin
   throw new Error(GENERIC_ERROR);
 }
 
+let isProcessingOfflineQueue = false;
+
 class ApiClient {
   private async request<T = any>(
     method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
@@ -308,18 +310,25 @@ class ApiClient {
   }
 
   async processOfflineQueue(): Promise<number> {
+    if (isProcessingOfflineQueue) return 0;
     const queue = getOfflineQueue();
     if (queue.length === 0) return 0;
+
+    isProcessingOfflineQueue = true;
     let processed = 0;
-    for (const item of queue) {
-      try {
-        await this.request(item.method, item.endpoint, item.body);
-        removeFromOfflineQueue(item.id);
-        processed++;
-      } catch {
-        // Stop on first failure if offline
-        break;
+    try {
+      for (const item of queue) {
+        try {
+          await this.request(item.method, item.endpoint, item.body);
+          removeFromOfflineQueue(item.id);
+          processed++;
+        } catch {
+          // Stop on first failure if offline
+          break;
+        }
       }
+    } finally {
+      isProcessingOfflineQueue = false;
     }
     return processed;
   }

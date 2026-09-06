@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { api } from "@/lib/api";
-import { getActiveSchoolId } from "@/store/tenantStore";
+import { ensureActiveSchoolId } from "@/store/tenantStore";
 import type { LoginInput, AuthUser } from "@muhsin/shared";
 
 interface AuthState {
@@ -19,7 +19,8 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       login: async (identifier, password, schoolId) => {
-        const targetSchoolId = schoolId || getActiveSchoolId();
+        // Guarantee schoolId resolution has finished before dispatching login
+        const targetSchoolId = schoolId || (await ensureActiveSchoolId());
         const input: LoginInput = { identifier: identifier.trim(), password, schoolId: targetSchoolId };
         const result = await api.login(input);
         localStorage.setItem("access_token", result.accessToken);
