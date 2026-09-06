@@ -11,6 +11,12 @@ export interface StudentListItem {
   totalExp: number;
   currentStreak: number;
   hasSetoranOnDate?: boolean;
+  categorySetoranStatus?: {
+    ziyadah: boolean;
+    murojaah: boolean;
+    sabiq: boolean;
+    talaqi: boolean;
+  };
   lastActivity?: {
     label: string;
     date: string;

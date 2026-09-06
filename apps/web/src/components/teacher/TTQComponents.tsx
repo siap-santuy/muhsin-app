@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronDown } from "lucide-react";
 
 export type TTQCategoryType = "ziyadah" | "murojaah" | "sabiq" | "talaqi";
 
@@ -52,16 +52,12 @@ export function TTQHeader({ date, onBack }: TTQHeaderProps) {
 
 interface TTQCategoryTabsProps {
   activeCategory: TTQCategoryType;
-  mode: "input" | "view";
-  studentId?: string;
-  date?: string;
+  onChangeCategory: (cat: TTQCategoryType) => void;
 }
 
 export function TTQCategoryTabs({
   activeCategory,
-  mode,
-  studentId,
-  date,
+  onChangeCategory,
 }: TTQCategoryTabsProps) {
   const tabs: Array<{ id: TTQCategoryType; label: string }> = [
     { id: "ziyadah", label: "Ziyadah" },
@@ -69,14 +65,6 @@ export function TTQCategoryTabs({
     { id: "sabiq", label: "Sabiq" },
     { id: "talaqi", label: "Talaqi" },
   ];
-
-  function handleTabClick(cat: TTQCategoryType) {
-    const params = new URLSearchParams();
-    if (studentId) params.set("studentId", studentId);
-    if (date) params.set("date", date);
-    const qs = params.toString();
-    window.location.hash = `#/${cat}-${mode}${qs ? `?${qs}` : ""}`;
-  }
 
   return (
     <div className="flex rounded-2xl border border-brand-line bg-white p-1.5 shadow-xs">
@@ -86,7 +74,7 @@ export function TTQCategoryTabs({
           <button
             key={t.id}
             type="button"
-            onClick={() => handleTabClick(t.id)}
+            onClick={() => onChangeCategory(t.id)}
             className={`flex-1 rounded-xl py-2 text-center text-xs font-bold transition-all ${
               isActive
                 ? "bg-[#22bad0] text-white shadow-xs"
@@ -97,6 +85,49 @@ export function TTQCategoryTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+interface TTQAttendanceRowProps {
+  mode: "input" | "view";
+  value: string;
+  onChange?: (val: "Hadir" | "Izin" | "Sakit" | "Alpa") => void;
+}
+
+export function TTQAttendanceRow({
+  mode,
+  value,
+  onChange,
+}: TTQAttendanceRowProps) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-2 text-brand-navy">
+        <Calendar className="h-5 w-5 text-brand-navy" />
+        <span className="text-sm font-extrabold text-brand-navy">
+          Status Kehadiran
+        </span>
+      </div>
+
+      {mode === "input" ? (
+        <div className="relative">
+          <select
+            value={value}
+            onChange={(e) => onChange?.(e.target.value as any)}
+            className="appearance-none rounded-xl border border-brand-line bg-white py-1.5 pl-3 pr-8 text-xs font-bold text-brand-navy outline-none shadow-xs focus:border-brand-cyan"
+          >
+            <option value="Hadir">Hadir</option>
+            <option value="Izin">Izin</option>
+            <option value="Sakit">Sakit</option>
+            <option value="Alpa">Alpa</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        </div>
+      ) : (
+        <span className="rounded-full border border-emerald-400 bg-emerald-50 px-3.5 py-1 text-xs font-bold text-emerald-600">
+          {value || "Hadir"}
+        </span>
+      )}
     </div>
   );
 }

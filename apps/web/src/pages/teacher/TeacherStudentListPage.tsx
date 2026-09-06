@@ -1,21 +1,21 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   ArrowUpDown,
-  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Edit3,
+  Eye,
   Loader2,
-  Mic,
-  Repeat,
   Search,
-  Sparkles,
-  X,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { DayStripPicker, type DayItem } from "@/components/student/DayStripPicker";
 import { api } from "@/lib/api";
+
+type TTQCategory = "ziyadah" | "murojaah" | "sabiq" | "talaqi";
+type StatusFilter = "all" | "unrated" | "rated";
 
 interface StudentItem {
   id: string;
@@ -28,6 +28,12 @@ interface StudentItem {
   totalExp: number;
   currentStreak: number;
   hasSetoranOnDate?: boolean;
+  categorySetoranStatus?: {
+    ziyadah: boolean;
+    murojaah: boolean;
+    sabiq: boolean;
+    talaqi: boolean;
+  };
   lastActivity?: {
     label: string;
     date: string;
@@ -67,11 +73,20 @@ function getCenteredDays(centerDateStr: string): DayItem[] {
   return days;
 }
 
+const CATEGORY_TABS: Array<{ id: TTQCategory; label: string }> = [
+  { id: "ziyadah", label: "Ziyadah" },
+  { id: "murojaah", label: "Muroja'ah" },
+  { id: "sabiq", label: "Sabiq" },
+  { id: "talaqi", label: "Talaqi" },
+];
+
 const PAGE_SIZE = 5;
 
 export function TeacherStudentListPage() {
   const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDate(new Date()));
   const [days, setDays] = useState<DayItem[]>(() => getCenteredDays(selectedDate));
+  const [activeCategory, setActiveCategory] = useState<TTQCategory>("ziyadah");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -79,7 +94,6 @@ export function TeacherStudentListPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStudentForAction, setSelectedStudentForAction] = useState<StudentItem | null>(null);
 
   // Re-center days strip on selectedDate change
   useEffect(() => {
@@ -121,6 +135,14 @@ export function TeacherStudentListPage() {
     );
   }, [students]);
 
+  // Helper check if student has rating for activeCategory
+  function isStudentRatedForCategory(s: StudentItem, cat: TTQCategory): boolean {
+    if (s.categorySetoranStatus) {
+      return !!s.categorySetoranStatus[cat];
+    }
+    return !!s.hasSetoranOnDate;
+  }
+
   // Filter & sort
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -130,7 +152,14 @@ export function TeacherStudentListPage() {
         s.name.toLowerCase().includes(q) ||
         s.email.toLowerCase().includes(q);
       const matchClass = selectedClass === "all" || s.className === selectedClass;
-      return matchSearch && matchClass;
+
+      const isRated = isStudentRatedForCategory(s, activeCategory);
+      const matchStatus =
+        statusFilter === "all" ||
+        (statusFilter === "rated" && isRated) ||
+        (statusFilter === "unrated" && !isRated);
+
+      return matchSearch && matchClass && matchStatus;
     });
 
     result.sort((a, b) => {
@@ -141,12 +170,22 @@ export function TeacherStudentListPage() {
     });
 
     return result;
-  }, [students, search, selectedClass, sortOrder]);
+  }, [students, search, selectedClass, sortOrder, activeCategory, statusFilter]);
+
+  // Calculate counts for quick status filter pills
+  const counts = useMemo(() => {
+    const inClass = students.filter(
+      (s) => selectedClass === "all" || s.className === selectedClass
+    );
+    const ratedCount = inClass.filter((s) => isStudentRatedForCategory(s, activeCategory)).length;
+    const unratedCount = inClass.length - ratedCount;
+    return { all: inClass.length, rated: ratedCount, unrated: unratedCount };
+  }, [students, selectedClass, activeCategory]);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedClass, sortOrder, selectedDate]);
+  }, [search, selectedClass, sortOrder, selectedDate, activeCategory, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedStudents = filtered.slice(
@@ -173,25 +212,23 @@ export function TeacherStudentListPage() {
     setSelectedDate(formatLocalDate(d));
   }
 
-  function handleAction(type: "ziyadah" | "murojaah" | "sabiq" | "talaqi", studentId: string) {
+  function handleAction(studentId: string, isRated: boolean) {
     sessionStorage.setItem("selectedStudentId", studentId);
-    setSelectedStudentForAction(null);
-    window.location.hash = `#/${type}-input?studentId=${studentId}&date=${selectedDate}`;
-  }
-
-  function handleViewPenilaian(student: StudentItem) {
-    sessionStorage.setItem("selectedStudentId", student.id);
-    const code = student.lastActivity?.subcategoryCode?.toLowerCase();
-    if (code?.includes("muroja")) {
-      window.location.hash = `#/murojaah-view?studentId=${student.id}&date=${selectedDate}`;
-    } else if (code?.includes("sabiq")) {
-      window.location.hash = `#/sabiq-view?studentId=${student.id}&date=${selectedDate}`;
-    } else if (code?.includes("talaqi")) {
-      window.location.hash = `#/talaqi-view?studentId=${student.id}&date=${selectedDate}`;
+    if (isRated) {
+      window.location.hash = `#/${activeCategory}-view?studentId=${studentId}&date=${selectedDate}`;
     } else {
-      window.location.hash = `#/ziyadah-view?studentId=${student.id}&date=${selectedDate}`;
+      window.location.hash = `#/${activeCategory}-input?studentId=${studentId}&date=${selectedDate}`;
     }
   }
+
+  const categoryLabel =
+    activeCategory === "ziyadah"
+      ? "Ziyadah"
+      : activeCategory === "murojaah"
+      ? "Muroja'ah"
+      : activeCategory === "sabiq"
+      ? "Sabiq"
+      : "Talaqi";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -227,7 +264,65 @@ export function TeacherStudentListPage() {
             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
 
-          {/* 3. Search Bar */}
+          {/* 3. Category Tabs (Ziyadah / Muroja'ah / Sabiq / Talaqi) */}
+          <div className="flex rounded-2xl border border-brand-line bg-white p-1.5 shadow-xs">
+            {CATEGORY_TABS.map((t) => {
+              const isActive = activeCategory === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveCategory(t.id)}
+                  className={`flex-1 rounded-xl py-2.5 text-center text-xs font-bold transition-all ${
+                    isActive
+                      ? "bg-[#22bad0] text-white shadow-xs scale-102"
+                      : "text-brand-navy hover:text-brand-cyan"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 4. Quick Status Sub-Filters (Semua / Belum Dinilai / Sudah Dinilai) */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={`flex-1 rounded-xl py-2 text-center text-xs font-bold border transition-all ${
+                statusFilter === "all"
+                  ? "bg-[#0b1c30] text-white border-[#0b1c30] shadow-xs"
+                  : "bg-white text-brand-navy border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              Semua ({counts.all})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("unrated")}
+              className={`flex-1 rounded-xl py-2 text-center text-xs font-bold border transition-all ${
+                statusFilter === "unrated"
+                  ? "bg-[#f5a623] text-white border-[#f5a623] shadow-xs"
+                  : "bg-white text-brand-navy border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              Belum ({counts.unrated})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("rated")}
+              className={`flex-1 rounded-xl py-2 text-center text-xs font-bold border transition-all ${
+                statusFilter === "rated"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-white text-brand-navy border-brand-line hover:bg-gray-50"
+              }`}
+            >
+              Sudah ({counts.rated})
+            </button>
+          </div>
+
+          {/* 5. Search Bar */}
           <div className="relative">
             <input
               type="text"
@@ -239,13 +334,13 @@ export function TeacherStudentListPage() {
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
 
-          {/* 4. Section Title & Sort */}
+          {/* 6. Section Title & Sort */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-baseline gap-1.5">
               <h1 className="text-base font-extrabold text-brand-navy">
                 Daftar Siswa
               </h1>
-              <span className="text-xs font-normal text-brand-text-muted">
+              <span className="text-xs font-semibold text-brand-text-muted">
                 ({filtered.length} Siswa)
               </span>
             </div>
@@ -279,15 +374,15 @@ export function TeacherStudentListPage() {
             <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted shadow-xs">
               {search
                 ? `Tidak ada siswa yang cocok dengan pencarian "${search}".`
-                : "Belum ada data siswa bimbingan."}
+                : `Belum ada siswa pada kategori ${categoryLabel}.`}
             </div>
           ) : null}
 
-          {/* 5. Student List Cards */}
+          {/* 7. Student List Cards */}
           {!loading && paginatedStudents.length > 0 ? (
             <div className="space-y-3.5">
               {paginatedStudents.map((s) => {
-                const isSudahSetor = !!s.hasSetoranOnDate;
+                const isRated = isStudentRatedForCategory(s, activeCategory);
 
                 return (
                   <div
@@ -314,13 +409,13 @@ export function TeacherStudentListPage() {
                         </div>
                       </div>
 
-                      {isSudahSetor ? (
-                        <span className="shrink-0 rounded-full border border-emerald-400 bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-600">
-                          Sudah Setor
+                      {isRated ? (
+                        <span className="shrink-0 rounded-full border border-emerald-400 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600">
+                          Sudah {categoryLabel}
                         </span>
                       ) : (
-                        <span className="shrink-0 rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-[10px] font-semibold text-gray-400">
-                          Belum Setor
+                        <span className="shrink-0 rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-[10px] font-bold text-gray-400">
+                          Belum {categoryLabel}
                         </span>
                       )}
                     </div>
@@ -329,37 +424,41 @@ export function TeacherStudentListPage() {
                     <div className="flex items-center justify-between rounded-xl border border-brand-line/80 bg-[#fbfdfd] p-3">
                       <div>
                         <p className="text-xs font-bold text-brand-navy">
-                          Aktifitas Terakhir:
+                          Aktifitas Terakhir ({categoryLabel}):
                         </p>
                         <p className="mt-1 text-xs font-semibold text-[#0b1c30]">
-                          {s.lastActivity?.label ?? "Belum ada riwayat setoran"}
+                          {isRated && s.lastActivity
+                            ? s.lastActivity.label
+                            : "Belum ada penilaian di tanggal ini"}
                         </p>
                         <p className="mt-0.5 text-[10px] text-brand-text-muted">
-                          {s.lastActivity?.date ?? "-"}
+                          {isRated && s.lastActivity ? s.lastActivity.date : selectedDate}
                         </p>
                       </div>
 
                       <span className="text-2xl font-extrabold text-emerald-600">
-                        {s.lastActivity?.grade ?? "-"}
+                        {isRated && s.lastActivity?.grade ? s.lastActivity.grade : "-"}
                       </span>
                     </div>
 
-                    {/* Action Button */}
-                    {isSudahSetor ? (
+                    {/* 1-Click Action Button */}
+                    {isRated ? (
                       <button
                         type="button"
-                        onClick={() => handleViewPenilaian(s)}
-                        className="w-full rounded-xl bg-[#22bad0] hover:bg-[#1bb0c5] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
+                        onClick={() => handleAction(s.id, true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#22bad0] hover:bg-[#1bb0c5] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
                       >
-                        LIHAT PENILAIAN
+                        <Eye className="h-4 w-4" />
+                        <span>LIHAT PENILAIAN {categoryLabel.toUpperCase()}</span>
                       </button>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setSelectedStudentForAction(s)}
-                        className="w-full rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
+                        onClick={() => handleAction(s.id, false)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
                       >
-                        INPUT NILAI
+                        <Edit3 className="h-4 w-4" />
+                        <span>INPUT {categoryLabel.toUpperCase()}</span>
                       </button>
                     )}
                   </div>
@@ -368,7 +467,7 @@ export function TeacherStudentListPage() {
             </div>
           ) : null}
 
-          {/* 6. Pagination Bar */}
+          {/* 8. Pagination Bar */}
           {!loading && totalPages > 1 ? (
             <div className="mt-2 flex items-center justify-center gap-1.5 pb-2">
               <button
@@ -413,88 +512,7 @@ export function TeacherStudentListPage() {
         </div>
       </main>
 
-      {/* 7. Input Action Sheet Modal */}
-      {selectedStudentForAction && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-in fade-in duration-200"
-          onClick={() => setSelectedStudentForAction(null)}
-        >
-          <div
-            className="w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-white p-5 pb-8 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between border-b border-brand-line/60 pb-3">
-              <div>
-                <h2 className="text-sm font-bold text-brand-navy">
-                  Pilih Jenis Setoran
-                </h2>
-                <p className="text-xs text-brand-text-muted">
-                  Santri: {selectedStudentForAction.name} ({selectedDate})
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedStudentForAction(null)}
-                className="rounded-full p-1.5 hover:bg-gray-100 text-gray-400"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleAction("ziyadah", selectedStudentForAction.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-brand-cyan/5 p-3.5 text-center hover:border-brand-cyan transition-colors"
-              >
-                <BookOpen className="h-6 w-6 text-brand-cyan" />
-                <span className="mt-2 text-xs font-bold text-brand-navy">
-                  Ziyadah (Tahfidz)
-                </span>
-                <span className="text-[10px] text-brand-text-muted">Hafalan Baru</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAction("murojaah", selectedStudentForAction.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-purple-50/50 p-3.5 text-center hover:border-purple-300 transition-colors"
-              >
-                <Repeat className="h-6 w-6 text-purple-600" />
-                <span className="mt-2 text-xs font-bold text-brand-navy">
-                  Muroja&apos;ah
-                </span>
-                <span className="text-[10px] text-brand-text-muted">Ulang Hafalan</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAction("sabiq", selectedStudentForAction.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-amber-50/50 p-3.5 text-center hover:border-amber-300 transition-colors"
-              >
-                <Sparkles className="h-6 w-6 text-amber-600" />
-                <span className="mt-2 text-xs font-bold text-brand-navy">
-                  Sabiq (Tahsin)
-                </span>
-                <span className="text-[10px] text-brand-text-muted">Bacaan Buku</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAction("talaqi", selectedStudentForAction.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-brand-line bg-emerald-50/50 p-3.5 text-center hover:border-emerald-300 transition-colors"
-              >
-                <Mic className="h-6 w-6 text-emerald-600" />
-                <span className="mt-2 text-xs font-bold text-brand-navy">
-                  Talaqi (Tahsin)
-                </span>
-                <span className="text-[10px] text-brand-text-muted">Bimbingan Guru</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 8. Bottom Navigation */}
+      {/* 9. Bottom Navigation */}
       <BottomNav items={TEACHER_NAV_ITEMS} activeIndex={1} />
     </div>
   );

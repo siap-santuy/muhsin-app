@@ -135,15 +135,32 @@ export class DrizzleStudentRepository implements IStudentRepository {
       )
       .orderBy(desc(setoranEntries.createdAt));
 
-    const dateSetoranMap = new Map<string, any>();
+    const dateSetoranMap = new Map<string, any[]>();
     for (const s of dateSetoranRows) {
-      if (!dateSetoranMap.has(s.studentId)) {
-        dateSetoranMap.set(s.studentId, s);
-      }
+      const arr = dateSetoranMap.get(s.studentId) || [];
+      arr.push(s);
+      dateSetoranMap.set(s.studentId, arr);
     }
 
     return rows.map((r) => {
-      const setoranOnDate = dateSetoranMap.get(r.id);
+      const studentSetorans = dateSetoranMap.get(r.id) || [];
+      const latestSetoran = studentSetorans[0] || null;
+
+      const categorySetoranStatus = {
+        ziyadah: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+        ),
+        murojaah: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+        ),
+        sabiq: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+        ),
+        talaqi: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+        ),
+      };
+
       return {
         id: r.id,
         name: r.name,
@@ -156,8 +173,9 @@ export class DrizzleStudentRepository implements IStudentRepository {
         level: r.level ?? 1,
         totalExp: r.totalExp ?? 0,
         currentStreak: r.currentStreak ?? 0,
-        hasSetoranOnDate: !!setoranOnDate,
-        lastActivity: this.formatLastActivity(setoranOnDate),
+        hasSetoranOnDate: studentSetorans.length > 0,
+        categorySetoranStatus,
+        lastActivity: this.formatLastActivity(latestSetoran),
       };
     });
   }
@@ -231,15 +249,32 @@ export class DrizzleStudentRepository implements IStudentRepository {
       )
       .orderBy(desc(setoranEntries.createdAt));
 
-    const dateSetoranMap = new Map<string, any>();
+    const dateSetoranMap = new Map<string, any[]>();
     for (const s of dateSetoranRows) {
-      if (!dateSetoranMap.has(s.studentId)) {
-        dateSetoranMap.set(s.studentId, s);
-      }
+      const arr = dateSetoranMap.get(s.studentId) || [];
+      arr.push(s);
+      dateSetoranMap.set(s.studentId, arr);
     }
 
     return rows.map((r) => {
-      const setoranOnDate = dateSetoranMap.get(r.id);
+      const studentSetorans = dateSetoranMap.get(r.id) || [];
+      const latestSetoran = studentSetorans[0] || null;
+
+      const categorySetoranStatus = {
+        ziyadah: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+        ),
+        murojaah: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+        ),
+        sabiq: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+        ),
+        talaqi: studentSetorans.some(
+          (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+        ),
+      };
+
       return {
         id: r.id,
         name: r.name,
@@ -252,8 +287,9 @@ export class DrizzleStudentRepository implements IStudentRepository {
         level: r.level ?? 1,
         totalExp: r.totalExp ?? 0,
         currentStreak: r.currentStreak ?? 0,
-        hasSetoranOnDate: !!setoranOnDate,
-        lastActivity: this.formatLastActivity(setoranOnDate),
+        hasSetoranOnDate: studentSetorans.length > 0,
+        categorySetoranStatus,
+        lastActivity: this.formatLastActivity(latestSetoran),
       };
     });
   }
