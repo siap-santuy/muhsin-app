@@ -22,6 +22,7 @@ import { StudentYaumiyahPage } from "@/pages/student/StudentYaumiyahPage";
 import { StudentYaumiyahViewPage } from "@/pages/student/StudentYaumiyahViewPage";
 import { TeacherDashboardPage } from "@/pages/teacher/TeacherDashboardPage";
 import { TeacherMonthlyRaportPage } from "@/pages/teacher/TeacherMonthlyRaportPage";
+import { TeacherMunaqosahRequestPage } from "@/pages/teacher/TeacherMunaqosahRequestPage";
 import { TeacherMurojaahInputPage } from "@/pages/teacher/TeacherMurojaahInputPage";
 import { TeacherMurojaahViewPage } from "@/pages/teacher/TeacherMurojaahViewPage";
 import { TeacherProfilePage } from "@/pages/teacher/TeacherProfilePage";
@@ -162,6 +163,8 @@ function renderContent(
   if (user.role === "teacher") {
     switch (path) {
       case "students":
+      case "student-list":
+      case "ttq":
       case "yaumiyah":
         return <TeacherStudentListPage />;
       case "ziyadah-input":
@@ -180,6 +183,8 @@ function renderContent(
         return <TeacherTalaqiInputPage />;
       case "talaqi-view":
         return <TeacherTalaqiViewPage />;
+      case "munaqosah":
+        return <TeacherMunaqosahRequestPage />;
       case "raport":
         return <TeacherRaportPage />;
       case "monthly-raport":
