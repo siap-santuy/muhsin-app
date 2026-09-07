@@ -1,5 +1,5 @@
 import { useState, useEffect, useSyncExternalStore } from "react";
-import { Share, X, ChevronRight, CheckCircle2, Smartphone } from "lucide-react";
+import { Share, X, ChevronRight, Smartphone } from "lucide-react";
 import { toast } from "@/store/toastStore";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -80,12 +80,12 @@ export function PWAInstallProfileItem() {
   const { isStandalone, isIOS, canPromptDirectly, triggerInstall } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
-  async function handleClick() {
-    if (isStandalone) {
-      toast.success("Aplikasi sudah terpasang di perangkat Anda");
-      return;
-    }
+  // Jika sudah terpasang (standalone), sembunyikan total dari menu profile
+  if (isStandalone) {
+    return null;
+  }
 
+  async function handleClick() {
     if (canPromptDirectly) {
       const installed = await triggerInstall();
       if (installed) {
@@ -112,25 +112,132 @@ export function PWAInstallProfileItem() {
               Pasang Aplikasi di HP
             </span>
             <span className="text-[10px] text-brand-text-muted">
-              {isStandalone ? "Aplikasi sudah terpasang" : "Akses cepat & hemat kuota data"}
+              Akses cepat &amp; hemat kuota data
             </span>
           </div>
         </div>
 
-        {isStandalone ? (
-          <span className="flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>Terpasang</span>
+        <div className="flex items-center gap-1.5">
+          <span className="rounded-full bg-brand-cyan/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-cyan">
+            Unduh
           </span>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <span className="rounded-full bg-brand-cyan/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-cyan">
-              Unduh
-            </span>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-          </div>
-        )}
+          <ChevronRight className="h-4 w-4 text-gray-400" />
+        </div>
       </button>
+
+      {/* Modal panduan iOS Safari */}
+      {showIOSGuide && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 animate-in fade-in"
+          onClick={() => setShowIOSGuide(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-sm font-bold text-brand-navy">
+                Pasang di iPhone / iPad
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowIOSGuide(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <ol className="mt-4 space-y-3 text-xs text-brand-navy">
+              <li className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cyan/10 font-bold text-brand-cyan">
+                  1
+                </span>
+                <span>
+                  Buka browser Safari, lalu klik tombol <strong>Bagikan (Share)</strong> <Share className="inline h-3.5 w-3.5 text-brand-cyan" /> di bagian bawah.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cyan/10 font-bold text-brand-cyan">
+                  2
+                </span>
+                <span>
+                  Gulir ke bawah dan pilih <strong>&quot;Tambah ke Layar Utama&quot; (Add to Home Screen)</strong>.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-cyan/10 font-bold text-brand-cyan">
+                  3
+                </span>
+                <span>
+                  Klik <strong>Tambah (Add)</strong> di pojok kanan atas. Ikon Muhsin App akan muncul di beranda HP Anda.
+                </span>
+              </li>
+            </ol>
+
+            <button
+              type="button"
+              onClick={() => setShowIOSGuide(false)}
+              className="mt-6 w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+            >
+              Mengerti
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function PWAInstallLoginBanner() {
+  const { isStandalone, isIOS, canPromptDirectly, triggerInstall } = usePWAInstall();
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+
+  // Jika sudah terpasang (standalone), sembunyikan total dari halaman login
+  if (isStandalone) {
+    return null;
+  }
+
+  async function handleInstall() {
+    if (canPromptDirectly) {
+      const installed = await triggerInstall();
+      if (installed) {
+        toast.success("Aplikasi berhasil dipasang!");
+      }
+    } else if (isIOS) {
+      setShowIOSGuide(true);
+    } else {
+      toast.info("Gunakan browser Chrome/Edge, atau pilih 'Tambahkan ke Layar Utama' pada menu browser Anda");
+    }
+  }
+
+  return (
+    <>
+      <div className="w-full max-w-[340px] sm:max-w-[360px] mt-4 rounded-2xl border border-brand-cyan/30 bg-gradient-to-r from-brand-cyan/5 via-white to-brand-cyan/10 p-3.5 shadow-xs transition-all">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-cyan/10 text-brand-cyan">
+              <Smartphone className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-brand-navy leading-tight">
+                Pasang Aplikasi di HP
+              </p>
+              <p className="text-[10px] text-brand-text-muted mt-0.5">
+                Lebih cepat &amp; tanpa buka browser
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleInstall}
+            className="shrink-0 rounded-xl bg-brand-cyan px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#18A5BA] active:scale-95 transition-all"
+          >
+            Pasang
+          </button>
+        </div>
+      </div>
 
       {/* Modal panduan iOS Safari */}
       {showIOSGuide && (

@@ -28,6 +28,11 @@
         "description": "Form input dan card TTQ otomatis menyesuaikan status kehadiran santri (Izin, Sakit, Alpa) dan menyembunyikan input nilai saat tidak hadir."
       },
       {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Penempatan banner Pasang Aplikasi PWA di halaman Login bagi pengguna baru, dan otomatis disembunyikan di Login maupun Profil jika aplikasi sudah terpasang."
+      },
+      {
         "category": "improvement",
         "categoryLabel": "Peningkatan UI/UX",
         "description": "Header TTQ (tombol kembali & tanggal) dibuat sticky di atas layar agar tidak ikut terdorong saat form di-scroll."

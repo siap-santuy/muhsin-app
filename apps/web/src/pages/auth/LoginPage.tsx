@@ -3,6 +3,7 @@ import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useTenantStore } from "@/store/tenantStore";
 import { Button } from "@/components/ui/button";
+import { PWAInstallLoginBanner } from "@/components/pwa/PWAInstallPrompt";
 
 export function LoginPage() {
   const login = useAuthStore((s) => s.login);
@@ -161,6 +162,7 @@ export function LoginPage() {
         {/* Form Card (Centered on Desktop and Mobile) */}
         <div className="my-auto flex w-full flex-col items-center">
           {loginCard}
+          <PWAInstallLoginBanner />
         </div>
 
         {/* Footer */}
