@@ -83,7 +83,7 @@ export function KoorStudentPage() {
           gender: formData.gender,
           nisn: formData.nisn || null,
         });
-        toast.success("Data santri berhasil diperbarui");
+        toast.success("Data siswa berhasil diperbarui");
       } else {
         await api.createStudent({
           name: formData.name,
@@ -92,25 +92,25 @@ export function KoorStudentPage() {
           gender: formData.gender,
           nisn: formData.nisn || null,
         });
-        toast.success("Santri baru berhasil ditambahkan");
+        toast.success("Siswa baru berhasil ditambahkan");
       }
       setIsModalOpen(false);
       load();
     } catch (err: any) {
-      toast.warning(err.message || "Gagal menyimpan data santri");
+      toast.warning(err.message || "Gagal menyimpan data siswa");
     } finally {
       setModalLoading(false);
     }
   }
 
   async function handleDeleteStudent(id: string, name: string) {
-    if (!window.confirm(`Yakin ingin menghapus santri "${name}"?`)) return;
+    if (!window.confirm(`Yakin ingin menghapus siswa "${name}"?`)) return;
     try {
       await api.deleteStudent(id);
-      toast.success("Santri berhasil dihapus");
+      toast.success("Siswa berhasil dihapus");
       load();
     } catch (err: any) {
-      toast.warning(err.message || "Gagal menghapus santri");
+      toast.warning(err.message || "Gagal menghapus siswa");
     }
   }
 
@@ -181,7 +181,7 @@ export function KoorStudentPage() {
               className="flex items-center gap-1.5 rounded-xl bg-brand-cyan px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-colors"
             >
               <Plus className="h-4 w-4" />
-              <span>Tambah Santri</span>
+              <span>Tambah Siswa</span>
             </button>
 
             <button
@@ -343,7 +343,7 @@ export function KoorStudentPage() {
                                 setIsModalOpen(true);
                               }}
                               className="rounded-lg p-1.5 text-brand-navy hover:bg-brand-page hover:text-brand-cyan transition-colors"
-                              title="Edit Santri"
+                              title="Edit Siswa"
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
@@ -351,7 +351,7 @@ export function KoorStudentPage() {
                               type="button"
                               onClick={() => handleDeleteStudent(st.id, st.name)}
                               className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
-                              title="Hapus Santri"
+                              title="Hapus Siswa"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -382,13 +382,13 @@ export function KoorStudentPage() {
           </div>
         </div>
 
-        {/* Modal Add / Edit Santri */}
+        {/* Modal Add / Edit Siswa */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-xs">
             <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-brand-line pb-3">
                 <h3 className="text-base font-bold text-brand-navy">
-                  {editingStudent ? "Edit Data Santri" : "Tambah Santri Baru"}
+                  {editingStudent ? "Edit Data Siswa" : "Tambah Siswa Baru"}
                 </h3>
                 <button
                   type="button"
@@ -475,7 +475,7 @@ export function KoorStudentPage() {
                     disabled={modalLoading}
                     className="rounded-xl bg-brand-cyan px-5 py-2 text-xs font-bold text-white hover:bg-brand-cyan-dark"
                   >
-                    {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStudent ? "Simpan Perubahan" : "Tambah Santri"}
+                    {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStudent ? "Simpan Perubahan" : "Tambah Siswa"}
                   </Button>
                 </div>
               </form>

@@ -418,7 +418,7 @@ export function TeacherStudentListPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama santri..."
+              placeholder="Cari nama siswa..."
               className="w-full rounded-2xl border border-brand-line bg-white py-3 pl-11 pr-4 text-xs font-semibold text-brand-navy outline-none shadow-xs placeholder:text-gray-400 focus:border-brand-cyan transition-colors"
             />
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -531,7 +531,7 @@ export function TeacherStudentListPage() {
                     {attendanceStatus && attendanceStatus !== "Hadir" ? (
                       <div className="flex items-center justify-between rounded-xl border border-dashed border-brand-line bg-[#f8fafc] px-3.5 py-2.5">
                         <p className="text-xs font-semibold text-brand-text-muted">
-                          Santri berstatus{" "}
+                          Siswa berstatus{" "}
                           <span className="font-bold text-brand-navy">
                             {attendanceStatus}
                           </span>{" "}

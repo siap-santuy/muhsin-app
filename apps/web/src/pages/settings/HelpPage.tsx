@@ -19,7 +19,7 @@ const FAQS: FaqItem[] = [
    • MA : Munfarid (Sendiri) di Awal Waktu (+7 EXP)
    • BT : Berjamaah Terlambat (+5 EXP)
    • MT : Munfarid Terlambat (+3 EXP)
-   • H  : Haid / Udzur Syar'i (khusus santriwati)
+   • H  : Haid / Udzur Syar'i (khusus siswi)
    • T  : Tidak Sholat (0 EXP)
 3. Tilawah Quran: Pilih Surah awal & nomor ayat hingga Surah akhir & nomor ayat. Jika sedang berhalangan, centang pilihan "Tidak Tilawah Hari Ini".
 4. Ibadah Sunnah: Centang amalan yang dikerjakan: Sholat Rawatib (Qabliyah/Ba'diyah), Tahajud, Dhuha, atau Puasa Sunnah.
@@ -41,7 +41,7 @@ const FAQS: FaqItem[] = [
    • Muroja'ah (Pengulangan Hafalan): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Tajwid & Kelancaran (0–100).
    • Sabiq (Tahsin / Buku Jilid): Tentukan Jilid & Halaman awal-akhir, lalu atur slider nilai Makhraj, Mad, Ghunnah, & Qolqolah (0–100).
    • Talaqi (Menyimak Bacaan Guru): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Kelancaran (0–100).
-4. Status Kehadiran & Catatan: Tentukan kehadiran santri (Hadir / Izin / Sakit / Alpa) dan masukkan catatan evaluasi bimbingan.
+4. Status Kehadiran & Catatan: Tentukan kehadiran siswa (Hadir / Izin / Sakit / Alpa) dan masukkan catatan evaluasi bimbingan.
 5. Simpan Penilaian: Klik "Simpan Penilaian". Nilai langsung masuk ke rekap Raport, status siswa berubah menjadi "Sudah Dinilai", dan siswa otomatis mendapatkan reward EXP.`,
     role: ["teacher"],
   },
@@ -57,7 +57,7 @@ const FAQS: FaqItem[] = [
   },
   {
     question: "Bagaimana perhitungan EXP dan Level naik?",
-    answer: "EXP didapatkan dari setiap pengiriman jurnal ibadah lengkap (hingga +60 EXP/hari) dan setoran hafalan yang diverifikasi guru (+20 EXP/setoran). Akumulasi EXP akan menaikkan level akun santri secara bertahap.",
+    answer: "EXP didapatkan dari setiap pengiriman jurnal ibadah lengkap (hingga +60 EXP/hari) dan setoran hafalan yang diverifikasi guru (+20 EXP/setoran). Akumulasi EXP akan menaikkan level akun siswa secara bertahap.",
     role: ["student", "parent"],
   },
   {

@@ -97,7 +97,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       );
 
     return {
-      studentName: studentRows[0]?.name ?? "Santri",
+      studentName: studentRows[0]?.name ?? "Siswa",
       level: gam?.level ?? 1,
       totalExp: gam?.totalExp ?? 0,
       currentStreak: gam?.currentStreak ?? 0,
@@ -369,7 +369,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         }
 
         attentionStudents.push({
-          name: s.studentName ?? "Santri",
+          name: s.studentName ?? "Siswa",
           className: s.className ?? "Kelas TTQ",
           grade: label,
           severity,

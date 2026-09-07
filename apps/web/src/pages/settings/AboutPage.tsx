@@ -67,7 +67,7 @@ export function AboutPage() {
           <ul className="space-y-2 text-xs text-brand-navy/90">
             <li className="flex items-start gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan mt-1.5 shrink-0" />
-              <span><strong>Gamifikasi Ihsan:</strong> EXP, Level, dan Streak harian untuk memotivasi istiqomah ibadah santri.</span>
+              <span><strong>Gamifikasi Ihsan:</strong> EXP, Level, dan Streak harian untuk memotivasi istiqomah ibadah siswa.</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan mt-1.5 shrink-0" />

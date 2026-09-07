@@ -10,7 +10,7 @@
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Sistem riwayat versi aplikasi interaktif (Bottom Sheet & Halaman #/versioning) untuk transparansi pembaruan sistem."
+        "description": "Sistem riwayat versi aplikasi interaktif (Bottom Sheet & Halaman versioning) untuk transparansi pembaruan sistem."
       },
       {
         "category": "feature",
@@ -25,7 +25,7 @@
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Form input dan card TTQ otomatis menyesuaikan status kehadiran santri (Izin, Sakit, Alpa) dan menyembunyikan input nilai saat tidak hadir."
+        "description": "Form input dan card TTQ otomatis menyesuaikan status kehadiran siswa (Izin, Sakit, Alpa) dan menyembunyikan input nilai saat tidak hadir."
       },
       {
         "category": "feature",
@@ -40,7 +40,7 @@
       {
         "category": "improvement",
         "categoryLabel": "Peningkatan UI/UX",
-        "description": "Pewarnaan kontras grade nilai pada card santri: Grade A (Biru), Grade B (Hijau), Grade C (Kuning), dan Grade D (Merah)."
+        "description": "Pewarnaan kontras grade nilai pada card siswa: Grade A (Biru), Grade B (Hijau), Grade C (Kuning), dan Grade D (Merah)."
       },
       {
         "category": "improvement",
@@ -55,7 +55,7 @@
       {
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
-        "description": "Kriteria Siswa Perlu Perhatian di Dashboard Guru disesuaikan menjadi santri dengan Grade D dan/atau Alpa lebih dari 3 kali."
+        "description": "Kriteria Siswa Perlu Perhatian di Dashboard Guru disesuaikan menjadi siswa dengan Grade D dan/atau Alpa lebih dari 3 kali."
       },
       {
         "category": "fix",
@@ -65,7 +65,7 @@
       {
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan aktifitas terakhir di card santri agar sesuai subkategori yang aktif (Ziyadah/Sabiq/dsb) dan tidak tertukar."
+        "description": "Perbaikan aktifitas terakhir di card siswa agar sesuai subkategori yang aktif (Ziyadah/Sabiq/dsb) dan tidak tertukar."
       },
       {
         "category": "fix",
@@ -90,12 +90,12 @@
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Sistem gamifikasi Ihsan: perhitungan EXP, Level, dan Streak keaktifan harian santri."
+        "description": "Sistem gamifikasi Ihsan: perhitungan EXP, Level, dan Streak keaktifan harian siswa."
       },
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Pencatatan ibadah yaumiyah mandiri oleh santri dan monitoring terintegrasi bagi orang tua."
+        "description": "Pencatatan ibadah yaumiyah mandiri oleh siswa dan monitoring terintegrasi bagi orang tua."
       },
       {
         "category": "feature",

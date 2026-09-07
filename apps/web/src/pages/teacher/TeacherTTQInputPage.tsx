@@ -154,7 +154,7 @@ export function TeacherTTQInputPage({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!student?.id) {
-      toast.warning("Data santri tidak ditemukan");
+      toast.warning("Data siswa tidak ditemukan");
       return;
     }
 
@@ -283,7 +283,7 @@ export function TeacherTTQInputPage({
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* 1. Header Santri & Kategori Fokus (Single Source of Truth) */}
+          {/* 1. Header Siswa & Kategori Fokus (Single Source of Truth) */}
           <div className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-line bg-gray-50 overflow-hidden">
@@ -295,7 +295,7 @@ export function TeacherTTQInputPage({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-brand-navy leading-tight">
-                  {student?.name ?? "Santri"}
+                  {student?.name ?? "Siswa"}
                 </h3>
                 <p className="mt-0.5 text-xs text-brand-text-muted">
                   {student?.className ?? "Kelas TTQ"}
@@ -522,7 +522,7 @@ export function TeacherTTQInputPage({
               rows={3}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Tambahkan catatan evaluasi santri..."
+              placeholder="Tambahkan catatan evaluasi siswa..."
               className="mt-2 w-full rounded-xl border border-brand-line p-3 text-xs text-brand-navy outline-none placeholder:text-gray-400 focus:border-brand-cyan"
             />
           </div>

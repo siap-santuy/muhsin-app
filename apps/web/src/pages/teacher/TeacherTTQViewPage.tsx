@@ -121,7 +121,7 @@ export function TeacherTTQViewPage({
         )}
 
         <div className="flex flex-col gap-4">
-          {/* 1. Header Santri & Kategori Fokus (Single Source of Truth) */}
+          {/* 1. Header Siswa & Kategori Fokus (Single Source of Truth) */}
           <div className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-line bg-gray-50 overflow-hidden">
@@ -133,7 +133,7 @@ export function TeacherTTQViewPage({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-brand-navy leading-tight">
-                  {student?.name ?? "Santri"}
+                  {student?.name ?? "Siswa"}
                 </h3>
                 <p className="mt-0.5 text-xs text-brand-text-muted">
                   {student?.className ?? "Kelas TTQ"}

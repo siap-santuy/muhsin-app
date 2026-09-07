@@ -39,7 +39,7 @@ Ketika user mengedit data secara offline di Device A, sementara server / Device 
 - Menggunakan browser native `PeriodicBackgroundSync` / `SyncManager` (`navigator.serviceWorker.ready.then(reg => reg.sync.register('sync-yaumiyah'))`) agar sinkronisasi bisa berjalan di background bahkan jika tab browser ditutup oleh siswa.
 
 ### D. Offline Asset Download (Dokumen / PDF / Panduan)
-- Cache audio murottal atau panduan munaqosah offline untuk santri.
+- Cache audio murottal atau panduan munaqosah offline untuk siswa.
 - Export preview raport secara offline menggunakan data lokal.
 
 ---

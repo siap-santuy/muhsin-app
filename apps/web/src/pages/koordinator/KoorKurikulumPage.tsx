@@ -414,7 +414,7 @@ export function KoorKurikulumPage() {
                     className="h-4 w-4 rounded text-brand-cyan focus:ring-brand-cyan"
                   />
                   <label htmlFor="rankingCheck" className="text-xs font-semibold text-brand-navy cursor-pointer">
-                    Hitung dalam ranking santri bulanan
+                    Hitung dalam ranking siswa bulanan
                   </label>
                 </div>
 

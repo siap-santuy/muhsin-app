@@ -25,7 +25,7 @@ function formatLocalDate(date: Date): string {
 
 export function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const firstName = user?.name ? user.name.split(" ")[0] : "Santri";
+  const firstName = user?.name ? user.name.split(" ")[0] : "Siswa";
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
   const todayStr = formatLocalDate(new Date());

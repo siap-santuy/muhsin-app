@@ -41,7 +41,7 @@ describe("GetDashboardSummaryUseCase", () => {
         name: "VII Abu Bakar",
         percentage: 80,
         progressColor: "bg-brand-cyan",
-        targetLabel: "12/15 Santri Aktif",
+        targetLabel: "12/15 Siswa Aktif",
       },
     ],
     attentionStudents: [

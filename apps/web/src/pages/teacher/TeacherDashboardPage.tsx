@@ -201,7 +201,7 @@ export function TeacherDashboardPage() {
                   {attentionStudents.length === 0 ? (
                     <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/40 p-4 text-center">
                       <p className="text-xs font-semibold text-emerald-700">
-                        Alhamdulillah, semua santri memiliki kehadiran dan nilai yang baik bulan ini.
+                        Alhamdulillah, semua siswa memiliki kehadiran dan nilai yang baik bulan ini.
                       </p>
                     </div>
                   ) : (

@@ -175,7 +175,7 @@ Pipeline otomatis terdefinisi di `Jenkinsfile`:
 
 ## 🎮 Aturan & Formula Sistem Gamifikasi Ihsan
 
-Sistem gamifikasi bertujuan mendorong konsistensi (*istiqomah*) ibadah harian santri dan capaian hafalan Al-Qur'an. Gamifikasi terdiri dari **EXP (Experience Points)**, **Level**, dan **Streak Istiqomah**.
+Sistem gamifikasi bertujuan mendorong konsistensi (*istiqomah*) ibadah harian siswa dan capaian hafalan Al-Qur'an. Gamifikasi terdiri dari **EXP (Experience Points)**, **Level**, dan **Streak Istiqomah**.
 
 ### 1. Formula Kenaikan Level (Level Up)
 - **Karakteristik**: Level bersifat kumulatif dan tidak pernah turun.
@@ -199,7 +199,7 @@ Sistem gamifikasi bertujuan mendorong konsistensi (*istiqomah*) ibadah harian sa
 | | **MA** (Munfarid Awal Waktu) | **+4 EXP** per waktu |
 | | **BT** (Berjamaah Terlambat) | **+3 EXP** per waktu |
 | | **MT** (Munfarid Terlambat) | **+2 EXP** per waktu |
-| | **H** (Haid - khusus santriwati) | **+5 EXP** per waktu |
+| | **H** (Haid - khusus siswi) | **+5 EXP** per waktu |
 | | **T** (Tidak Sholat) | **0 EXP** (Poin minus di raport) |
 | **Sholat Sunnah** | **Rawatib** (Qobliyah / Ba'diyah) | **+2 EXP** per jenis rawatib |
 | | **Sholat Dhuha** | **+5 EXP** |

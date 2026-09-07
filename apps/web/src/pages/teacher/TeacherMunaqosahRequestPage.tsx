@@ -18,7 +18,7 @@ export function TeacherMunaqosahRequestPage() {
         setStudents(data);
         if (data.length) setSelectedStudentId(data[0].id);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat daftar santri");
+        setError(err instanceof Error ? err.message : "Gagal memuat daftar siswa");
       } finally {
         setLoading(false);
       }
@@ -68,9 +68,9 @@ export function TeacherMunaqosahRequestPage() {
             <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">{error}</div>
           )}
 
-          {/* Pilih Santri */}
+          {/* Pilih Siswa */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <label className="text-xs font-bold text-brand-navy">Santri</label>
+            <label className="text-xs font-bold text-brand-navy">Siswa</label>
             <div className="relative mt-2">
               <select
                 value={selectedStudentId}
