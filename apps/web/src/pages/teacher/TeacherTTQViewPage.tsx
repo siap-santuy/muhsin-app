@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Edit, Loader2, BookOpen, ShieldCheck } from "lucide-react";
 import { formatLocalDate } from "@/utils/date";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
 import {
   TTQHeader,
   TTQAttendanceRow,
@@ -21,6 +22,7 @@ interface TeacherTTQViewPageProps {
 export function TeacherTTQViewPage({
   initialCategory = "ziyadah",
 }: TeacherTTQViewPageProps) {
+  const currentUser = useAuthStore((s) => s.user);
   const hash = window.location.hash;
   const queryParams = new URLSearchParams(hash.split("?")[1] || "");
   const routeDate = queryParams.get("date") || formatLocalDate(new Date());
@@ -162,21 +164,31 @@ export function TeacherTTQViewPage({
 
             {initialCategory === "sabiq" ? (
               <p className="text-sm font-extrabold uppercase tracking-wide text-[#22bad0]">
-                Jilid {entry?.referenceStart?.jilid ?? 3}:{" "}
-                {entry?.referenceStart?.halaman ?? 100}
-                {entry?.referenceEnd?.halaman &&
-                entry.referenceEnd.halaman !== entry.referenceStart?.halaman
-                  ? ` - ${entry.referenceEnd.halaman}`
-                  : ""}
+                {entry?.referenceStart?.jilid
+                  ? entry?.referenceEnd?.jilid &&
+                    entry.referenceEnd.jilid !== entry.referenceStart.jilid
+                    ? `Jilid ${entry.referenceStart.jilid} Hal: ${entry.referenceStart.halaman ?? 1} s/d Jilid ${entry.referenceEnd.jilid} Hal: ${entry.referenceEnd.halaman ?? 1}`
+                    : `Jilid ${entry.referenceStart.jilid}: ${entry.referenceStart.halaman ?? 1}${
+                        entry?.referenceEnd?.halaman &&
+                        entry.referenceEnd.halaman !== entry.referenceStart.halaman
+                          ? ` - ${entry.referenceEnd.halaman}`
+                          : ""
+                      }`
+                  : "-"}
               </p>
             ) : (
               <p className="text-sm font-extrabold uppercase tracking-wide text-[#22bad0]">
-                {entry?.referenceStart?.surah || "AL - BAQARAH"}:{" "}
-                {entry?.referenceStart?.ayat ?? 1}
-                {entry?.referenceEnd?.ayat &&
-                entry.referenceEnd.ayat !== entry.referenceStart?.ayat
-                  ? `-${entry.referenceEnd.ayat}`
-                  : ""}
+                {entry?.referenceStart?.surah
+                  ? entry?.referenceEnd?.surah &&
+                    entry.referenceEnd.surah !== entry.referenceStart.surah
+                    ? `${entry.referenceStart.surah}: ${entry.referenceStart.ayat ?? 1} s/d ${entry.referenceEnd.surah}: ${entry.referenceEnd.ayat ?? 1}`
+                    : `${entry.referenceStart.surah}: ${entry.referenceStart.ayat ?? 1}${
+                        entry?.referenceEnd?.ayat &&
+                        entry.referenceEnd.ayat !== entry.referenceStart.ayat
+                          ? `-${entry.referenceEnd.ayat}`
+                          : ""
+                      }`
+                  : "-"}
               </p>
             )}
           </div>
@@ -197,7 +209,7 @@ export function TeacherTTQViewPage({
                     Makhraj
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.makhraj ?? 85}
+                    {entry?.scores?.makhraj ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -205,7 +217,7 @@ export function TeacherTTQViewPage({
                     Mad
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.mad ?? 90}
+                    {entry?.scores?.mad ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -213,7 +225,7 @@ export function TeacherTTQViewPage({
                     Ghunnah
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.ghunnah ?? 80}
+                    {entry?.scores?.ghunnah ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -221,7 +233,7 @@ export function TeacherTTQViewPage({
                     Qolqolah
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.qolqolah ?? 80}
+                    {entry?.scores?.qolqolah ?? 0}
                   </span>
                 </div>
               </div>
@@ -232,7 +244,7 @@ export function TeacherTTQViewPage({
                     Kelancaran
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.kelancaran ?? 90}
+                    {entry?.scores?.kelancaran ?? 0}
                   </span>
                 </div>
               </div>
@@ -243,7 +255,7 @@ export function TeacherTTQViewPage({
                     Tajwid
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.tajwid ?? 85}
+                    {entry?.scores?.tajwid ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -251,7 +263,7 @@ export function TeacherTTQViewPage({
                     Kelancaran
                   </span>
                   <span className="text-base font-extrabold text-[#22bad0]">
-                    {entry?.scores?.kelancaran ?? 90}
+                    {entry?.scores?.kelancaran ?? 0}
                   </span>
                 </div>
               </div>
@@ -263,17 +275,22 @@ export function TeacherTTQViewPage({
             <label className="text-xs font-bold text-brand-navy">
               Catatan (Opsional)
             </label>
-            <div className="rounded-2xl border-l-4 border-[#f5a623] bg-[#fffbf2] p-4 shadow-xs">
-              <p className="text-xs italic text-brand-navy leading-relaxed">
-                &quot;
-                {rawCatatan ||
-                  "Ananda Fulan menunjukkan progress yang baik, harap orang tua membantu mengingatkan untuk mengulangi perlajaran dan murojaah di rumah."}
-                &quot;
-              </p>
-              <p className="mt-2.5 text-[11px] font-bold text-brand-navy">
-                - Ustadz Arai Kurnia Ramadhan
-              </p>
-            </div>
+            {rawCatatan?.trim() ? (
+              <div className="rounded-2xl border-l-4 border-[#f5a623] bg-[#fffbf2] p-4 shadow-xs">
+                <p className="text-xs italic text-brand-navy leading-relaxed">
+                  &quot;{rawCatatan.trim()}&quot;
+                </p>
+                <p className="mt-2.5 text-[11px] font-bold text-brand-navy">
+                  - {currentUser?.name || "Ustadz Pembimbing"}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-brand-line bg-gray-50/70 p-3.5 text-center">
+                <p className="text-xs text-brand-text-muted">
+                  Tidak ada catatan evaluasi untuk setoran ini.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 6. Action Button: Ubah Penilaian */}

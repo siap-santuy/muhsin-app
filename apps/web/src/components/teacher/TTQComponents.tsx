@@ -29,7 +29,7 @@ export function TTQHeader({ date, onBack }: TTQHeaderProps) {
   }
 
   return (
-    <div className="flex flex-col items-center pt-3 pb-2">
+    <div className="sticky top-0 z-20 flex flex-col items-center bg-brand-page/95 backdrop-blur-xs pt-3 pb-3 border-b border-brand-line/50 mb-2">
       <div className="relative flex w-full items-center justify-center">
         <button
           type="button"
@@ -43,7 +43,7 @@ export function TTQHeader({ date, onBack }: TTQHeaderProps) {
           TTQ
         </h1>
       </div>
-      <p className="mt-4 text-xs font-bold text-brand-navy">
+      <p className="mt-2 text-xs font-bold text-brand-navy">
         {formatIndonesianFullDate(date)}
       </p>
     </div>

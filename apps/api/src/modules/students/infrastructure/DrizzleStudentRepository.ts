@@ -23,15 +23,35 @@ export class DrizzleStudentRepository implements IStudentRepository {
 
     let label = name;
     if (refStart?.surah) {
-      if (refStart.ayat && refEnd?.ayat) {
-        label = `${name} ${refStart.surah}: ${refStart.ayat} - ${refEnd.ayat}`;
-      } else if (refStart.ayat) {
-        label = `${name} ${refStart.surah}: ${refStart.ayat}`;
+      const sStart = refStart.surah;
+      const sEnd = refEnd?.surah;
+      const aStart = refStart.ayat;
+      const aEnd = refEnd?.ayat;
+
+      if (sEnd && sStart !== sEnd) {
+        // Lintas surah
+        label = `${name} ${sStart}:${aStart ?? 1} s/d ${sEnd}:${aEnd ?? 1}`;
+      } else if (aStart && aEnd && aStart !== aEnd) {
+        // Surah sama, rentang ayat berbeda
+        label = `${name} ${sStart}: ${aStart} - ${aEnd}`;
+      } else if (aStart) {
+        label = `${name} ${sStart}: ${aStart}`;
       } else {
-        label = `${name} ${refStart.surah}`;
+        label = `${name} ${sStart}`;
       }
     } else if (refStart?.jilid || refStart?.halaman) {
-      label = `${name} Jilid: ${refStart.jilid ?? 1}${refStart.halaman ? ` Hal: ${refStart.halaman}` : ""}`;
+      const jStart = refStart.jilid;
+      const jEnd = refEnd?.jilid;
+      const hStart = refStart.halaman;
+      const hEnd = refEnd?.halaman;
+
+      if (jEnd && jStart !== jEnd) {
+        label = `${name} Jilid ${jStart} Hal ${hStart ?? 1} s/d Jilid ${jEnd} Hal ${hEnd ?? 1}`;
+      } else if (hStart && hEnd && hStart !== hEnd) {
+        label = `${name} Jilid ${jStart ?? 1} Hal: ${hStart} - ${hEnd}`;
+      } else {
+        label = `${name} Jilid: ${jStart ?? 1}${hStart ? ` Hal: ${hStart}` : ""}`;
+      }
     }
 
     let grade = "A";
@@ -52,12 +72,21 @@ export class DrizzleStudentRepository implements IStudentRepository {
       dateFormatted = `${d}/${m}/${y}`;
     }
 
+    let attendanceStatus = "Hadir";
+    if (entry.keterangan && typeof entry.keterangan === "string") {
+      const match = entry.keterangan.match(/^\[(.*?)\]/);
+      if (match && match[1]) {
+        attendanceStatus = match[1];
+      }
+    }
+
     return {
       label,
       date: dateFormatted,
       grade,
       subcategoryCode: entry.subcategoryCode,
       setoranId: entry.id,
+      attendanceStatus,
     };
   }
 
@@ -120,6 +149,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
         referenceStart: setoranEntries.referenceStart,
         referenceEnd: setoranEntries.referenceEnd,
         scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
       })
       .from(setoranEntries)
       .leftJoin(
@@ -146,19 +176,31 @@ export class DrizzleStudentRepository implements IStudentRepository {
       const studentSetorans = dateSetoranMap.get(r.id) || [];
       const latestSetoran = studentSetorans[0] || null;
 
+      const ziyadahSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+      );
+      const murojaahSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+      );
+      const sabiqSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+      );
+      const talaqiSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+      );
+
       const categorySetoranStatus = {
-        ziyadah: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
-        ),
-        murojaah: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
-        ),
-        sabiq: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
-        ),
-        talaqi: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
-        ),
+        ziyadah: !!ziyadahSetoran,
+        murojaah: !!murojaahSetoran,
+        sabiq: !!sabiqSetoran,
+        talaqi: !!talaqiSetoran,
+      };
+
+      const categoryLastActivity = {
+        ziyadah: this.formatLastActivity(ziyadahSetoran),
+        murojaah: this.formatLastActivity(murojaahSetoran),
+        sabiq: this.formatLastActivity(sabiqSetoran),
+        talaqi: this.formatLastActivity(talaqiSetoran),
       };
 
       return {
@@ -175,6 +217,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
         currentStreak: r.currentStreak ?? 0,
         hasSetoranOnDate: studentSetorans.length > 0,
         categorySetoranStatus,
+        categoryLastActivity,
         lastActivity: this.formatLastActivity(latestSetoran),
       };
     });
@@ -234,6 +277,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
         referenceStart: setoranEntries.referenceStart,
         referenceEnd: setoranEntries.referenceEnd,
         scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
       })
       .from(setoranEntries)
       .leftJoin(
@@ -260,19 +304,31 @@ export class DrizzleStudentRepository implements IStudentRepository {
       const studentSetorans = dateSetoranMap.get(r.id) || [];
       const latestSetoran = studentSetorans[0] || null;
 
+      const ziyadahSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+      );
+      const murojaahSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+      );
+      const sabiqSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+      );
+      const talaqiSetoran = studentSetorans.find(
+        (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+      );
+
       const categorySetoranStatus = {
-        ziyadah: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
-        ),
-        murojaah: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
-        ),
-        sabiq: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
-        ),
-        talaqi: studentSetorans.some(
-          (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
-        ),
+        ziyadah: !!ziyadahSetoran,
+        murojaah: !!murojaahSetoran,
+        sabiq: !!sabiqSetoran,
+        talaqi: !!talaqiSetoran,
+      };
+
+      const categoryLastActivity = {
+        ziyadah: this.formatLastActivity(ziyadahSetoran),
+        murojaah: this.formatLastActivity(murojaahSetoran),
+        sabiq: this.formatLastActivity(sabiqSetoran),
+        talaqi: this.formatLastActivity(talaqiSetoran),
       };
 
       return {
@@ -289,6 +345,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
         currentStreak: r.currentStreak ?? 0,
         hasSetoranOnDate: studentSetorans.length > 0,
         categorySetoranStatus,
+        categoryLastActivity,
         lastActivity: this.formatLastActivity(latestSetoran),
       };
     });
@@ -346,6 +403,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
         referenceStart: setoranEntries.referenceStart,
         referenceEnd: setoranEntries.referenceEnd,
         scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
       })
       .from(setoranEntries)
       .leftJoin(

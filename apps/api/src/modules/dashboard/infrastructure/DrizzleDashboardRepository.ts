@@ -230,10 +230,13 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     const totalClassesToday = teacherClassList.length;
     const completedClassesToday = completedClassIds.size;
 
-    // Monthly setoran per class for classProgress
+    // Monthly setoran entries for teacher's school and current month
     const monthlySetoran = await this.db
       .select({
         studentId: setoranEntries.studentId,
+        date: setoranEntries.date,
+        scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
       })
       .from(setoranEntries)
       .where(
@@ -244,7 +247,37 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         )
       );
 
-    const monthlyActiveStudents = new Set(monthlySetoran.map((s) => s.studentId));
+    // Hitung total hari kerja (Senin-Jumat, Sabtu & Minggu libur) dalam bulan ini
+    const [yearNum, monthNum] = currentMonth.split("-").map(Number);
+    const dateCursor = new Date(yearNum, monthNum - 1, 1);
+    let totalWorkingDays = 0;
+    while (dateCursor.getMonth() === monthNum - 1) {
+      const dayOfWeek = dateCursor.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        totalWorkingDays++;
+      }
+      dateCursor.setDate(dateCursor.getDate() + 1);
+    }
+    const safeWorkingDays = Math.max(1, totalWorkingDays);
+
+    // Map studentId -> classId
+    const studentToClassMap = new Map<string, string>();
+    for (const sm of studentMappings) {
+      if (sm.classId) {
+        studentToClassMap.set(sm.studentId, sm.classId);
+      }
+    }
+
+    // Map classId -> Set tanggal input
+    const classInputDatesMap = new Map<string, Set<string>>();
+    for (const s of monthlySetoran) {
+      const cId = studentToClassMap.get(s.studentId);
+      if (cId) {
+        const dateSet = classInputDatesMap.get(cId) || new Set<string>();
+        dateSet.add(s.date);
+        classInputDatesMap.set(cId, dateSet);
+      }
+    }
 
     const badgeThemes = [
       { bg: "bg-brand-cyan/10", text: "text-brand-cyan-dark", progress: "bg-brand-cyan" },
@@ -254,10 +287,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     ];
 
     const classProgress = teacherClassList.map((cls, idx) => {
-      const inClass = studentMappings.filter((s) => s.classId === cls.id);
-      const totalInClass = inClass.length;
-      const activeInClass = inClass.filter((s) => monthlyActiveStudents.has(s.studentId)).length;
-      const percentage = totalInClass > 0 ? Math.min(100, Math.round((activeInClass / totalInClass) * 100)) : 0;
+      const inputDatesCount = classInputDatesMap.get(cls.id)?.size ?? 0;
+      const percentage = Math.min(100, Math.round((inputDatesCount / safeWorkingDays) * 100));
       const theme = badgeThemes[idx % badgeThemes.length];
       const badge = cls.name.split(" ")[0] || cls.name.slice(0, 4);
 
@@ -268,20 +299,86 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         name: cls.name,
         percentage,
         progressColor: theme.progress,
-        targetLabel: `${activeInClass}/${totalInClass} Santri Aktif`,
+        targetLabel: `${inputDatesCount}/${safeWorkingDays} Hari Input`,
       };
     });
 
-    const attentionStudents: Array<{ name: string; className: string; grade: string }> = [];
+    // Perhitungan Siswa Perlu Perhatian:
+    // 1. Paling banyak alpa (> 3 alpa dalam sebulan)
+    // 2. Nilai paling rendah (Grade D / rata-rata skor < 68)
+    const studentStatsMap = new Map<
+      string,
+      { alpaCount: number; scoresList: number[] }
+    >();
+
+    for (const s of monthlySetoran) {
+      const stats = studentStatsMap.get(s.studentId) || {
+        alpaCount: 0,
+        scoresList: [],
+      };
+
+      if (s.keterangan && s.keterangan.includes("[Alpa]")) {
+        stats.alpaCount++;
+      }
+
+      if (s.scores && typeof s.scores === "object") {
+        const nums = Object.values(s.scores).filter(
+          (v) => typeof v === "number"
+        ) as number[];
+        if (nums.length > 0) {
+          const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+          stats.scoresList.push(avg);
+        }
+      }
+
+      studentStatsMap.set(s.studentId, stats);
+    }
+
+    const attentionStudents: Array<{
+      name: string;
+      className: string;
+      grade: string;
+      severity: number;
+    }> = [];
+
     for (const s of studentMappings) {
-      if (!studentsWhoSetorToday.has(s.studentId)) {
+      const stats = studentStatsMap.get(s.studentId);
+      const alpaCount = stats?.alpaCount ?? 0;
+      const scores = stats?.scoresList ?? [];
+      const avgScore =
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : null;
+
+      const isHighAlpa = alpaCount > 3;
+      const isGradeD = avgScore !== null && avgScore < 68;
+
+      if (isHighAlpa || isGradeD) {
+        let label = "";
+        let severity = 0;
+
+        if (isHighAlpa && isGradeD) {
+          label = `${alpaCount}x Alpa • Grade D (${Math.round(avgScore!)})`;
+          severity = 100 + alpaCount;
+        } else if (isHighAlpa) {
+          label = `${alpaCount}x Alpa`;
+          severity = 50 + alpaCount;
+        } else {
+          label = `Grade D (${Math.round(avgScore!)})`;
+          severity = 30 + (68 - avgScore!);
+        }
+
         attentionStudents.push({
           name: s.studentName ?? "Santri",
           className: s.className ?? "Kelas TTQ",
-          grade: "Belum Setor",
+          grade: label,
+          severity,
         });
       }
     }
+
+    // Urutkan berdasarkan tingkat urgensi tertinggi
+    attentionStudents.sort((a, b) => b.severity - a.severity);
 
     return {
       teacherName: teacherRows[0]?.name ?? "Ustadz",

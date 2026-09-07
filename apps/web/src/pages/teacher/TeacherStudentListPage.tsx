@@ -34,12 +34,47 @@ interface StudentItem {
     sabiq: boolean;
     talaqi: boolean;
   };
+  categoryLastActivity?: {
+    ziyadah?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: string;
+    } | null;
+    murojaah?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: string;
+    } | null;
+    sabiq?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: string;
+    } | null;
+    talaqi?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: string;
+    } | null;
+  };
   lastActivity?: {
     label: string;
     date: string;
     grade: string;
     subcategoryCode?: string;
     setoranId?: string;
+    attendanceStatus?: string;
   } | null;
 }
 
@@ -81,19 +116,74 @@ const CATEGORY_TABS: Array<{ id: TTQCategory; label: string }> = [
 ];
 
 const PAGE_SIZE = 5;
+const TTQ_FILTER_STORAGE_KEY = "teacher_ttq_filter_state";
+
+function getGradeColorClass(grade?: string): string {
+  switch (grade?.toUpperCase()) {
+    case "A":
+      return "text-blue-600";
+    case "B":
+      return "text-emerald-600";
+    case "C":
+      return "text-amber-500";
+    case "D":
+      return "text-rose-600";
+    default:
+      return "text-gray-400";
+  }
+}
+
+interface TTQFilterPersistedState {
+  selectedDate?: string;
+  activeCategory?: TTQCategory;
+  statusFilter?: StatusFilter;
+  selectedClass?: string;
+  search?: string;
+}
+
+function loadPersistedTTQFilter(): TTQFilterPersistedState {
+  try {
+    const raw = sessionStorage.getItem(TTQ_FILTER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
 
 export function TeacherStudentListPage() {
-  const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDate(new Date()));
+  const persisted = useMemo(() => loadPersistedTTQFilter(), []);
+
+  const [selectedDate, setSelectedDate] = useState<string>(
+    () => persisted.selectedDate || formatLocalDate(new Date())
+  );
   const [days, setDays] = useState<DayItem[]>(() => getCenteredDays(selectedDate));
-  const [activeCategory, setActiveCategory] = useState<TTQCategory>("ziyadah");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [activeCategory, setActiveCategory] = useState<TTQCategory>(
+    () => persisted.activeCategory || "ziyadah"
+  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    () => persisted.statusFilter || "unrated"
+  );
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [search, setSearch] = useState(() => persisted.search || "");
+  const [selectedClass, setSelectedClass] = useState<string>(
+    () => persisted.selectedClass || "all"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+
+  // Simpan filter ke sessionStorage saat ada perubahan
+  useEffect(() => {
+    const filterState: TTQFilterPersistedState = {
+      selectedDate,
+      activeCategory,
+      statusFilter,
+      selectedClass,
+      search,
+    };
+    sessionStorage.setItem(TTQ_FILTER_STORAGE_KEY, JSON.stringify(filterState));
+  }, [selectedDate, activeCategory, statusFilter, selectedClass, search]);
 
   // Re-center days strip on selectedDate change
   useEffect(() => {
@@ -383,6 +473,10 @@ export function TeacherStudentListPage() {
             <div className="space-y-3.5">
               {paginatedStudents.map((s) => {
                 const isRated = isStudentRatedForCategory(s, activeCategory);
+                const categoryActivity =
+                  s.categoryLastActivity?.[activeCategory] ||
+                  (isRated ? s.lastActivity : null);
+                const attendanceStatus = categoryActivity?.attendanceStatus || (isRated ? "Hadir" : null);
 
                 return (
                   <div
@@ -409,37 +503,73 @@ export function TeacherStudentListPage() {
                         </div>
                       </div>
 
-                      {isRated ? (
-                        <span className="shrink-0 rounded-full border border-emerald-400 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600">
-                          Sudah {categoryLabel}
-                        </span>
-                      ) : (
+                      {/* Status Attendance Badge */}
+                      {!isRated ? (
                         <span className="shrink-0 rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-[10px] font-bold text-gray-400">
                           Belum {categoryLabel}
+                        </span>
+                      ) : attendanceStatus === "Izin" ? (
+                        <span className="shrink-0 rounded-full border border-amber-400 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-600">
+                          Izin
+                        </span>
+                      ) : attendanceStatus === "Sakit" ? (
+                        <span className="shrink-0 rounded-full border border-sky-400 bg-sky-50 px-3 py-1 text-[10px] font-bold text-sky-600">
+                          Sakit
+                        </span>
+                      ) : attendanceStatus === "Alpa" ? (
+                        <span className="shrink-0 rounded-full border border-rose-400 bg-rose-50 px-3 py-1 text-[10px] font-bold text-rose-600">
+                          Alpa
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full border border-emerald-400 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600">
+                          Sudah {categoryLabel}
                         </span>
                       )}
                     </div>
 
-                    {/* Inner Box: Aktifitas Terakhir & Grade */}
-                    <div className="flex items-center justify-between rounded-xl border border-brand-line/80 bg-[#fbfdfd] p-3">
-                      <div>
-                        <p className="text-xs font-bold text-brand-navy">
-                          Aktifitas Terakhir ({categoryLabel}):
+                    {/* Inner Box: Aktifitas Terakhir & Grade (Hanya tampil jika hadir / belum dinilai) */}
+                    {attendanceStatus && attendanceStatus !== "Hadir" ? (
+                      <div className="flex items-center justify-between rounded-xl border border-dashed border-brand-line bg-[#f8fafc] px-3.5 py-2.5">
+                        <p className="text-xs font-semibold text-brand-text-muted">
+                          Santri berstatus{" "}
+                          <span className="font-bold text-brand-navy">
+                            {attendanceStatus}
+                          </span>{" "}
+                          (Tidak ada setoran nilai)
                         </p>
-                        <p className="mt-1 text-xs font-semibold text-[#0b1c30]">
-                          {isRated && s.lastActivity
-                            ? s.lastActivity.label
-                            : "Belum ada penilaian di tanggal ini"}
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-brand-text-muted">
-                          {isRated && s.lastActivity ? s.lastActivity.date : selectedDate}
-                        </p>
+                        <span className="text-xs font-bold text-gray-400">-</span>
                       </div>
+                    ) : (
+                      <div className="flex items-center justify-between rounded-xl border border-brand-line/80 bg-[#fbfdfd] p-3">
+                        <div>
+                          <p className="text-xs font-bold text-brand-navy">
+                            Aktifitas Terakhir ({categoryLabel}):
+                          </p>
+                          <p className="mt-1 text-xs font-semibold text-[#0b1c30]">
+                            {isRated && categoryActivity
+                              ? categoryActivity.label
+                              : "Belum ada penilaian di tanggal ini"}
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-brand-text-muted">
+                            {isRated && categoryActivity
+                              ? categoryActivity.date
+                              : selectedDate}
+                          </p>
+                        </div>
 
-                      <span className="text-2xl font-extrabold text-emerald-600">
-                        {isRated && s.lastActivity?.grade ? s.lastActivity.grade : "-"}
-                      </span>
-                    </div>
+                        <span
+                          className={`text-2xl font-extrabold ${getGradeColorClass(
+                            isRated && categoryActivity?.grade
+                              ? categoryActivity.grade
+                              : undefined
+                          )}`}
+                        >
+                          {isRated && categoryActivity?.grade
+                            ? categoryActivity.grade
+                            : "-"}
+                        </span>
+                      </div>
+                    )}
 
                     {/* 1-Click Action Button */}
                     {isRated ? (

@@ -1,7 +1,13 @@
-import { Heart, ShieldCheck, Star } from "lucide-react";
+import { useState } from "react";
+import { Heart, ShieldCheck, Star, Sparkles, ChevronRight } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
+import { VersionSliderDrawer } from "@/components/versioning/VersionSliderDrawer";
+import versionsData from "@/data/versions.json";
 
 export function AboutPage() {
+  const [isSliderOpen, setIsSliderOpen] = useState(false);
+  const latestVersion = versionsData[0]?.version || "v1.0.1";
+
   return (
     <SettingsPageShell title="Tentang Muhsin App" subtitle="Informasi versi &amp; pengembang">
       <div className="flex flex-col gap-4 text-brand-navy">
@@ -13,11 +19,44 @@ export function AboutPage() {
             className="h-28 w-28 object-contain"
           />
           <h2 className="mt-3 text-lg font-extrabold text-brand-navy">Muhsin App</h2>
-          <p className="text-xs font-semibold text-brand-cyan">v1.0.0 (MVP Release)</p>
-          <p className="mt-2 text-xs text-brand-text-muted max-w-[280px]">
+          
+          {/* Version Chip (Clickable to open version slider) */}
+          <button
+            type="button"
+            onClick={() => setIsSliderOpen(true)}
+            className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-brand-cyan/10 px-3 py-1 text-xs font-bold text-brand-cyan hover:bg-brand-cyan/20 active:scale-98 transition-all"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{latestVersion} (Terbaru)</span>
+            <span className="text-[10px] underline ml-0.5">Lihat Pembaruan</span>
+          </button>
+
+          <p className="mt-3 text-xs text-brand-text-muted max-w-[280px]">
             SaaS Manajemen &amp; Monitoring Program Tahsin, Tahfidz Qur&apos;an, dan Ibadah Yaumiyah Siswa Sekolah Islam Terpadu.
           </p>
         </div>
+
+        {/* Versioning Link Action */}
+        <button
+          type="button"
+          onClick={() => setIsSliderOpen(true)}
+          className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 text-left shadow-xs transition-colors hover:border-brand-cyan"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-cyan/10 text-brand-cyan font-bold text-xs">
+              {latestVersion}
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-brand-navy">
+                Catatan Rilis &amp; Riwayat Versi
+              </h3>
+              <p className="text-[11px] text-brand-text-muted">
+                Periksa fitur baru, perbaikan bug, dan optimasi sistem
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-gray-400" />
+        </button>
 
         {/* Vision & Mission Card */}
         <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm space-y-3">
@@ -60,6 +99,12 @@ export function AboutPage() {
           <p className="mt-1 text-[10px] text-brand-text-muted">&copy; 2026 Muhsin App. Hak Cipta Dilindungi.</p>
         </div>
       </div>
+
+      {/* Version Slider Drawer */}
+      <VersionSliderDrawer
+        isOpen={isSliderOpen}
+        onClose={() => setIsSliderOpen(false)}
+      />
     </SettingsPageShell>
   );
 }

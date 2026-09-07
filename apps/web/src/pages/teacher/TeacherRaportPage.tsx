@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -45,17 +45,47 @@ interface StudentOption {
   className: string | null;
 }
 
+const TEACHER_RAPORT_FILTER_KEY = "teacher_raport_filter_state";
+
+interface TeacherRaportFilterState {
+  selectedClass?: string;
+  selectedStudentId?: string;
+  selectedYear?: string;
+  selectedMonth?: string;
+  selectedSemester?: number;
+}
+
+function loadPersistedRaportFilter(): TeacherRaportFilterState {
+  try {
+    const raw = sessionStorage.getItem(TEACHER_RAPORT_FILTER_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export function TeacherRaportPage() {
   const currentOffset = getCurrentAcademicOffset();
   const defaultMonthOffset = Math.max(0, currentOffset - 1);
   const defaultMonth = ACADEMIC_MONTHS[defaultMonthOffset];
 
+  const persisted = useMemo(() => loadPersistedRaportFilter(), []);
+
   const [students, setStudents] = useState<StudentOption[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState("2026/2027");
-  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth.name);
+  const [selectedClass, setSelectedClass] = useState<string>(
+    () => persisted.selectedClass || "all"
+  );
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(
+    () => persisted.selectedStudentId || ""
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    () => persisted.selectedYear || "2026/2027"
+  );
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    () => persisted.selectedMonth || defaultMonth.name
+  );
   const [selectedSemester, setSelectedSemester] = useState<number>(
-    defaultMonth.semester
+    () => persisted.selectedSemester || defaultMonth.semester
   );
 
   useEffect(() => {
@@ -63,20 +93,73 @@ export function TeacherRaportPage() {
       try {
         const studentList = await api.getStudents();
         setStudents(studentList);
-        if (studentList.length > 0) {
-          const preselected = sessionStorage.getItem("selectedStudentId");
-          if (preselected && studentList.some((s) => s.id === preselected)) {
-            setSelectedStudentId(preselected);
-          } else {
-            setSelectedStudentId(studentList[0].id);
-          }
-        }
       } catch {
         // Fallback
       }
     }
     load();
   }, []);
+
+  // Simpan seluruh filter ke sessionStorage saat ada perubahan
+  useEffect(() => {
+    const filterState: TeacherRaportFilterState = {
+      selectedClass,
+      selectedStudentId,
+      selectedYear,
+      selectedMonth,
+      selectedSemester,
+    };
+    sessionStorage.setItem(
+      TEACHER_RAPORT_FILTER_KEY,
+      JSON.stringify(filterState)
+    );
+    if (selectedStudentId) {
+      sessionStorage.setItem("selectedStudentId", selectedStudentId);
+    }
+  }, [
+    selectedClass,
+    selectedStudentId,
+    selectedYear,
+    selectedMonth,
+    selectedSemester,
+  ]);
+
+  // Ekstraksi daftar kelas unik
+  const classesList = useMemo(() => {
+    return Array.from(
+      new Set(students.map((s) => s.className).filter(Boolean) as string[])
+    );
+  }, [students]);
+
+  // Filter siswa berdasarkan kelas yang dipilih
+  const filteredStudents = useMemo(() => {
+    if (selectedClass === "all") return students;
+    return students.filter((s) => s.className === selectedClass);
+  }, [students, selectedClass]);
+
+  // Sinkronisasi selectedStudentId saat daftar siswa atau kelas berubah
+  useEffect(() => {
+    if (filteredStudents.length === 0) {
+      setSelectedStudentId("");
+      return;
+    }
+
+    // Cek apakah selectedStudentId yang ada sekarang valid dalam daftar filteredStudents
+    const isCurrentValid = filteredStudents.some(
+      (s) => s.id === selectedStudentId
+    );
+    if (!isCurrentValid) {
+      // Prioritaskan dari persisted jika cocok
+      const persistedMatch = filteredStudents.find(
+        (s) => s.id === persisted.selectedStudentId
+      );
+      if (persistedMatch) {
+        setSelectedStudentId(persistedMatch.id);
+      } else {
+        setSelectedStudentId(filteredStudents[0].id);
+      }
+    }
+  }, [filteredStudents, selectedClass, persisted.selectedStudentId]);
 
   const isPastYear = selectedYear !== "2026/2027";
 
@@ -146,24 +229,54 @@ export function TeacherRaportPage() {
 
       <main className="flex-1 overflow-y-auto px-4 pb-20 pt-1">
         <div className="flex flex-col gap-4">
-          {/* Siswa Selector */}
-          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-              PILIH SISWA HALAQAH
-            </label>
-            <div className="relative mt-1">
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50 p-2.5 pr-8 text-xs font-bold text-brand-navy outline-none"
-              >
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.className ?? "Kelas TTQ"})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          {/* Filter Kelas & Siswa Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+            {/* Dropdown 1: Pilih Kelas */}
+            <div>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                PILIH KELAS
+              </label>
+              <div className="relative mt-1">
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50 p-2.5 pr-8 text-xs font-bold text-brand-navy outline-none focus:border-brand-cyan transition-colors"
+                >
+                  <option value="all">Semua Kelas</option>
+                  {classesList.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Dropdown 2: Pilih Siswa (Hanya Nama Saja) */}
+            <div>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                PILIH SISWA HALAQAH
+              </label>
+              <div className="relative mt-1">
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  disabled={filteredStudents.length === 0}
+                  className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50 p-2.5 pr-8 text-xs font-bold text-brand-navy outline-none focus:border-brand-cyan transition-colors disabled:opacity-50"
+                >
+                  {filteredStudents.length === 0 ? (
+                    <option value="">Tidak ada siswa di kelas ini</option>
+                  ) : (
+                    filteredStudents.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
             </div>
           </div>
 

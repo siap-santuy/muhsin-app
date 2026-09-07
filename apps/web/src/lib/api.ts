@@ -466,12 +466,53 @@ class ApiClient {
     totalExp: number;
     currentStreak: number;
     hasSetoranOnDate?: boolean;
+    categorySetoranStatus?: {
+      ziyadah: boolean;
+      murojaah: boolean;
+      sabiq: boolean;
+      talaqi: boolean;
+    };
+    categoryLastActivity?: {
+      ziyadah?: {
+        label: string;
+        date: string;
+        grade: string;
+        subcategoryCode?: string;
+        setoranId?: string;
+        attendanceStatus?: string;
+      } | null;
+      murojaah?: {
+        label: string;
+        date: string;
+        grade: string;
+        subcategoryCode?: string;
+        setoranId?: string;
+        attendanceStatus?: string;
+      } | null;
+      sabiq?: {
+        label: string;
+        date: string;
+        grade: string;
+        subcategoryCode?: string;
+        setoranId?: string;
+        attendanceStatus?: string;
+      } | null;
+      talaqi?: {
+        label: string;
+        date: string;
+        grade: string;
+        subcategoryCode?: string;
+        setoranId?: string;
+        attendanceStatus?: string;
+      } | null;
+    };
     lastActivity?: {
       label: string;
       date: string;
       grade: string;
       subcategoryCode?: string;
       setoranId?: string;
+      attendanceStatus?: string;
     } | null;
   }>> {
     const params = new URLSearchParams();

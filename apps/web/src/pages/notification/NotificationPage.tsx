@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
+import { formatNotificationTime } from "@/utils/date";
 
 export function NotificationPage() {
   const user = useAuthStore((s) => s.user);
@@ -95,7 +96,9 @@ export function NotificationPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-brand-navy">{item.title}</h3>
-                    <span className="text-[10px] text-brand-text-muted">{item.time}</span>
+                    <span className="text-[10px] font-medium text-brand-text-muted">
+                      {formatNotificationTime(item.time)}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-brand-navy/80 leading-relaxed">{item.message}</p>
                 </div>

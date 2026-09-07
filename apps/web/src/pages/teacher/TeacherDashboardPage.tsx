@@ -198,25 +198,33 @@ export function TeacherDashboardPage() {
                 </div>
 
                 <div className="mt-3 flex flex-col gap-2.5">
-                  {attentionStudents.map((student, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between rounded-lg border border-[#ff5722]/30 bg-[#ffdad6]/20 px-3 py-2.5"
-                    >
-                      <div>
-                        <p className="text-xs font-bold text-brand-navy">
-                          {student.name}
-                        </p>
-                        <p className="text-[10px] text-brand-text-muted">
-                          {student.className}
-                        </p>
-                      </div>
-
-                      <span className="text-sm font-extrabold text-[#ff5722]">
-                        {student.grade}
-                      </span>
+                  {attentionStudents.length === 0 ? (
+                    <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/40 p-4 text-center">
+                      <p className="text-xs font-semibold text-emerald-700">
+                        Alhamdulillah, semua santri memiliki kehadiran dan nilai yang baik bulan ini.
+                      </p>
                     </div>
-                  ))}
+                  ) : (
+                    attentionStudents.map((student, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-lg border border-[#ff5722]/30 bg-[#ffdad6]/20 px-3 py-2.5"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-brand-navy">
+                            {student.name}
+                          </p>
+                          <p className="text-[10px] text-brand-text-muted">
+                            {student.className}
+                          </p>
+                        </div>
+
+                        <span className="text-xs font-extrabold text-[#ff5722]">
+                          {student.grade}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </>

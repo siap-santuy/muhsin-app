@@ -42,6 +42,7 @@ import { KoorKurikulumPage } from "@/pages/koordinator/KoorKurikulumPage";
 import { KoorMunaqosahPage } from "@/pages/koordinator/KoorMunaqosahPage";
 import { NotificationPage } from "@/pages/notification/NotificationPage";
 import { AboutPage } from "@/pages/settings/AboutPage";
+import { VersioningPage } from "@/pages/settings/VersioningPage";
 import { ChangePasswordPage } from "@/pages/settings/ChangePasswordPage";
 import { EditProfilePage } from "@/pages/settings/EditProfilePage";
 import { HelpPage } from "@/pages/settings/HelpPage";
@@ -89,6 +90,8 @@ function renderContent(
       return <HelpPage />;
     case "about":
       return <AboutPage />;
+    case "versioning":
+      return <VersioningPage />;
   }
 
   // Role: STUDENT

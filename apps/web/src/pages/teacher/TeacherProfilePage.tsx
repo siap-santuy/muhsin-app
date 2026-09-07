@@ -3,6 +3,7 @@ import {
   ChevronRight,
   HelpCircle,
   Info,
+  Layers,
   Lock,
   LogOut,
   ShieldCheck,
@@ -123,6 +124,7 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
               {[
                 { icon: HelpCircle, label: "Bantuan & Panduan Guru", route: "#/help" },
                 { icon: Info, label: "Tentang Muhsin", route: "#/about" },
+                { icon: Layers, label: "Riwayat Versi Aplikasi", route: "#/versioning" },
               ].map((item) => {
                 const Icon = item.icon;
                 return (

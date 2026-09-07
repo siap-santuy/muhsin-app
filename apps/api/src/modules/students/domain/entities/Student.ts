@@ -17,11 +17,46 @@ export interface StudentListItem {
     sabiq: boolean;
     talaqi: boolean;
   };
+  categoryLastActivity?: {
+    ziyadah?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: "Hadir" | "Izin" | "Sakit" | "Alpa" | string;
+    } | null;
+    murojaah?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: "Hadir" | "Izin" | "Sakit" | "Alpa" | string;
+    } | null;
+    sabiq?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: "Hadir" | "Izin" | "Sakit" | "Alpa" | string;
+    } | null;
+    talaqi?: {
+      label: string;
+      date: string;
+      grade: string;
+      subcategoryCode?: string;
+      setoranId?: string;
+      attendanceStatus?: "Hadir" | "Izin" | "Sakit" | "Alpa" | string;
+    } | null;
+  };
   lastActivity?: {
     label: string;
     date: string;
     grade: string;
     subcategoryCode?: string;
     setoranId?: string;
+    attendanceStatus?: "Hadir" | "Izin" | "Sakit" | "Alpa" | string;
   } | null;
 }
