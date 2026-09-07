@@ -53,6 +53,12 @@ export function createNotificationRoutes(deps: NotificationRoutesDeps) {
     async (c) => {
       const user = c.get("user");
       const id = c.req.param("id");
+      if (!id) {
+        return c.json(
+          { data: null, error: { code: "VALIDATION_ERROR", message: "ID not provided" }, meta: null },
+          400
+        );
+      }
       await deps.markNotificationReadUseCase.execute(id, user.userId, user.schoolId);
       return c.json({ data: { success: true }, error: null, meta: null }, 200);
     }

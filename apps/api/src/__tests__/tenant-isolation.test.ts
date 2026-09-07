@@ -10,6 +10,7 @@ const tokenService = new TokenService(
 );
 
 const app = createApp({
+  db: {} as never,
   loginUseCase: {} as never,
   refreshTokenUseCase: {} as never,
   getProfileUseCase: {

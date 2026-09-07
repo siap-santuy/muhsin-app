@@ -11,24 +11,54 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    question: "Bagaimana cara mengisi Ibadah Yaumiyah harian?",
-    answer: "Buka menu Yaumiyah dari navigasi bawah, klik 'ISI IBADAH HARI INI', pilih tanggal yang ingin diisi (hari ini atau kemarin), lengkapi indikator sholat/tilawah/sunnah lalu tekan KIRIM.",
+    question: "Bagaimana cara mengisi Ibadah Yaumiyah harian (Langkah demi langkah)?",
+    answer: `Langkah pengisian jurnal Yaumiyah harian:
+1. Buka menu "Yaumiyah" dari navigasi bawah, lalu klik tombol "ISI IBADAH HARI INI" (atau pilih tanggal di kalender strip: hari ini H atau kemarin H-1).
+2. Sholat Fardhu: Tentukan status 5 waktu sholat menggunakan kode:
+   • BA : Berjamaah di Awal Waktu (+10 EXP)
+   • MA : Munfarid (Sendiri) di Awal Waktu (+7 EXP)
+   • BT : Berjamaah Terlambat (+5 EXP)
+   • MT : Munfarid Terlambat (+3 EXP)
+   • H  : Haid / Udzur Syar'i (khusus santriwati)
+   • T  : Tidak Sholat (0 EXP)
+3. Tilawah Quran: Pilih Surah awal & nomor ayat hingga Surah akhir & nomor ayat. Jika sedang berhalangan, centang pilihan "Tidak Tilawah Hari Ini".
+4. Ibadah Sunnah: Centang amalan yang dikerjakan: Sholat Rawatib (Qabliyah/Ba'diyah), Tahajud, Dhuha, atau Puasa Sunnah.
+5. Simpan / Kirim: Klik "Simpan Draft" jika masih ingin diubah nanti, atau klik "KIRIM" untuk penguncian data resmi dan otomatis mengklaim EXP & Streak.`,
     role: ["student", "parent"],
   },
   {
     question: "Mengapa saya tidak bisa mengedit ibadah tanggal 2 hari lalu?",
-    answer: "Pengisian dan pengeditan jurnal yaumiyah dibatasi pada window H (hari ini) dan H-1 (kemarin). Tanggal lebih lama otomatis dikunci oleh sistem.",
+    answer: "Pengisian dan pengeditan jurnal yaumiyah dibatasi pada window H (hari ini) dan H-1 (kemarin). Tanggal lebih lama otomatis dikunci oleh sistem untuk menjaga kedisiplinan pencatatan harian.",
     role: ["student", "parent"],
+  },
+  {
+    question: "Bagaimana cara guru menginput nilai setoran TTQ siswa?",
+    answer: `Langkah penginputan nilai setoran pembimbing TTQ:
+1. Pilih Kelas Aktif: Jika mengampu lebih dari satu kelas, pilih kelas yang sesuai pada menu pemilih kelas (Class Switcher).
+2. Buka Menu Siswa: Masuk ke tab "Siswa" atau "TTQ", pilih tanggal halaqah, lalu klik nama siswa yang menyetor.
+3. Pilih Kategori Penilaian:
+   • Ziyadah (Hafalan Baru): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Tajwid & Kelancaran (0–100).
+   • Muroja'ah (Pengulangan Hafalan): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Tajwid & Kelancaran (0–100).
+   • Sabiq (Tahsin / Buku Jilid): Tentukan Jilid & Halaman awal-akhir, lalu atur slider nilai Makhraj, Mad, Ghunnah, & Qolqolah (0–100).
+   • Talaqi (Menyimak Bacaan Guru): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Kelancaran (0–100).
+4. Status Kehadiran & Catatan: Tentukan kehadiran santri (Hadir / Izin / Sakit / Alpa) dan masukkan catatan evaluasi bimbingan.
+5. Simpan Penilaian: Klik "Simpan Penilaian". Nilai langsung masuk ke rekap Raport, status siswa berubah menjadi "Sudah Dinilai", dan siswa otomatis mendapatkan reward EXP.`,
+    role: ["teacher"],
+  },
+  {
+    question: "Apa arti status 'Siswa Perlu Perhatian' di Dashboard Guru?",
+    answer: "Indikator otomatis yang menampilkan siswa pada kelas aktif yang belum menyetorkan hafalan (Ziyadah/Muroja'ah) lebih dari 3 hari, atau memiliki riwayat yaumiyah yang sering terlewat/alpa dalam 1 pekan terakhir. Guru dapat langsung menekan tombol ingatkan atau langsung menuju input nilai.",
+    role: ["teacher"],
+  },
+  {
+    question: "Bagaimana cara kerja mode Offline saat tidak ada internet?",
+    answer: "Muhsin App mendukung Progressive Web App (PWA) offline. Jika koneksi terputus, Anda tetap dapat mengisi jurnal yaumiyah atau menginput setoran siswa. Data akan tersimpan aman di antrean lokal HP/perangkat dan otomatis disinkronkan ke server saat kembali terhubung ke internet.",
+    role: ["student", "parent", "teacher"],
   },
   {
     question: "Bagaimana perhitungan EXP dan Level naik?",
-    answer: "EXP didapatkan dari setiap pengiriman jurnal ibadah lengkap dan setoran hafalan yang diverifikasi guru. Level naik otomatis ketika akumulasi EXP mencapai ambang batas.",
+    answer: "EXP didapatkan dari setiap pengiriman jurnal ibadah lengkap (hingga +60 EXP/hari) dan setoran hafalan yang diverifikasi guru (+20 EXP/setoran). Akumulasi EXP akan menaikkan level akun santri secara bertahap.",
     role: ["student", "parent"],
-  },
-  {
-    question: "Bagaimana guru menginput setoran Ziyadah & Muroja'ah?",
-    answer: "Guru masuk ke menu Utama Pembimbing, pilih 'Input Ziyadah' atau 'Input Muroja'ah', pilih siswa dari daftar halaqah, lalu masukkan capaian ayat dan nilai performance (0-100).",
-    role: ["teacher"],
   },
   {
     question: "Bagaimana cara memasang / mengunduh aplikasi di HP?",
@@ -36,8 +66,8 @@ const FAQS: FaqItem[] = [
     role: ["student", "parent", "teacher"],
   },
   {
-    question: "Bagaimana cara mencetak / mendownload Raport Bulanan?",
-    answer: "Buka menu Raport, pilih bulan atau semester yang diinginkan, kemudian klik tombol 'UNDUH RAPORT' di bagian bawah halaman untuk mencetak atau menyimpan format PDF.",
+    question: "Bagaimana cara mencetak / mendownload Raport Bulanan & Semester?",
+    answer: "Buka menu Raport, pilih bulan atau semester yang diinginkan, kemudian klik tombol 'UNDUH RAPORT' di bagian bawah halaman untuk mencetak atau menyimpan format PDF resmi.",
     role: ["student", "parent", "teacher"],
   },
 ];
@@ -93,7 +123,7 @@ export function HelpPage() {
                   />
                 </button>
                 {isOpen ? (
-                  <div className="border-t border-brand-line/40 bg-gray-50/50 px-4 py-3 text-xs text-brand-navy/90 leading-relaxed">
+                  <div className="border-t border-brand-line/40 bg-gray-50/50 px-4 py-3 text-xs text-brand-navy/90 leading-relaxed whitespace-pre-line">
                     {faq.answer}
                   </div>
                 ) : null}

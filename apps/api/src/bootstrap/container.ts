@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import Redis from "ioredis";
-import { createDb } from "../db/client";
+import { createDb, type Db } from "../db/client";
 
 // Auth module
 import { DrizzleUserRepository } from "../modules/auth/infrastructure/DrizzleUserRepository";
