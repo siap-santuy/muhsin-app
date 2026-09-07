@@ -131,7 +131,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     schoolId: string
   ): Promise<TeacherDashboardSummary> {
     const teacherRows = await this.db
-      .select({ name: users.name })
+      .select({ name: users.name, gender: users.gender })
       .from(users)
       .where(and(eq(users.id, teacherId), eq(users.schoolId, schoolId)))
       .limit(1);
@@ -381,7 +381,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     attentionStudents.sort((a, b) => b.severity - a.severity);
 
     return {
-      teacherName: teacherRows[0]?.name ?? "Ustadz",
+      teacherName: teacherRows[0]?.name ?? "Guru",
+      gender: teacherRows[0]?.gender ?? null,
       totalStudents,
       totalClassesToday,
       completedClassesToday,

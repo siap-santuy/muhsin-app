@@ -31,7 +31,7 @@ export function SplashScreen() {
           <p>
             Powered by <span className="font-semibold text-slate-600">MuhsinApp</span>
           </p>
-          <p className="text-[10px] text-slate-400">v1.0.0</p>
+          <p className="text-[10px] text-slate-400">v1.0.1</p>
         </div>
       </div>
     </div>

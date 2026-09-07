@@ -14,6 +14,7 @@ import {
   DayStripPicker,
   type DayItem,
 } from "@/components/student/DayStripPicker";
+import { SholatInfoModal } from "@/components/yaumiyah/SholatInfoModal";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
@@ -71,6 +72,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
+  const [showSholatInfo, setShowSholatInfo] = useState(false);
 
   // Sync if propInitialDate changes from route
   useEffect(() => {
@@ -282,7 +284,14 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                       Sholat Fardhu
                     </h2>
                   </div>
-                  <Info className="h-4 w-4 text-brand-text-muted" />
+                  <button
+                    type="button"
+                    onClick={() => setShowSholatInfo(true)}
+                    aria-label="Informasi Kode Sholat"
+                    className="flex items-center gap-1 rounded-lg p-1 text-brand-text-muted hover:bg-gray-100 hover:text-brand-cyan transition-colors"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </div>
 
                 <div className="mt-3 divide-y divide-brand-line/40">
@@ -434,6 +443,11 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
           onClose={handleCloseToast}
         />
       ) : null}
+
+      <SholatInfoModal
+        isOpen={showSholatInfo}
+        onClose={() => setShowSholatInfo(false)}
+      />
     </div>
   );
 }

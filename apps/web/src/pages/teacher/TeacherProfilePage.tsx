@@ -162,7 +162,7 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
             <p className="text-[11px] font-medium text-brand-text-muted">
               Powered by <span className="font-semibold text-brand-navy">MuhsinApp</span>
             </p>
-            <p className="text-[10px] text-brand-text-muted">v1.0.0 (Guru Edition)</p>
+            <p className="text-[10px] text-brand-text-muted">v1.0.1</p>
           </div>
         </div>
       </main>

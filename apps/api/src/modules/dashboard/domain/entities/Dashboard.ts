@@ -21,6 +21,7 @@ export interface StudentDashboardSummary {
 
 export interface TeacherDashboardSummary {
   teacherName: string;
+  gender?: string | null;
   totalStudents: number;
   totalClassesToday?: number;
   completedClassesToday?: number;

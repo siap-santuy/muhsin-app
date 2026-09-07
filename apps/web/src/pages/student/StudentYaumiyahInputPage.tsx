@@ -4,6 +4,7 @@ import {
   DayStripPicker,
   type DayItem,
 } from "@/components/student/DayStripPicker";
+import { SholatInfoModal } from "@/components/yaumiyah/SholatInfoModal";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
@@ -73,6 +74,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
   const [surahEnd, setSurahEnd] = useState("");
   const [ayatEnd, setAyatEnd] = useState("");
   const [notTilawah, setNotTilawah] = useState(false);
+  const [showSholatInfo, setShowSholatInfo] = useState(false);
   const [sholatState, setSholatState] = useState<Record<string, string>>({
     Subuh: "",
     Dzuhur: "",
@@ -491,7 +493,14 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                 </span>
                 <h2 className="text-base font-bold text-brand-navy">Sholat Fardhu</h2>
               </div>
-              <Info className="h-4 w-4 text-brand-text-muted" />
+              <button
+                type="button"
+                onClick={() => setShowSholatInfo(true)}
+                aria-label="Informasi Kode Sholat"
+                className="flex items-center gap-1 rounded-lg p-1 text-brand-text-muted hover:bg-gray-100 hover:text-brand-cyan transition-colors"
+              >
+                <Info className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="mt-2 divide-y divide-brand-line/30">
@@ -620,6 +629,11 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
           onClose={handleCloseToast}
         />
       ) : null}
+
+      <SholatInfoModal
+        isOpen={showSholatInfo}
+        onClose={() => setShowSholatInfo(false)}
+      />
     </div>
   );
 }

@@ -46,7 +46,15 @@ export function TeacherDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const name = summary?.teacherName ?? user?.name ?? "Ustadz Arai Kurnia Ramadhan";
+  const rawName = summary?.teacherName ?? user?.name ?? "Arai Kurnia Ramadhan";
+  const cleanName = rawName.replace(/^(ustadzah|ustadz)\s+/i, "").trim();
+  const gender = (summary?.gender ?? user?.gender ?? "").trim().toLowerCase();
+  const displayName =
+    gender === "ikhwan"
+      ? `Ustadz ${cleanName}`
+      : gender === "akhwat"
+      ? `Ustadzah ${cleanName}`
+      : cleanName;
   const totalClasses = summary?.totalClassesToday ?? 2;
   const completedClasses = summary?.completedClassesToday ?? 1;
 
@@ -65,7 +73,7 @@ export function TeacherDashboardPage() {
               Assalamu&apos;alaikum,
             </h1>
             <p className="text-xl font-extrabold text-brand-navy leading-tight">
-              {name.startsWith("Ustadz") ? name : `Ustadz ${name}`}
+              {displayName}
             </p>
           </section>
 
