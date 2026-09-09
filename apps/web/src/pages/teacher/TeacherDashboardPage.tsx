@@ -11,6 +11,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
+import { getDisplayName } from "@/lib/utils";
 
 interface ClassProgress {
   badge: string;
@@ -46,15 +47,11 @@ export function TeacherDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const rawName = summary?.teacherName ?? user?.name ?? "Arai Kurnia Ramadhan";
-  const cleanName = rawName.replace(/^(ustadzah|ustadz)\s+/i, "").trim();
-  const gender = (summary?.gender ?? user?.gender ?? "").trim().toLowerCase();
-  const displayName =
-    gender === "ikhwan"
-      ? `Ustadz ${cleanName}`
-      : gender === "akhwat"
-      ? `Ustadzah ${cleanName}`
-      : cleanName;
+  const displayName = getDisplayName(
+    user?.name ?? "Guru Pembimbing",
+    user?.gender ?? "",
+    "teacher"
+  );
   const totalClasses = summary?.totalClassesToday ?? 2;
   const completedClasses = summary?.completedClassesToday ?? 1;
 

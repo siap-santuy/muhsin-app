@@ -16,6 +16,7 @@ import { MenuCard } from "@/components/ui/MenuCard";
 import { ReminderBanner } from "@/components/ui/ReminderBanner";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
+import { getDisplayName } from "@/lib/utils";
 
 const QUOTE = {
   text: '"Sesungguhnya Allah mencintai orang-orang yang berbuat ihsan."',
@@ -34,7 +35,11 @@ export function ParentDashboardPage() {
       });
   }, []);
 
-  const parentName = summary?.parentName ?? user?.name ?? "Orang Tua";
+  const parentName = getDisplayName(
+    user?.name ?? "Orang Tua",
+    user?.gender ?? "",
+    "parent"
+  );
   const childName = summary?.childName ?? "Ananda";
   const childClass = summary?.childClassName ?? "Kelas VII";
   const isFilled = summary?.isYaumiyahTodayFilled ?? true;

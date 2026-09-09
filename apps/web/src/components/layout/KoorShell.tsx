@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
+import { getDisplayName } from "@/lib/utils";
 
 interface KoorShellProps {
   children: React.ReactNode;
@@ -74,7 +75,11 @@ export function KoorShell({
     fetchNotifications();
   });
 
-  const userName = user?.name ?? "Ust. Abdullah S.Pd.I";
+  const userName = getDisplayName(
+    user?.name ?? "Ust. Abdullah S.Pd.I",
+    user?.gender ?? "",
+    "koordinator"
+  );
 
   const renderNavList = () => (
     <nav className="flex-1 space-y-1 px-3 py-4">
