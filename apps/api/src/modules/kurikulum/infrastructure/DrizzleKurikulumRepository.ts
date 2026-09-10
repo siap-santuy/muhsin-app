@@ -4,6 +4,7 @@ import {
   assessmentSubcategories,
 } from "../../../db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { setoranEntries } from "../../../db/schema";
 import type { IKurikulumRepository } from "../domain/repositories/IKurikulumRepository";
 import type { CategoryConfig, GradingScaleItem } from "../domain/entities/Kurikulum";
 
@@ -104,6 +105,91 @@ export class DrizzleKurikulumRepository implements IKurikulumRepository {
       .returning({ id: assessmentSubcategories.id });
 
     return rows[0].id;
+  }
+
+  async updateCategory(id: string, schoolId: string, data: { code?: string; name?: string }): Promise<void> {
+    await this.db
+      .update(assessmentCategories)
+      .set({
+        ...(data.code !== undefined ? { code: data.code } : {}),
+        ...(data.name !== undefined ? { name: data.name } : {}),
+      })
+      .where(and(eq(assessmentCategories.id, id), eq(assessmentCategories.schoolId, schoolId)));
+  }
+
+  async deleteCategory(id: string, schoolId: string): Promise<void> {
+    const used = await this.db
+      .select({ id: assessmentSubcategories.id })
+      .from(assessmentSubcategories)
+      .innerJoin(setoranEntries, eq(setoranEntries.subcategoryId, assessmentSubcategories.id))
+      .where(
+        and(
+          eq(assessmentSubcategories.categoryId, id),
+          eq(assessmentSubcategories.schoolId, schoolId)
+        )
+      )
+      .limit(1);
+    if (used.length > 0) {
+      throw new Error("Kategori tidak bisa dihapus karena sudah ada nilai tercatat");
+    }
+    await this.db
+      .update(assessmentSubcategories)
+      .set({ isActive: false })
+      .where(and(eq(assessmentSubcategories.categoryId, id), eq(assessmentSubcategories.schoolId, schoolId)));
+    await this.db
+      .update(assessmentCategories)
+      .set({ isActive: false })
+      .where(and(eq(assessmentCategories.id, id), eq(assessmentCategories.schoolId, schoolId)));
+  }
+
+  async updateSubcategory(
+    id: string,
+    schoolId: string,
+    data: { code?: string; name?: string; scoreFields?: any[]; includeInRanking?: boolean }
+  ): Promise<void> {
+    if (data.scoreFields !== undefined) {
+      const used = await this.db
+        .select({ id: setoranEntries.id })
+        .from(setoranEntries)
+        .where(and(eq(setoranEntries.subcategoryId, id), eq(setoranEntries.schoolId, schoolId)))
+        .limit(1);
+      if (used.length > 0) {
+        const current = await this.db
+          .select({ scoreFields: assessmentSubcategories.scoreFields })
+          .from(assessmentSubcategories)
+          .where(and(eq(assessmentSubcategories.id, id), eq(assessmentSubcategories.schoolId, schoolId)))
+          .limit(1);
+        const oldKeys = (((current[0]?.scoreFields as any[]) ?? []).map((f) => f.key)).sort();
+        const newKeys = ((data.scoreFields as any[]).map((f) => f.key)).sort();
+        if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
+          throw new Error("Field penilaian terkunci karena sudah ada nilai tercatat (hanya label yang boleh diubah)");
+        }
+      }
+    }
+    await this.db
+      .update(assessmentSubcategories)
+      .set({
+        ...(data.code !== undefined ? { code: data.code } : {}),
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.scoreFields !== undefined ? { scoreFields: data.scoreFields } : {}),
+        ...(data.includeInRanking !== undefined ? { includeInRanking: data.includeInRanking } : {}),
+      })
+      .where(and(eq(assessmentSubcategories.id, id), eq(assessmentSubcategories.schoolId, schoolId)));
+  }
+
+  async deleteSubcategory(id: string, schoolId: string): Promise<void> {
+    const used = await this.db
+      .select({ id: setoranEntries.id })
+      .from(setoranEntries)
+      .where(and(eq(setoranEntries.subcategoryId, id), eq(setoranEntries.schoolId, schoolId)))
+      .limit(1);
+    if (used.length > 0) {
+      throw new Error("Sub-kategori tidak bisa dihapus karena sudah ada nilai tercatat");
+    }
+    await this.db
+      .update(assessmentSubcategories)
+      .set({ isActive: false })
+      .where(and(eq(assessmentSubcategories.id, id), eq(assessmentSubcategories.schoolId, schoolId)));
   }
 
   async getGradingScale(_schoolId: string): Promise<GradingScaleItem[]> {

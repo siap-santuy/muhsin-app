@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import {
   BookOpen,
+  CalendarClock,
   Edit2,
   GraduationCap,
   Loader2,
   Plus,
+  Repeat,
   Search,
   Trash2,
   Users,
@@ -26,8 +28,20 @@ interface TeacherRecord {
 
 export function KoorTeacherPage() {
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [substitutions, setSubstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subForm, setSubForm] = useState({
+    absentTeacherId: "",
+    substituteTeacherId: "",
+    classId: "",
+    dateStart: "",
+    dateEnd: "",
+    reason: "",
+  });
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,12 +57,53 @@ export function KoorTeacherPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await api.getTeachers();
+      const [data, classes, subs] = await Promise.all([
+        api.getTeachers(),
+        api.getClasses().catch(() => []),
+        api.getSubstitutions().catch(() => []),
+      ]);
       setTeachers(data);
+      setClassOptions(classes);
+      setSubstitutions(subs);
     } catch {
       // Fallback
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSaveSubstitution(e: React.FormEvent) {
+    e.preventDefault();
+    if (!subForm.absentTeacherId || !subForm.substituteTeacherId || !subForm.classId || !subForm.dateStart || !subForm.dateEnd) {
+      toast.warning("Lengkapi guru berhalangan, pengganti, kelas, dan rentang tanggal");
+      return;
+    }
+    if (subForm.absentTeacherId === subForm.substituteTeacherId) {
+      toast.warning("Guru pengganti harus berbeda dengan guru berhalangan");
+      return;
+    }
+    setSubLoading(true);
+    try {
+      await api.createSubstitution(subForm);
+      toast.success("Penugasan guru pengganti berhasil dibuat");
+      setIsSubModalOpen(false);
+      setSubForm({ absentTeacherId: "", substituteTeacherId: "", classId: "", dateStart: "", dateEnd: "", reason: "" });
+      load();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal membuat penugasan pengganti");
+    } finally {
+      setSubLoading(false);
+    }
+  }
+
+  async function handleDeleteSubstitution(id: string) {
+    if (!window.confirm("Batalkan penugasan guru pengganti ini?")) return;
+    try {
+      await api.deleteSubstitution(id);
+      toast.success("Penugasan pengganti dibatalkan");
+      load();
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal membatalkan penugasan");
     }
   }
 
@@ -70,6 +125,7 @@ export function KoorTeacherPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
+          classId: formData.classId || null,
         });
         toast.success("Data guru berhasil diperbarui");
       } else {
@@ -77,6 +133,7 @@ export function KoorTeacherPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
+          classId: formData.classId || null,
         });
         toast.success("Guru baru berhasil ditambahkan");
       }
@@ -105,6 +162,9 @@ export function KoorTeacherPage() {
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalAssignedStudents = teachers.reduce((sum, t) => sum + (t.studentCount || 0), 0);
+  const avgStudents = teachers.length > 0 ? Math.round(totalAssignedStudents / teachers.length) : 0;
 
   return (
     <KoorShell
@@ -173,9 +233,9 @@ export function KoorTeacherPage() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
-                  Status Aktif
+                  Total Siswa Binaan
                 </p>
-                <span className="text-2xl font-black text-emerald-600">100% Aktif</span>
+                <span className="text-2xl font-black text-emerald-600">{totalAssignedStudents} Siswa</span>
               </div>
             </div>
           </div>
@@ -189,9 +249,60 @@ export function KoorTeacherPage() {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
                   Rata-rata Siswa / Guru
                 </p>
-                <span className="text-2xl font-black text-brand-navy">15 Siswa</span>
+                <span className="text-2xl font-black text-brand-navy">{avgStudents} Siswa</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Substitute Assignment Section */}
+        <div className="rounded-2xl border border-brand-line/60 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-brand-line/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                <Repeat className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-brand-navy">Guru Pengganti Sementara</h2>
+                <p className="text-xs text-brand-text-muted">
+                  {substitutions.length} penugasan aktif untuk guru berhalangan (izin/sakit)
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSubModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-600 transition-colors"
+            >
+              <CalendarClock className="h-4 w-4" />
+              <span>Tugaskan Pengganti</span>
+            </button>
+          </div>
+          <div className="divide-y divide-brand-line/40">
+            {substitutions.length === 0 ? (
+              <p className="p-4 text-xs text-brand-text-muted">Belum ada penugasan pengganti.</p>
+            ) : (
+              substitutions.map((s) => {
+                const absent = teachers.find((t) => t.id === s.absentTeacherId)?.name ?? "Guru berhalangan";
+                const sub = teachers.find((t) => t.id === s.substituteTeacherId)?.name ?? "Guru pengganti";
+                const cls = classOptions.find((c) => c.id === s.classId)?.name ?? "Kelas";
+                return (
+                  <div key={s.id} className="flex flex-col gap-2 p-4 text-xs sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-bold text-brand-navy">{sub} menggantikan {absent}</p>
+                      <p className="text-brand-text-muted">{cls} • {String(s.dateStart).slice(0, 10)} s/d {String(s.dateEnd).slice(0, 10)}{s.reason ? ` • ${s.reason}` : ""}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSubstitution(s.id)}
+                      className="w-fit rounded-lg px-3 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50"
+                    >
+                      Batalkan
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -230,11 +341,11 @@ export function KoorTeacherPage() {
                           <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-bold text-brand-cyan-dark">
                             {t.classes.length > 0
                               ? t.classes.map((c) => c.name).join(", ")
-                              : "Halaqah VII Abu Bakar"}
+                              : "-"}
                           </span>
                         </td>
                         <td className="px-4 py-3 font-bold text-brand-navy">
-                          {t.studentCount || 15} Siswa
+                          {t.studentCount} Siswa
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
@@ -332,6 +443,22 @@ export function KoorTeacherPage() {
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Kelas Bimbingan</label>
+                  <select
+                    value={formData.classId}
+                    onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="">Pilih Kelas...</option>
+                    {classOptions.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2 border-t border-brand-line">
                   <button
                     type="button"
@@ -346,6 +473,110 @@ export function KoorTeacherPage() {
                     className="rounded-xl bg-brand-cyan px-5 py-2 text-xs font-bold text-white hover:bg-brand-cyan-dark"
                   >
                     {modalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : editingTeacher ? "Simpan Perubahan" : "Tambah Guru"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {isSubModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h3 className="text-base font-bold text-brand-navy">Tugaskan Guru Pengganti</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsSubModalOpen(false)}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveSubstitution} className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Guru Berhalangan</label>
+                  <select
+                    required
+                    value={subForm.absentTeacherId}
+                    onChange={(e) => setSubForm({ ...subForm, absentTeacherId: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="">Pilih Guru...</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Guru Pengganti</label>
+                  <select
+                    required
+                    value={subForm.substituteTeacherId}
+                    onChange={(e) => setSubForm({ ...subForm, substituteTeacherId: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="">Pilih Guru...</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Kelas yang Digantikan</label>
+                  <select
+                    required
+                    value={subForm.classId}
+                    onChange={(e) => setSubForm({ ...subForm, classId: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="">Pilih Kelas...</option>
+                    {classOptions.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">Tanggal Mulai</label>
+                    <input
+                      type="date"
+                      required
+                      value={subForm.dateStart}
+                      onChange={(e) => setSubForm({ ...subForm, dateStart: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">Tanggal Selesai</label>
+                    <input
+                      type="date"
+                      required
+                      value={subForm.dateEnd}
+                      onChange={(e) => setSubForm({ ...subForm, dateEnd: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-brand-line">
+                  <button
+                    type="button"
+                    onClick={() => setIsSubModalOpen(false)}
+                    className="rounded-xl border border-brand-line px-4 py-2 text-xs font-bold text-brand-navy hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <Button
+                    type="submit"
+                    disabled={subLoading}
+                    className="rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white hover:bg-amber-600"
+                  >
+                    {subLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tugaskan"}
                   </Button>
                 </div>
               </form>

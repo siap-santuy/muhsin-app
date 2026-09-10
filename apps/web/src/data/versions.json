@@ -1,9 +1,54 @@
 [
   {
-    "version": "v1.0.2",
-    "releaseDate": "10 September 2026",
+    "version": "v1.0.3",
+    "releaseDate": "11 September 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Integrasi Penuh Halaman Koordinator: Dashboard Live, CRUD, Substitusi & Penjadwalan",
+    "summary": "Seluruh halaman koordinator kini terhubung API tanpa data dummy: dashboard agregat live 7 hari, CRUD siswa/guru/kelas, penugasan guru pengganti, penjadwalan munaqosah dengan penguji dan tanggal, serta kurikulum dengan field penilaian dinamis.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Backend CRUD siswa dan guru untuk koordinator (POST/PUT/DELETE /students & /teachers) dengan validasi email unik per sekolah dan penugasan kelas otomatis."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "UI penugasan Guru Pengganti Sementara di halaman Data Guru: pilih guru berhalangan, pengganti, kelas, dan rentang tanggal dengan daftar aktif yang bisa dibatalkan."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Modal penjadwalan Munaqosah lengkap: pilih periode ujian, guru penguji, tanggal dan waktu, plus badge jumlah pending live di navigasi."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan UI/UX",
+        "description": "Dashboard koordinator 100% live: total siswa/guru/kelas dari database, grafik setoran 7 hari per kategori, dan label tahun ajaran aktif tanpa angka hardcode."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan UI/UX",
+        "description": "Filter kelas berbasis ID di halaman siswa, metrik rata-rata EXP dan streak live, serta dropdown kelas dinamis di form tambah/edit."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan UI/UX",
+        "description": "Form sub-kategori kurikulum dengan field penilaian yang bisa diketik bebas (format key:Label) dan label tahun ajaran aktif dari server."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Hapus seluruh fallback dummy koordinator (1248 siswa, 15 guru, 8 kelas, 142 setoran, 92.5%, 96.8%, Halaqah VII Abu Bakar) di backend dan frontend."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.2",
+    "releaseDate": "10 September 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Fitur Koreksi Kategori TTQ, Guru Pengganti, Input Angka, & Penyesuaian EXP",
     "summary": "Pembaruan penting pada sistem penilaian TTQ: fitur pindah kategori tanpa approval koordinator, penugasan guru pengganti sementara lintas kelas, form penilaian dengan input angka presisi, penyesuaian level dinamis saat terjadi koreksi status, dan sinkronisasi penamaan profil.",
     "changes": [

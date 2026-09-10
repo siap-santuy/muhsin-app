@@ -28,9 +28,14 @@ interface MunaqosahRequestItem {
 export function KoorMunaqosahPage() {
   const [requests, setRequests] = useState<MunaqosahRequestItem[]>([]);
   const [teachers, setTeachers] = useState<Array<{ id: string; name: string }>>([]);
+  const [periods, setPeriods] = useState<Array<{ id: string; nama: string; status: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReq, setSelectedReq] = useState<MunaqosahRequestItem | null>(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const [jadwalTanggal, setJadwalTanggal] = useState("");
+  const [jadwalWaktu, setJadwalWaktu] = useState("");
+  const [scheduleTarget, setScheduleTarget] = useState<MunaqosahRequestItem | null>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history">("pending");
   const [actionLoading, setActionLoading] = useState(false);
   const [scheduledPage, setScheduledPage] = useState(1);
@@ -38,14 +43,20 @@ export function KoorMunaqosahPage() {
 
   async function loadData() {
     try {
-      const [reqs, teacherList] = await Promise.all([
+      const [reqs, teacherList, periodList] = await Promise.all([
         api.getMunaqosahRequests(),
         api.getTeachers(),
+        api.getMunaqosahPeriods().catch(() => []),
       ]);
       setRequests(reqs);
       setTeachers(teacherList);
+      setPeriods(periodList);
       if (teacherList.length > 0) {
         setSelectedTeacherId(teacherList[0].id);
+      }
+      const openPeriod = periodList.find((p) => p.status === "buka") || periodList[0];
+      if (openPeriod) {
+        setSelectedPeriodId(openPeriod.id);
       }
     } catch {
       // Fallback
@@ -90,6 +101,31 @@ export function KoorMunaqosahPage() {
       setSelectedReq(null);
     } catch (err: any) {
       alert(err.message || "Gagal menyetujui pengajuan");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleScheduleSubmit() {
+    if (!scheduleTarget) return;
+    if (!selectedPeriodId || !selectedTeacherId || !jadwalTanggal) {
+      alert("Lengkapi periode, penguji, dan tanggal ujian");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await api.scheduleMunaqosahRequest(scheduleTarget.id, {
+        periodId: selectedPeriodId,
+        examinerTeacherId: selectedTeacherId,
+        jadwalTanggal,
+        jadwalWaktu: jadwalWaktu || undefined,
+      });
+      await loadData();
+      setScheduleTarget(null);
+      setJadwalTanggal("");
+      setJadwalWaktu("");
+    } catch (err: any) {
+      alert(err.message || "Gagal menjadwalkan ujian");
     } finally {
       setActionLoading(false);
     }
@@ -230,7 +266,7 @@ export function KoorMunaqosahPage() {
                   scheduledPaginated.map((req) => (
                     <div
                       key={req.id}
-                      className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
+                      className="flex flex-col gap-3 rounded-2xl border border-brand-line bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between"
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -243,11 +279,21 @@ export function KoorMunaqosahPage() {
                         </div>
                         <p className="text-xs text-brand-text-muted">
                           {req.className} • Penguji: {req.assignedExaminerName ?? "Menunggu Penugasan"}
+                          {req.examDate ? ` • ${req.examDate}${req.examTime ? ` ${req.examTime}` : ""}` : ""}
                         </p>
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 border border-emerald-200">
-                        {req.status === "disetujui" ? "Disetujui" : "Dijadwalkan"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 border border-emerald-200">
+                          {req.status === "disetujui" ? "Disetujui" : "Dijadwalkan"}
+                        </span>
+                        <Button
+                          type="button"
+                          onClick={() => setScheduleTarget(req)}
+                          className="h-9 rounded-xl bg-purple-600 text-xs font-bold text-white hover:bg-purple-700"
+                        >
+                          Jadwalkan
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -365,6 +411,105 @@ export function KoorMunaqosahPage() {
                   className="h-10 rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Konfirmasi & Setujui"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {scheduleTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-brand-line pb-3">
+                <h2 className="text-base font-bold text-brand-navy">
+                  Jadwalkan Ujian Munaqosah
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setScheduleTarget(null)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="my-4 space-y-3 text-xs">
+                <div className="rounded-xl bg-gray-50 p-3">
+                  <p className="font-bold text-brand-navy">
+                    {scheduleTarget.studentName} (Juz {scheduleTarget.juzKe})
+                  </p>
+                  <p className="text-brand-text-muted">{scheduleTarget.className}</p>
+                </div>
+
+                <div>
+                  <label className="font-bold text-brand-navy">Periode Ujian</label>
+                  <select
+                    value={selectedPeriodId}
+                    onChange={(e) => setSelectedPeriodId(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    <option value="">Pilih Periode...</option>
+                    {periods.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama} ({p.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-brand-navy">Guru Penguji</label>
+                  <select
+                    value={selectedTeacherId}
+                    onChange={(e) => setSelectedTeacherId(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  >
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-brand-navy">Tanggal Ujian</label>
+                    <input
+                      type="date"
+                      value={jadwalTanggal}
+                      onChange={(e) => setJadwalTanggal(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-brand-navy">Waktu (Opsional)</label>
+                    <input
+                      type="time"
+                      value={jadwalWaktu}
+                      onChange={(e) => setJadwalWaktu(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setScheduleTarget(null)}
+                  className="h-10 rounded-xl"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleScheduleSubmit}
+                  disabled={actionLoading}
+                  className="h-10 rounded-xl bg-purple-600 font-bold text-white hover:bg-purple-700"
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Simpan Jadwal"}
                 </Button>
               </div>
             </div>

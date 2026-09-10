@@ -90,7 +90,9 @@ import { createNotificationRoutes } from "../modules/notifications/presentation/
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
-import { createPublicSchoolRoutes } from "../modules/schools/presentation/routes";
+import { createPublicSchoolRoutes, createSchoolAdminRoutes } from "../modules/schools/presentation/routes";
+import { DrizzleSchoolAdminRepository } from "../modules/schools/infrastructure/DrizzleSchoolAdminRepository";
+import { ManageStudentUseCase, ManageTeacherUseCase } from "../modules/schools/application/use-cases/ManageSchoolUserUseCase";
 import { errorHandler } from "../middleware/error-handler";
 
 export interface ContainerDeps {
@@ -117,9 +119,12 @@ export interface ContainerDeps {
   // Students
   getStudentsUseCase: GetStudentsUseCase;
   getStudentByIdUseCase: GetStudentByIdUseCase;
+  manageStudentUseCase: ManageStudentUseCase;
   // Teachers
   getTeachersUseCase: GetTeachersUseCase;
   manageSubstitutionUseCase: ManageSubstitutionUseCase;
+  manageTeacherUseCase: ManageTeacherUseCase;
+  schoolAdminRepo: DrizzleSchoolAdminRepository;
   // Reports
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
@@ -193,6 +198,15 @@ export function createApp(deps: ContainerDeps): Hono {
   // Protected middleware for all /api/* routes
   const protectedAuth = authMiddleware(deps.tokenService);
 
+  const schoolAdminRoutes = createSchoolAdminRoutes({
+    adminRepo: deps.schoolAdminRepo,
+    manageStudentUseCase: deps.manageStudentUseCase,
+    manageTeacherUseCase: deps.manageTeacherUseCase,
+  });
+  app.use("/school-admin/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/school-admin", protectedAuth, tenantScopeMiddleware);
+  app.route("/school-admin", schoolAdminRoutes);
+
   // Users / Profile
   const protectedUsers = buildAuthProtectedRoutes(deps);
   app.use("/users/*", protectedAuth, tenantScopeMiddleware);
@@ -231,6 +245,7 @@ export function createApp(deps: ContainerDeps): Hono {
   const studentRoutes = createStudentRoutes({
     getStudentsUseCase: deps.getStudentsUseCase,
     getStudentByIdUseCase: deps.getStudentByIdUseCase,
+    manageStudentUseCase: deps.manageStudentUseCase,
   });
   app.use("/students/*", protectedAuth, tenantScopeMiddleware);
   app.use("/students", protectedAuth, tenantScopeMiddleware);
@@ -240,6 +255,7 @@ export function createApp(deps: ContainerDeps): Hono {
   const teacherRoutes = createTeacherRoutes({
     getTeachersUseCase: deps.getTeachersUseCase,
     manageSubstitutionUseCase: deps.manageSubstitutionUseCase,
+    manageTeacherUseCase: deps.manageTeacherUseCase,
   });
   app.use("/teachers/*", protectedAuth, tenantScopeMiddleware);
   app.use("/teachers", protectedAuth, tenantScopeMiddleware);
@@ -315,6 +331,7 @@ export function buildContainer() {
   const munaqosahRepo = new DrizzleMunaqosahRepository(db);
   const kurikulumRepo = new DrizzleKurikulumRepository(db);
   const notificationRepo = new DrizzleCachedNotificationRepository(db, redis);
+  const schoolAdminRepo = new DrizzleSchoolAdminRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -366,6 +383,8 @@ export function buildContainer() {
   const getStudentByIdUseCase = new GetStudentByIdUseCase(studentRepo);
   const getTeachersUseCase = new GetTeachersUseCase(teacherRepo);
   const manageSubstitutionUseCase = new ManageSubstitutionUseCase(teacherSubRepo);
+  const manageStudentUseCase = new ManageStudentUseCase(schoolAdminRepo, passwordHasher);
+  const manageTeacherUseCase = new ManageTeacherUseCase(schoolAdminRepo, passwordHasher);
 
   // UseCases — Reports
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
@@ -412,8 +431,11 @@ export function buildContainer() {
       getAssessmentCategoriesUseCase,
       getStudentsUseCase,
       getStudentByIdUseCase,
+      manageStudentUseCase,
       getTeachersUseCase,
       manageSubstitutionUseCase,
+      manageTeacherUseCase,
+      schoolAdminRepo,
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
       getDashboardSummaryUseCase,

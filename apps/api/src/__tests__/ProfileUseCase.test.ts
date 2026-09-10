@@ -38,6 +38,9 @@ describe("Profile UseCases", () => {
         id === user.id && schoolId === user.schoolId ? user : null,
       updateProfile: async () => user,
       updatePasswordHash: async () => {},
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new GetProfileUseCase(userRepo);
@@ -57,6 +60,9 @@ describe("Profile UseCases", () => {
       findById: async () => null,
       updateProfile: async () => makeMockUser(),
       updatePasswordHash: async () => {},
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new GetProfileUseCase(userRepo);
@@ -77,6 +83,9 @@ describe("Profile UseCases", () => {
         return current;
       },
       updatePasswordHash: async () => {},
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new UpdateProfileUseCase(userRepo);
@@ -113,6 +122,9 @@ describe("Profile UseCases", () => {
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async () => {},
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new UpdateProfileUseCase(userRepo);
@@ -138,6 +150,9 @@ describe("Profile UseCases", () => {
       updatePasswordHash: async (_id, _schoolId, hash) => {
         updatedHash = hash;
       },
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new ChangePasswordUseCase(userRepo, hasher);
@@ -161,6 +176,9 @@ describe("Profile UseCases", () => {
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async () => {},
+      createUser: async () => makeMockUser(),
+      updateUser: async () => makeMockUser(),
+      deleteUser: async () => {},
     };
 
     const useCase = new ChangePasswordUseCase(userRepo, hasher);

@@ -24,6 +24,9 @@ function makeDeps(user: User | null) {
     findById: async () => user,
     updateProfile: async () => user!,
     updatePasswordHash: async () => {},
+    createUser: async () => user!,
+    updateUser: async () => user!,
+    deleteUser: async () => {},
   };
 
   const saved: Array<{ userId: string; hash: string; ttl: number }> = [];

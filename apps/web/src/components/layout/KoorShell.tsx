@@ -53,7 +53,7 @@ const NAV_ITEMS = [
     label: "Approval Munaqosah",
     icon: Award,
     href: "#/munaqosah",
-    badge: "2",
+    badgeKey: "munaqosahPending",
   },
 ];
 
@@ -80,6 +80,29 @@ export function KoorShell({
     user?.gender ?? "",
     "koordinator"
   );
+  const [munaqosahPending, setMunaqosahPending] = useState<number | null>(null);
+
+  useState(() => {
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const reqs = await api.getMunaqosahRequests("diajukan").catch(() => api.getMunaqosahRequests());
+        const pending = Array.isArray(reqs) ? reqs.filter((r: any) => r.status === "diajukan").length : 0;
+        setMunaqosahPending(pending);
+      } catch {
+        setMunaqosahPending(null);
+      }
+    })();
+  });
+
+  function resolveBadge(item: any): string | null {
+    if (item.badge) return item.badge;
+    if (item.badgeKey === "munaqosahPending") {
+      if (munaqosahPending === null || munaqosahPending === 0) return null;
+      return String(munaqosahPending);
+    }
+    return null;
+  }
 
   const renderNavList = () => (
     <nav className="flex-1 space-y-1 px-3 py-4">
@@ -108,7 +131,7 @@ export function KoorShell({
               />
               <span>{item.label}</span>
             </div>
-            {item.badge ? (
+            {resolveBadge(item) ? (
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
                   isActive
@@ -116,7 +139,7 @@ export function KoorShell({
                     : "bg-brand-amber/20 text-brand-navy"
                 }`}
               >
-                {item.badge}
+                {resolveBadge(item)}
               </span>
             ) : null}
           </a>

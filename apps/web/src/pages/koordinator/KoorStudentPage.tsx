@@ -32,6 +32,7 @@ interface StudentRecord {
 
 export function KoorStudentPage() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
@@ -45,7 +46,7 @@ export function KoorStudentPage() {
     name: "",
     email: "",
     phone: "",
-    className: "VII Abu Bakar",
+    classId: "",
     gender: "ikhwan" as "ikhwan" | "akhwat",
     nisn: "",
   });
@@ -53,8 +54,13 @@ export function KoorStudentPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await api.getStudents();
+      const params = classFilter !== "all" ? { classId: classFilter } : undefined;
+      const [data, classes] = await Promise.all([
+        api.getStudents(params),
+        api.getClasses().catch(() => []),
+      ]);
       setStudents(data);
+      setClassOptions(classes);
     } catch {
       // Fallback
     } finally {
@@ -64,7 +70,7 @@ export function KoorStudentPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [classFilter]);
 
   async function handleSaveStudent(e: React.FormEvent) {
     e.preventDefault();
@@ -82,6 +88,7 @@ export function KoorStudentPage() {
           phone: formData.phone || null,
           gender: formData.gender,
           nisn: formData.nisn || null,
+          classId: formData.classId || null,
         });
         toast.success("Data siswa berhasil diperbarui");
       } else {
@@ -91,6 +98,7 @@ export function KoorStudentPage() {
           phone: formData.phone || null,
           gender: formData.gender,
           nisn: formData.nisn || null,
+          classId: formData.classId || null,
         });
         toast.success("Siswa baru berhasil ditambahkan");
       }
@@ -116,14 +124,17 @@ export function KoorStudentPage() {
 
   const PAGE_SIZE = 5;
 
+  const avgExp = students.length > 0
+    ? Math.round(students.reduce((sum, s) => sum + (s.totalExp || 0), 0) / students.length)
+    : 0;
+  const activeStreakCount = students.filter((s) => (s.currentStreak || 0) > 0).length;
+  const streakRate = students.length > 0 ? Math.round((activeStreakCount / students.length) * 100) : 0;
+
   const filtered = students.filter((st) => {
     const matchSearch =
       st.name.toLowerCase().includes(search.toLowerCase()) ||
       st.email.toLowerCase().includes(search.toLowerCase());
-    const matchClass =
-      classFilter === "all" ||
-      (st.className && st.className.toLowerCase().includes(classFilter));
-    return matchSearch && matchClass;
+    return matchSearch;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -165,9 +176,11 @@ export function KoorStudentPage() {
                 className="bg-transparent font-semibold text-brand-navy outline-none"
               >
                 <option value="all">Semua Kelas</option>
-                <option value="vii">Kelas VII</option>
-                <option value="viii">Kelas VIII</option>
-                <option value="ix">Kelas IX</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -175,7 +188,7 @@ export function KoorStudentPage() {
               type="button"
               onClick={() => {
                 setEditingStudent(null);
-                setFormData({ name: "", email: "", phone: "", className: "VII Abu Bakar", gender: "ikhwan", nisn: "" });
+                setFormData({ name: "", email: "", phone: "", classId: classOptions[0]?.id || "", gender: "ikhwan", nisn: "" });
                 setIsModalOpen(true);
               }}
               className="flex items-center gap-1.5 rounded-xl bg-brand-cyan px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-colors"
@@ -225,9 +238,9 @@ export function KoorStudentPage() {
             </div>
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
-                Progress TTQ Minggu Ini
+                Rata-rata EXP Siswa
               </p>
-              <span className="text-2xl font-black text-brand-navy">92.5%</span>
+              <span className="text-2xl font-black text-brand-navy">{avgExp} EXP</span>
             </div>
           </div>
 
@@ -237,14 +250,14 @@ export function KoorStudentPage() {
                 <UserCheck className="h-5 w-5" />
               </div>
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
-                Baik
+                Live
               </span>
             </div>
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
-                Rata-rata Kehadiran
+                Siswa Aktif Streak ({activeStreakCount})
               </p>
-              <span className="text-2xl font-black text-brand-navy">96.8%</span>
+              <span className="text-2xl font-black text-brand-navy">{streakRate}%</span>
             </div>
           </div>
 
@@ -319,7 +332,7 @@ export function KoorStudentPage() {
                             {st.email}
                           </p>
                         </td>
-                        <td className="px-4 py-3 font-semibold">{st.className ?? "VII Abu Bakar"}</td>
+                        <td className="px-4 py-3 font-semibold">{st.className ?? "-"}</td>
                         <td className="px-4 py-3 font-bold text-brand-cyan">
                           Lv. {st.level} ({st.totalExp} EXP)
                         </td>
@@ -332,11 +345,12 @@ export function KoorStudentPage() {
                               type="button"
                               onClick={() => {
                                 setEditingStudent(st);
+                                const matchedClass = classOptions.find((c) => c.name === st.className);
                                 setFormData({
                                   name: st.name,
                                   email: st.email,
                                   phone: st.phone || "",
-                                  className: st.className || "VII Abu Bakar",
+                                  classId: (st as any).classId || matchedClass?.id || "",
                                   gender: "ikhwan",
                                   nisn: "",
                                 });
@@ -451,14 +465,16 @@ export function KoorStudentPage() {
                 <div>
                   <label className="text-xs font-bold text-brand-navy">Kelas</label>
                   <select
-                    value={formData.className}
-                    onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                    value={formData.classId}
+                    onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                   >
-                    <option value="VII Abu Bakar">VII Abu Bakar</option>
-                    <option value="VII Umar">VII Umar</option>
-                    <option value="VIII Utsman">VIII Utsman</option>
-                    <option value="IX Ali">IX Ali</option>
+                    <option value="">Pilih Kelas...</option>
+                    {classOptions.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

@@ -646,6 +646,54 @@ class ApiClient {
     return this.request("DELETE", `/kurikulum/subcategories/${id}`);
   }
 
+  async getClasses(): Promise<Array<{ id: string; name: string; jenjangLevel: string | null }>> {
+    return this.request("GET", `/school-admin/classes`);
+  }
+
+  async getActivePeriod(): Promise<{ id: string; tahunAjaran: string; semester: string; isLocked: boolean } | null> {
+    return this.request("GET", `/school-admin/active-period`);
+  }
+
+  async getMunaqosahPeriods(): Promise<Array<{ id: string; nama: string; tanggalMulai: string; tanggalSelesai: string; status: string }>> {
+    return this.request("GET", `/school-admin/munaqosah-periods`);
+  }
+
+  async getSubstitutions(): Promise<Array<{
+    id: string;
+    absentTeacherId: string;
+    substituteTeacherId: string;
+    classId: string;
+    dateStart: string;
+    dateEnd: string;
+    reason?: string | null;
+  }>> {
+    return this.request("GET", `/teachers/substitutions`);
+  }
+
+  async createSubstitution(input: {
+    absentTeacherId: string;
+    substituteTeacherId: string;
+    classId: string;
+    dateStart: string;
+    dateEnd: string;
+    reason?: string | null;
+  }) {
+    return this.request("POST", `/teachers/substitutions`, input);
+  }
+
+  async deleteSubstitution(id: string) {
+    return this.request("DELETE", `/teachers/substitutions/${id}`);
+  }
+
+  async scheduleMunaqosahRequest(id: string, input: {
+    periodId: string;
+    examinerTeacherId: string;
+    jadwalTanggal: string;
+    jadwalWaktu?: string;
+  }) {
+    return this.request("POST", `/munaqosah/requests/${id}/schedule`, input);
+  }
+
   async getNotifications() {
     return this.request("GET", `/notifications`);
   }

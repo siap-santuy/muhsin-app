@@ -17,6 +17,10 @@ describe("Kurikulum Module UseCases", () => {
       ]),
       createCategory: vi.fn(),
       createSubcategory: vi.fn(),
+      updateCategory: vi.fn(),
+      deleteCategory: vi.fn(),
+      updateSubcategory: vi.fn(),
+      deleteSubcategory: vi.fn(),
       getGradingScale: vi.fn(),
     };
 
@@ -32,6 +36,10 @@ describe("Kurikulum Module UseCases", () => {
       getCategoriesWithSubcategories: vi.fn(),
       createCategory: vi.fn().mockResolvedValue("cat-new"),
       createSubcategory: vi.fn(),
+      updateCategory: vi.fn(),
+      deleteCategory: vi.fn(),
+      updateSubcategory: vi.fn(),
+      deleteSubcategory: vi.fn(),
       getGradingScale: vi.fn(),
     };
 
@@ -57,6 +65,10 @@ describe("Kurikulum Module UseCases", () => {
       getCategoriesWithSubcategories: vi.fn(),
       createCategory: vi.fn(),
       createSubcategory: vi.fn().mockResolvedValue("sub-new"),
+      updateCategory: vi.fn(),
+      deleteCategory: vi.fn(),
+      updateSubcategory: vi.fn(),
+      deleteSubcategory: vi.fn(),
       getGradingScale: vi.fn(),
     };
 

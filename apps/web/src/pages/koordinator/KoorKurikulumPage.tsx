@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 export function KoorKurikulumPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [gradingScale, setGradingScale] = useState<any[]>([]);
+  const [activePeriod, setActivePeriod] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"categories" | "grading">("categories");
 
@@ -25,21 +26,37 @@ export function KoorKurikulumPage() {
     code: "",
     name: "",
     includeInRanking: true,
+    scoreFieldsText: "tajwid:Tajwid\nkelancaran:Kelancaran",
   });
 
   async function loadData() {
     try {
-      const [cats, scale] = await Promise.all([
+      const [cats, scale, period] = await Promise.all([
         api.getKurikulumCategories(),
         api.getGradingScale(),
+        api.getActivePeriod().catch(() => null),
       ]);
       setCategories(cats);
       setGradingScale(scale);
+      setActivePeriod(period);
     } catch {
       // Fallback
     } finally {
       setLoading(false);
     }
+  }
+
+  function parseScoreFields(text: string): Array<{ key: string; label: string; min: number; max: number }> {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [key, ...rest] = line.split(":");
+        const label = rest.join(":").trim() || key.trim();
+        return { key: key.trim().toLowerCase().replace(/\s+/g, "_"), label, min: 0, max: 100 };
+      })
+      .filter((f) => f.key.length > 0);
   }
 
   useEffect(() => {
@@ -51,7 +68,7 @@ export function KoorKurikulumPage() {
     if (!catFormData.code || !catFormData.name) return;
     setModalLoading(true);
     try {
-      await api.createCategory(catFormData);
+      await api.createCategory({ ...catFormData, academicPeriodId: activePeriod?.id });
       toast.success("Kategori kurikulum baru berhasil ditambahkan");
       setIsCatModalOpen(false);
       setCatFormData({ code: "", name: "" });
@@ -66,6 +83,11 @@ export function KoorKurikulumPage() {
   async function handleCreateSubcategory(e: React.FormEvent) {
     e.preventDefault();
     if (!subFormData.code || !subFormData.name || !selectedCatId) return;
+    const scoreFields = parseScoreFields(subFormData.scoreFieldsText);
+    if (scoreFields.length === 0) {
+      toast.warning("Isi minimal 1 field penilaian (format: key:Label per baris)");
+      return;
+    }
     setModalLoading(true);
     try {
       await api.createSubcategory({
@@ -73,15 +95,11 @@ export function KoorKurikulumPage() {
         code: subFormData.code,
         name: subFormData.name,
         includeInRanking: subFormData.includeInRanking,
-        scoreFields: [
-          { key: "tajwid", label: "Tajwid", min: 0, max: 100 },
-          { key: "kelancaran", label: "Kelancaran", min: 0, max: 100 },
-          { key: "makhraj", label: "Makharijul Huruf", min: 0, max: 100 },
-        ],
+        scoreFields,
       });
       toast.success("Sub-kategori berhasil ditambahkan");
       setIsSubModalOpen(false);
-      setSubFormData({ code: "", name: "", includeInRanking: true });
+      setSubFormData({ code: "", name: "", includeInRanking: true, scoreFieldsText: "tajwid:Tajwid\nkelancaran:Kelancaran" });
       loadData();
     } catch (err: any) {
       toast.warning(err.message || "Gagal membuat sub-kategori");
@@ -124,7 +142,7 @@ export function KoorKurikulumPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-brand-cyan-dark">
-                Tahun Ajaran: 2026/2027 (Aktif)
+                Tahun Ajaran: {activePeriod ? `${activePeriod.tahunAjaran} • ${activePeriod.semester} (Aktif)` : "Memuat..."}
               </span>
             </div>
             <h1 className="mt-2 text-lg font-black text-brand-navy">
@@ -401,6 +419,18 @@ export function KoorKurikulumPage() {
                     value={subFormData.name}
                     onChange={(e) => setSubFormData({ ...subFormData, name: e.target.value })}
                     placeholder="Contoh: Setoran Hafalan Baru (Ziyadah)"
+                    className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-brand-navy">Field Penilaian (1 baris = 1 field, format key:Label)</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={subFormData.scoreFieldsText}
+                    onChange={(e) => setSubFormData({ ...subFormData, scoreFieldsText: e.target.value })}
+                    placeholder={"tajwid:Tajwid\nkelancaran:Kelancaran"}
                     className="mt-1 w-full rounded-xl border border-brand-line bg-brand-page px-3.5 py-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                   />
                 </div>

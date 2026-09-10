@@ -9,6 +9,7 @@ import {
   studentGamification,
   hafalanTargets,
   setoranEntries,
+  assessmentSubcategories,
   dailyIbadah,
 } from "../../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -538,22 +539,67 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       .from(classes)
       .where(eq(classes.schoolId, schoolId));
 
-    const totalStudents = Number(studentCount[0]?.count ?? 0) || 1248;
-    const totalTeachers = Number(teacherCount[0]?.count ?? 0) || 15;
-    const totalClasses = Number(classCount[0]?.count ?? 0) || 8;
+    const totalStudents = Number(studentCount[0]?.count ?? 0);
+    const totalTeachers = Number(teacherCount[0]?.count ?? 0);
+    const totalClasses = Number(classCount[0]?.count ?? 0);
+
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 6);
+
+    const weekRows = await this.db
+      .select({
+        date: setoranEntries.date,
+        subcategoryId: setoranEntries.subcategoryId,
+      })
+      .from(setoranEntries)
+      .where(
+        and(
+          eq(setoranEntries.schoolId, schoolId),
+          sql`${setoranEntries.date} >= ${weekAgo.toISOString().slice(0, 10)}`,
+          sql`${setoranEntries.date} <= ${today.toISOString().slice(0, 10)}`
+        )
+      );
+
+    const subMeta = await this.db
+      .select({
+        id: assessmentSubcategories.id,
+        code: assessmentSubcategories.code,
+        name: assessmentSubcategories.name,
+      })
+      .from(assessmentSubcategories)
+      .where(eq(assessmentSubcategories.schoolId, schoolId));
+
+    const subMap = new Map(subMeta.map((s) => [s.id, `${s.code} ${s.name}`.toLowerCase()]));
+
+    const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+    const chartData: Array<{ day: string; Ziyadah: number; Murojaah: number; Tahsin: number }> = [];
+    const dateKeys: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      dateKeys.push(key);
+      chartData.push({ day: dayNames[d.getDay()], Ziyadah: 0, Murojaah: 0, Tahsin: 0 });
+    }
+
+    let setoranMingguIniCount = 0;
+    for (const row of weekRows) {
+      const idx = dateKeys.indexOf(row.date as string);
+      if (idx < 0) continue;
+      setoranMingguIniCount++;
+      const meta = (subMap.get(row.subcategoryId) ?? "").toLowerCase();
+      if (meta.includes("ziyadah")) chartData[idx].Ziyadah++;
+      else if (meta.includes("muroja")) chartData[idx].Murojaah++;
+      else chartData[idx].Tahsin++;
+    }
 
     return {
       totalStudents,
       totalTeachers,
       totalClasses,
-      setoranMingguIniCount: 142,
-      chartData: [
-        { day: "Sen", Ziyadah: 42, Murojaah: 38, Tahsin: 25 },
-        { day: "Sel", Ziyadah: 45, Murojaah: 40, Tahsin: 28 },
-        { day: "Rab", Ziyadah: 39, Murojaah: 42, Tahsin: 30 },
-        { day: "Kam", Ziyadah: 48, Murojaah: 44, Tahsin: 22 },
-        { day: "Jum", Ziyadah: 50, Murojaah: 46, Tahsin: 35 },
-      ],
+      setoranMingguIniCount,
+      chartData,
     };
   }
 }

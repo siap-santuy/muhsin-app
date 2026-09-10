@@ -19,25 +19,25 @@ import { api } from "@/lib/api";
 
 export function KoorDashboardPage() {
   const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [activePeriod, setActivePeriod] = useState<any>(null);
 
   useEffect(() => {
-    api.getDashboardSummary()
-      .then(setSummary)
-      .catch(() => {
-        // Fallback
-      });
+    Promise.all([api.getDashboardSummary(), api.getActivePeriod().catch(() => null)])
+      .then(([sum, period]) => {
+        setSummary(sum);
+        setActivePeriod(period);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const totalStudents = summary?.totalStudents ?? 1248;
-  const totalTeachers = summary?.totalTeachers ?? 15;
-  const totalClasses = summary?.totalClasses ?? 8;
-  const chartData = summary?.chartData ?? [
-    { day: "Sen", Ziyadah: 42, Murojaah: 38, Tahsin: 25 },
-    { day: "Sel", Ziyadah: 45, Murojaah: 40, Tahsin: 28 },
-    { day: "Rab", Ziyadah: 39, Murojaah: 42, Tahsin: 30 },
-    { day: "Kam", Ziyadah: 48, Murojaah: 44, Tahsin: 22 },
-    { day: "Jum", Ziyadah: 50, Murojaah: 46, Tahsin: 35 },
-  ];
+  const totalStudents = summary?.totalStudents ?? 0;
+  const totalTeachers = summary?.totalTeachers ?? 0;
+  const totalClasses = summary?.totalClasses ?? 0;
+  const setoranMingguIni = summary?.setoranMingguIniCount ?? 0;
+  const chartData: Array<{ day: string; Ziyadah: number; Murojaah: number; Tahsin: number }> =
+    summary?.chartData ?? [];
 
   const stats = [
     {
@@ -59,19 +59,19 @@ export function KoorDashboardPage() {
     {
       label: "TOTAL KELAS",
       value: String(totalClasses),
-      subtext: "Jenjang SMP IT",
+      subtext: activePeriod ? `TA ${activePeriod.tahunAjaran} • ${activePeriod.semester}` : "Tahun Ajaran Aktif",
       subtextColor: "text-brand-text-muted",
       icon: BookOpen,
       iconBg: "bg-slate-100 text-brand-navy",
     },
     {
       label: "SETORAN PEKAN INI",
-      value: "142",
-      subtext: "Aktivitas Terverifikasi",
+      value: String(setoranMingguIni),
+      subtext: "Aktivitas Terverifikasi 7 Hari",
       subtextColor: "text-orange-600 font-bold",
       icon: Award,
       iconBg: "bg-orange-100 text-orange-600",
-      badge: "Aktif",
+      badge: loading ? "Memuat..." : "Live",
     },
   ];
 

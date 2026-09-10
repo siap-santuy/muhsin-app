@@ -1,7 +1,7 @@
 import type { Db } from "../../../db/client";
 import { users } from "../../../db/schema";
 import { eq, and, or, sql } from "drizzle-orm";
-import type { IUserRepository, UpdateUserData } from "../domain/repositories/IUserRepository";
+import type { IUserRepository, UpdateUserData, CreateUserData, UpdateUserAdminData } from "../domain/repositories/IUserRepository";
 import type { User } from "../domain/entities/User";
 
 export class DrizzleUserRepository implements IUserRepository {
@@ -65,6 +65,46 @@ export class DrizzleUserRepository implements IUserRepository {
     await this.db
       .update(users)
       .set({ passwordHash })
+      .where(and(eq(users.id, id), eq(users.schoolId, schoolId)));
+  }
+
+  async createUser(data: CreateUserData): Promise<User> {
+    const rows = await this.db
+      .insert(users)
+      .values({
+        schoolId: data.schoolId,
+        role: data.role as any,
+        name: data.name,
+        email: data.email,
+        passwordHash: data.passwordHash,
+        phone: data.phone ?? null,
+        username: data.username ?? null,
+        gender: data.gender ?? null,
+      })
+      .returning();
+    const row = rows[0];
+    if (!row) throw new Error("Gagal membuat user");
+    return this.toDomain(row);
+  }
+
+  async updateUser(id: string, schoolId: string, data: UpdateUserAdminData): Promise<User> {
+    const rows = await this.db
+      .update(users)
+      .set({
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.email !== undefined ? { email: data.email } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+      })
+      .where(and(eq(users.id, id), eq(users.schoolId, schoolId)))
+      .returning();
+    const row = rows[0];
+    if (!row) throw new Error("User tidak ditemukan");
+    return this.toDomain(row);
+  }
+
+  async deleteUser(id: string, schoolId: string): Promise<void> {
+    await this.db
+      .delete(users)
       .where(and(eq(users.id, id), eq(users.schoolId, schoolId)));
   }
 
