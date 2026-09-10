@@ -21,8 +21,35 @@ export class DrizzleSetoranRepository implements ISetoranRepository {
         referenceEnd: entity.referenceEnd as any,
         scores: entity.scores as any,
         keterangan: entity.keterangan,
+        substitutedForTeacherId: entity.substitutedForTeacherId,
       })
       .returning();
+
+    return this.toDomain(rows[0]);
+  }
+
+  async update(entity: SetoranEntryEntity): Promise<SetoranEntryEntity> {
+    const rows = await this.db
+      .update(setoranEntries)
+      .set({
+        subcategoryId: entity.subcategoryId,
+        referenceStart: entity.referenceStart as any,
+        referenceEnd: entity.referenceEnd as any,
+        scores: entity.scores as any,
+        keterangan: entity.keterangan,
+        updatedAt: entity.updatedAt,
+      })
+      .where(
+        and(
+          eq(setoranEntries.id, entity.id),
+          eq(setoranEntries.schoolId, entity.schoolId)
+        )
+      )
+      .returning();
+
+    if (!rows[0]) {
+      throw new Error("Gagal memperbarui setoran");
+    }
 
     return this.toDomain(rows[0]);
   }
@@ -141,6 +168,7 @@ export class DrizzleSetoranRepository implements ISetoranRepository {
       referenceEnd: row.referenceEnd as any,
       scores: row.scores as Record<string, number>,
       keterangan: row.keterangan,
+      substitutedForTeacherId: (row as any).substitutedForTeacherId ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

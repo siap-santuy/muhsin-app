@@ -1,9 +1,59 @@
 [
   {
-    "version": "v1.0.1",
-    "releaseDate": "07 September 2026",
+    "version": "v1.0.2",
+    "releaseDate": "10 September 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Fitur Koreksi Kategori TTQ, Guru Pengganti, Input Angka, & Penyesuaian EXP",
+    "summary": "Pembaruan penting pada sistem penilaian TTQ: fitur pindah kategori tanpa approval koordinator, penugasan guru pengganti sementara lintas kelas, form penilaian dengan input angka presisi, penyesuaian level dinamis saat terjadi koreksi status, dan sinkronisasi penamaan profil.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tombol 'Ubah Kategori' sejajar dengan Ubah Penilaian untuk memindahkan nilai jika guru salah memilih subkategori (misal Ziyadah tertukar Muroja'ah) tanpa perlu menghapus setoran."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Sistem Guru Pengganti (Teacher Substitution): Koordinator dapat menugaskan guru pengganti sementara untuk kelas yang gurunya berhalangan hadir dengan akses input setoran dan riwayat siswa."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan UI/UX",
+        "description": "Penggantian kontrol slider penilaian TTQ menjadi input angka langsung (0-100) untuk pengisian nilai yang lebih cepat, akurat, dan ramah sentuhan."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Aturan Bisnis",
+        "description": "Penguncian reward EXP saat pertama kali setoran disimpan agar tidak terhitung ganda (double), disertai penyesuaian otomatis (reverse) jika status kehadiran diubah dari Hadir ke Izin/Sakit/Alpa."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Aturan Bisnis",
+        "description": "Pembaruan kalkulasi level gamifikasi yang dinamis: level dapat turun secara proporsional jika EXP berkurang melewati batas ambang level."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Penyelarasan nama panggilan pengguna pada Dashboard Guru, Orang Tua, dan Koordinator agar selalu konsisten sesuai akun yang aktif."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan alur pencatatan dan validasi form ibadah yaumiyah siswa."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Standarisasi penamaan 'santri' menjadi 'siswa' di seluruh komponen aplikasi dan teks panduan."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.1",
+    "releaseDate": "07 September 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Optimasi Input TTQ, Raport Guru, Dashboard & Sistem Versi",
     "summary": "Pembaruan komprehensif pada alur input TTQ guru, filter halaman raport, kalkulasi metrik dashboard, pemformatan waktu notifikasi, dan penambahan fitur riwayat versi aplikasi.",
     "changes": [

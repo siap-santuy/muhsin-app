@@ -3,7 +3,7 @@ export class ExpCalculator {
    * Formula: level N requires 100 * N cumulative EXP.
    * Total required for level L = 100 * (1 + 2 + ... + L-1) = 50 * L * (L-1)
    * Inverse: L ≈ floor((1 + sqrt(1 + 8 * exp / 100)) / 2)
-   * Minimum level is 1. Level never drops.
+   * Minimum level is 1. Level drops if totalExp drops below threshold.
    */
   static calculateLevel(totalExp: number): number {
     if (totalExp <= 0) return 1;

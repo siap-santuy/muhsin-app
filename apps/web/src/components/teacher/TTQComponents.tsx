@@ -147,20 +147,35 @@ export function TTQScoreSlider({
   min = 0,
   max = 100,
 }: TTQScoreSliderProps) {
+  function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value;
+    if (raw === "") {
+      onChange(0);
+      return;
+    }
+    const parsed = Number(raw);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(max, Math.max(min, parsed));
+      onChange(clamped);
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-brand-navy">{label}</span>
-        <span className="text-lg font-extrabold text-[#22bad0]">{value}</span>
+    <div className="flex items-center justify-between gap-3 py-1">
+      <span className="text-xs font-bold text-brand-navy">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          value={value === 0 ? "" : value}
+          placeholder="0"
+          onChange={handleNumberChange}
+          className="w-20 rounded-xl border border-brand-line bg-white px-3 py-2 text-center text-sm font-extrabold text-[#22bad0] outline-none shadow-xs focus:border-brand-cyan"
+        />
+        <span className="text-[11px] font-semibold text-brand-text-muted">/100</span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-[#22bad0]"
-      />
     </div>
   );
 }

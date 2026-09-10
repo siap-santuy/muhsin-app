@@ -139,8 +139,19 @@ export const createSetoranInputSchema = z.object({
   scores: z.record(z.number().min(0).max(100)),
   keterangan: z.string().optional().nullable(),
   scoreFieldKeys: z.array(z.string()),
+  substitutedForTeacherId: z.string().uuid().optional().nullable(),
 });
 export type CreateSetoranInput = z.infer<typeof createSetoranInputSchema>;
+
+export const correctSetoranInputSchema = z.object({
+  targetSubcategoryId: z.string().uuid(),
+  scores: z.record(z.number().min(0).max(100)),
+  referenceStart: z.record(z.any()).optional().nullable(),
+  referenceEnd: z.record(z.any()).optional().nullable(),
+  keterangan: z.string().optional().nullable(),
+  scoreFieldKeys: z.array(z.string()),
+});
+export type CorrectSetoranInput = z.infer<typeof correctSetoranInputSchema>;
 
 // --- Surah Reference ---
 export * from "./surah";

@@ -37,12 +37,13 @@ const FAQS: FaqItem[] = [
 1. Pilih Kelas Aktif: Jika mengampu lebih dari satu kelas, pilih kelas yang sesuai pada menu pemilih kelas (Class Switcher).
 2. Buka Menu Siswa: Masuk ke tab "Siswa" atau "TTQ", pilih tanggal halaqah, lalu klik nama siswa yang menyetor.
 3. Pilih Kategori Penilaian:
-   • Ziyadah (Hafalan Baru): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Tajwid & Kelancaran (0–100).
-   • Muroja'ah (Pengulangan Hafalan): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Tajwid & Kelancaran (0–100).
-   • Sabiq (Tahsin / Buku Jilid): Tentukan Jilid & Halaman awal-akhir, lalu atur slider nilai Makhraj, Mad, Ghunnah, & Qolqolah (0–100).
-   • Talaqi (Menyimak Bacaan Guru): Tentukan Surah & Ayat awal-akhir, lalu atur slider nilai Kelancaran (0–100).
+   • Ziyadah (Hafalan Baru): Tentukan Surah & Ayat awal-akhir, lalu masukkan angka nilai Tajwid & Kelancaran (0–100).
+   • Muroja'ah (Pengulangan Hafalan): Tentukan Surah & Ayat awal-akhir, lalu masukkan angka nilai Tajwid & Kelancaran (0–100).
+   • Sabiq (Tahsin / Buku Jilid): Tentukan Jilid & Halaman awal-akhir, lalu masukkan angka nilai Makhraj, Mad, Ghunnah, & Qolqolah (0–100).
+   • Talaqi (Menyimak Bacaan Guru): Tentukan Surah & Ayat awal-akhir, lalu masukkan angka nilai Kelancaran (0–100).
 4. Status Kehadiran & Catatan: Tentukan kehadiran siswa (Hadir / Izin / Sakit / Alpa) dan masukkan catatan evaluasi bimbingan.
-5. Simpan Penilaian: Klik "Simpan Penilaian". Nilai langsung masuk ke rekap Raport, status siswa berubah menjadi "Sudah Dinilai", dan siswa otomatis mendapatkan reward EXP.`,
+5. Simpan Penilaian: Klik "Simpan Penilaian". Nilai langsung masuk ke rekap Raport, status siswa berubah menjadi "Sudah Dinilai", dan siswa otomatis mendapatkan reward EXP.
+6. Koreksi & Ubah Kategori: Jika terjadi salah input kategori (misal Ziyadah tertukar Muroja'ah), guru pembimbing dapat langsung menekan tombol "UBAH KATEGORI" pada halaman lihat nilai tanpa perlu menghapus setoran.`,
     role: ["teacher"],
   },
   {

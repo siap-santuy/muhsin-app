@@ -34,10 +34,13 @@ import { createGamificationRoutes } from "../modules/gamification/presentation/r
 // Setoran module
 import { DrizzleSetoranRepository } from "../modules/setoran/infrastructure/DrizzleSetoranRepository";
 import { CreateSetoranUseCase } from "../modules/setoran/application/use-cases/CreateSetoranUseCase";
+import { CorrectSetoranUseCase } from "../modules/setoran/application/use-cases/CorrectSetoranUseCase";
 import { GetSetoranHistoryUseCase } from "../modules/setoran/application/use-cases/GetSetoranHistoryUseCase";
 import { GetSetoranByIdUseCase } from "../modules/setoran/application/use-cases/GetSetoranByIdUseCase";
 import { GetAssessmentCategoriesUseCase } from "../modules/setoran/application/use-cases/GetAssessmentCategoriesUseCase";
 import { createSetoranRoutes } from "../modules/setoran/presentation/routes";
+import { DrizzleTeacherSubstitutionRepository } from "../modules/teachers/infrastructure/DrizzleTeacherSubstitutionRepository";
+import { ManageSubstitutionUseCase } from "../modules/teachers/application/use-cases/ManageSubstitutionUseCase";
 
 // Students module
 import { DrizzleStudentRepository } from "../modules/students/infrastructure/DrizzleStudentRepository";
@@ -107,6 +110,7 @@ export interface ContainerDeps {
   getGamificationSummaryUseCase: GetGamificationSummaryUseCase;
   // Setoran
   createSetoranUseCase: CreateSetoranUseCase;
+  correctSetoranUseCase: CorrectSetoranUseCase;
   getSetoranHistoryUseCase: GetSetoranHistoryUseCase;
   getSetoranByIdUseCase: GetSetoranByIdUseCase;
   getAssessmentCategoriesUseCase: GetAssessmentCategoriesUseCase;
@@ -115,6 +119,7 @@ export interface ContainerDeps {
   getStudentByIdUseCase: GetStudentByIdUseCase;
   // Teachers
   getTeachersUseCase: GetTeachersUseCase;
+  manageSubstitutionUseCase: ManageSubstitutionUseCase;
   // Reports
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
@@ -213,6 +218,7 @@ export function createApp(deps: ContainerDeps): Hono {
   // Setoran
   const setoranRoutes = createSetoranRoutes({
     createSetoranUseCase: deps.createSetoranUseCase,
+    correctSetoranUseCase: deps.correctSetoranUseCase,
     getSetoranHistoryUseCase: deps.getSetoranHistoryUseCase,
     getSetoranByIdUseCase: deps.getSetoranByIdUseCase,
     getAssessmentCategoriesUseCase: deps.getAssessmentCategoriesUseCase,
@@ -233,6 +239,7 @@ export function createApp(deps: ContainerDeps): Hono {
   // Teachers
   const teacherRoutes = createTeacherRoutes({
     getTeachersUseCase: deps.getTeachersUseCase,
+    manageSubstitutionUseCase: deps.manageSubstitutionUseCase,
   });
   app.use("/teachers/*", protectedAuth, tenantScopeMiddleware);
   app.use("/teachers", protectedAuth, tenantScopeMiddleware);
@@ -300,6 +307,7 @@ export function buildContainer() {
   const gamificationRepo = new DrizzleGamificationRepository(db);
   const expTxRepo = new DrizzleExpTransactionRepository(db);
   const setoranRepo = new DrizzleSetoranRepository(db);
+  const teacherSubRepo = new DrizzleTeacherSubstitutionRepository(db);
   const studentRepo = new DrizzleStudentRepository(db);
   const teacherRepo = new DrizzleTeacherRepository(db);
   const raportRepo = new DrizzleRaportRepository(db);
@@ -348,6 +356,7 @@ export function buildContainer() {
 
   // UseCases — Setoran
   const createSetoranUseCase = new CreateSetoranUseCase(setoranRepo, addExpUseCase);
+  const correctSetoranUseCase = new CorrectSetoranUseCase(setoranRepo, addExpUseCase);
   const getSetoranHistoryUseCase = new GetSetoranHistoryUseCase(setoranRepo);
   const getSetoranByIdUseCase = new GetSetoranByIdUseCase(setoranRepo);
   const getAssessmentCategoriesUseCase = new GetAssessmentCategoriesUseCase(setoranRepo);
@@ -356,6 +365,7 @@ export function buildContainer() {
   const getStudentsUseCase = new GetStudentsUseCase(studentRepo);
   const getStudentByIdUseCase = new GetStudentByIdUseCase(studentRepo);
   const getTeachersUseCase = new GetTeachersUseCase(teacherRepo);
+  const manageSubstitutionUseCase = new ManageSubstitutionUseCase(teacherSubRepo);
 
   // UseCases — Reports
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
@@ -396,12 +406,14 @@ export function buildContainer() {
       getDailyIbadahStatsUseCase,
       getGamificationSummaryUseCase,
       createSetoranUseCase,
+      correctSetoranUseCase,
       getSetoranHistoryUseCase,
       getSetoranByIdUseCase,
       getAssessmentCategoriesUseCase,
       getStudentsUseCase,
       getStudentByIdUseCase,
       getTeachersUseCase,
+      manageSubstitutionUseCase,
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
       getDashboardSummaryUseCase,

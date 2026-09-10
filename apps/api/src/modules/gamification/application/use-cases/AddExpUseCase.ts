@@ -35,14 +35,14 @@ export class AddExpUseCase {
     );
 
     const prevExp = current?.totalExp ?? 0;
-    const newTotalExp = prevExp + input.expAmount;
+    const newTotalExp = Math.max(0, prevExp + input.expAmount);
     const newLevel = ExpCalculator.calculateLevel(newTotalExp);
 
-    // 3. Upsert gamification summary
+    // 3. Upsert gamification summary (level can drop if exp drops below threshold, min 1)
     await this.gamificationRepo.upsert({
       studentId: input.studentId,
       schoolId: input.schoolId,
-      level: Math.max(current?.level ?? 1, newLevel), // Level never drops
+      level: Math.max(1, newLevel),
       totalExp: newTotalExp,
       currentStreak: current?.currentStreak ?? 0,
       longestStreak: current?.longestStreak ?? 0,

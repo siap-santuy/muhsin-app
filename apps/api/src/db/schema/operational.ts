@@ -60,6 +60,7 @@ export const setoranEntries = pgTable("setoran_entries", {
   teacherId: uuid("teacher_id")
     .notNull()
     .references(() => users.id),
+  substitutedForTeacherId: uuid("substituted_for_teacher_id").references(() => users.id),
   date: date("date").notNull(),
   referenceStart: jsonb("reference_start"), // {surah, ayat} atau {halaman}
   referenceEnd: jsonb("reference_end"),

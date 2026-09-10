@@ -9,6 +9,7 @@ export interface SetoranEntryEntity {
   referenceEnd?: Record<string, any> | null;
   scores: Record<string, number>; // { tajwid: 90, kelancaran: 85 }
   keterangan?: string | null;
+  substitutedForTeacherId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

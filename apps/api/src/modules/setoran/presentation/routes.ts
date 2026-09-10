@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { CreateSetoranUseCase } from "../application/use-cases/CreateSetoranUseCase";
+import type { CorrectSetoranUseCase } from "../application/use-cases/CorrectSetoranUseCase";
 import type { GetSetoranHistoryUseCase } from "../application/use-cases/GetSetoranHistoryUseCase";
 import type { GetSetoranByIdUseCase } from "../application/use-cases/GetSetoranByIdUseCase";
 import type { GetAssessmentCategoriesUseCase } from "../application/use-cases/GetAssessmentCategoriesUseCase";
@@ -16,10 +17,21 @@ const createSetoranBodySchema = z.object({
   scores: z.record(z.number().min(0).max(100)),
   keterangan: z.string().optional().nullable(),
   scoreFieldKeys: z.array(z.string()),
+  substitutedForTeacherId: z.string().uuid().optional().nullable(),
+});
+
+const correctSetoranBodySchema = z.object({
+  targetSubcategoryId: z.string().uuid(),
+  scores: z.record(z.number().min(0).max(100)),
+  referenceStart: z.record(z.any()).optional().nullable(),
+  referenceEnd: z.record(z.any()).optional().nullable(),
+  keterangan: z.string().optional().nullable(),
+  scoreFieldKeys: z.array(z.string()),
 });
 
 export interface SetoranRoutesDeps {
   createSetoranUseCase: CreateSetoranUseCase;
+  correctSetoranUseCase: CorrectSetoranUseCase;
   getSetoranHistoryUseCase: GetSetoranHistoryUseCase;
   getSetoranByIdUseCase: GetSetoranByIdUseCase;
   getAssessmentCategoriesUseCase: GetAssessmentCategoriesUseCase;
@@ -110,6 +122,48 @@ export function createSetoranRoutes(deps: SetoranRoutesDeps) {
       return c.json(
         { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },
         422
+      );
+    }
+  });
+
+  // PATCH /setoran/:id/correct — koreksi atau pindah kategori setoran (guru pemilik atau koordinator)
+  app.patch("/:id/correct", requireRole("teacher", "koordinator_ttq"), async (c) => {
+    const user = c.get("user");
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const parsed = correctSetoranBodySchema.safeParse(body);
+
+    if (!parsed.success) {
+      return c.json(
+        { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+        400
+      );
+    }
+
+    try {
+      const entry = await deps.correctSetoranUseCase.execute({
+        setoranId: id ?? "",
+        schoolId: user.schoolId,
+        userId: user.userId,
+        userRole: user.role,
+        ...parsed.data,
+      });
+
+      return c.json({ data: entry, error: null, meta: null }, 200);
+    } catch (err: any) {
+      const isForbidden = err.message?.includes("Akses ditolak");
+      const isNotFound = err.message?.includes("tidak ditemukan");
+      const status = isForbidden ? 403 : isNotFound ? 404 : 422;
+      return c.json(
+        {
+          data: null,
+          error: {
+            code: isForbidden ? "FORBIDDEN" : isNotFound ? "NOT_FOUND" : "BUSINESS_ERROR",
+            message: err.message,
+          },
+          meta: null,
+        },
+        status
       );
     }
   });

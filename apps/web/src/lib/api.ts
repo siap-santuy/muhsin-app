@@ -309,6 +309,17 @@ class ApiClient {
     }
   }
 
+  async correctSetoran(id: string, input: {
+    targetSubcategoryId: string;
+    scores: Record<string, number>;
+    scoreFieldKeys: string[];
+    referenceStart?: Record<string, any> | null;
+    referenceEnd?: Record<string, any> | null;
+    keterangan?: string | null;
+  }) {
+    return this.request("PATCH", `/setoran/${id}/correct`, input);
+  }
+
   async processOfflineQueue(): Promise<number> {
     if (isProcessingOfflineQueue) return 0;
     const queue = getOfflineQueue();

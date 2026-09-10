@@ -4,11 +4,12 @@ import {
   classes,
   studentClassEnrollment,
   studentTeacherMapping,
+  teacherSubstitutions,
   studentGamification,
   setoranEntries,
   assessmentSubcategories,
 } from "../../../db/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, lte, gte } from "drizzle-orm";
 import type { IStudentRepository } from "../domain/repositories/IStudentRepository";
 import type { StudentListItem } from "../domain/entities/Student";
 
@@ -228,6 +229,25 @@ export class DrizzleStudentRepository implements IStudentRepository {
     schoolId: string,
     options?: { date?: string; classId?: string }
   ): Promise<StudentListItem[]> {
+    const targetDateStr = options?.date ?? new Date().toISOString().slice(0, 10);
+    const targetDateObj = new Date(targetDateStr);
+
+    // 1. Ambil kelas dari substitusi aktif guru ini untuk tanggal bersangkutan
+    const activeSubs = await this.db
+      .select({ classId: teacherSubstitutions.classId })
+      .from(teacherSubstitutions)
+      .where(
+        and(
+          eq(teacherSubstitutions.schoolId, schoolId),
+          eq(teacherSubstitutions.substituteTeacherId, teacherId),
+          lte(teacherSubstitutions.dateStart, targetDateObj),
+          gte(teacherSubstitutions.dateEnd, targetDateObj)
+        )
+      );
+
+    const subClassIds = activeSubs.map((s) => s.classId);
+
+    // 2. Query siswa yang di-mapping langsung ke guru tsb
     const conditions = [
       eq(studentTeacherMapping.teacherId, teacherId),
       eq(studentTeacherMapping.schoolId, schoolId),
@@ -237,7 +257,7 @@ export class DrizzleStudentRepository implements IStudentRepository {
       conditions.push(eq(studentTeacherMapping.classId, options.classId));
     }
 
-    const rows = await this.db
+    const regularRows = await this.db
       .select({
         id: users.id,
         name: users.name,
@@ -261,6 +281,56 @@ export class DrizzleStudentRepository implements IStudentRepository {
       )
       .where(and(...conditions));
 
+    // 3. Query siswa dari kelas substitusi (jika ada dan cocok filter classId)
+    let substitutedRows: typeof regularRows = [];
+    const validSubClasses = options?.classId
+      ? subClassIds.filter((cid) => cid === options.classId)
+      : subClassIds;
+
+    if (validSubClasses.length > 0) {
+      substitutedRows = await this.db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          phone: users.phone,
+          className: classes.name,
+          classId: classes.id,
+          level: studentGamification.level,
+          totalExp: studentGamification.totalExp,
+          currentStreak: studentGamification.currentStreak,
+        })
+        .from(studentClassEnrollment)
+        .innerJoin(users, eq(users.id, studentClassEnrollment.studentId))
+        .leftJoin(classes, eq(classes.id, studentClassEnrollment.classId))
+        .leftJoin(
+          studentGamification,
+          and(
+            eq(studentGamification.studentId, users.id),
+            eq(studentGamification.schoolId, schoolId)
+          )
+        )
+        .where(
+          and(
+            eq(studentClassEnrollment.schoolId, schoolId),
+            inArray(studentClassEnrollment.classId, validSubClasses),
+            eq(users.role, "student")
+          )
+        );
+    }
+
+    // Gabungkan unik by ID
+    const studentMap = new Map<string, (typeof regularRows)[0]>();
+    for (const r of regularRows) {
+      studentMap.set(r.id, r);
+    }
+    for (const r of substitutedRows) {
+      if (!studentMap.has(r.id)) {
+        studentMap.set(r.id, r);
+      }
+    }
+
+    const rows = Array.from(studentMap.values());
     if (rows.length === 0) return [];
 
     const studentIds = rows.map((r) => r.id);

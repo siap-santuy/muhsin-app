@@ -7,12 +7,20 @@ export interface CreateSetoranInput {
   subcategoryId: string;
   studentId: string;
   teacherId: string;
+  substitutedForTeacherId?: string | null;
   date: string; // YYYY-MM-DD
   referenceStart?: Record<string, any> | null;
   referenceEnd?: Record<string, any> | null;
   scores: Record<string, number>;
   keterangan?: string | null;
   scoreFieldKeys: string[]; // Allowed keys to validate dynamically
+}
+
+function isHadirStatus(keterangan?: string | null): boolean {
+  if (!keterangan) return true;
+  const match = keterangan.match(/^\[(.*?)\]/);
+  if (!match) return true;
+  return match[1].toLowerCase() === "hadir";
 }
 
 export class CreateSetoranUseCase {
@@ -40,6 +48,7 @@ export class CreateSetoranUseCase {
       subcategoryId: input.subcategoryId,
       studentId: input.studentId,
       teacherId: input.teacherId,
+      substitutedForTeacherId: input.substitutedForTeacherId ?? null,
       date: input.date,
       referenceStart: input.referenceStart ?? null,
       referenceEnd: input.referenceEnd ?? null,
@@ -51,9 +60,10 @@ export class CreateSetoranUseCase {
 
     const saved = await this.repo.create(entity);
 
-    // 2. Beri EXP setoran jika ada nilai valid (default +20 EXP)
+    // 2. Beri EXP setoran jika ada nilai valid dan status Hadir (+20 EXP)
     const hasValidScores = Object.values(input.scores).some((v) => v > 0);
-    if (hasValidScores && !input.keterangan) {
+    const isHadir = isHadirStatus(input.keterangan);
+    if (hasValidScores && isHadir) {
       await this.addExpUseCase.execute({
         schoolId: input.schoolId,
         studentId: input.studentId,

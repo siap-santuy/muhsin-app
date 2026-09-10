@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Edit, Loader2, BookOpen, ShieldCheck } from "lucide-react";
+import { Edit, Loader2, BookOpen, ShieldCheck, RefreshCw, X, Check } from "lucide-react";
 import { formatLocalDate } from "@/utils/date";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import {
   TTQHeader,
   TTQAttendanceRow,
@@ -33,8 +34,14 @@ export function TeacherTTQViewPage({
 
   const [student, setStudent] = useState<StudentOption | null>(null);
   const [entry, setEntry] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal ubah kategori
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedTargetCatId, setSelectedTargetCatId] = useState<string>("");
+  const [submittingChange, setSubmittingChange] = useState(false);
 
   const categoryTitle =
     initialCategory === "ziyadah"
@@ -53,6 +60,7 @@ export function TeacherTTQViewPage({
           api.getAssessmentCategories(),
         ]);
 
+        setCategories(catList);
         const currentStudent =
           studentList.find((s) => s.id === routeStudentId) || studentList[0] || null;
         setStudent(currentStudent);
@@ -87,6 +95,51 @@ export function TeacherTTQViewPage({
   function handleEdit() {
     if (student?.id) {
       window.location.hash = `#/${initialCategory}-input?studentId=${student.id}&date=${routeDate}`;
+    }
+  }
+
+  async function handleConfirmCategoryChange() {
+    if (!entry?.id || !selectedTargetCatId) return;
+    const targetCat = categories.find((c) => c.id === selectedTargetCatId);
+    if (!targetCat) return;
+
+    setSubmittingChange(true);
+    try {
+      // Map skor yang kompatibel dengan field subkategori baru
+      const targetFields = (targetCat.scoreFields || []).map((f: any) => f.key);
+      const newScores: Record<string, number> = {};
+      for (const key of targetFields) {
+        newScores[key] = entry.scores?.[key] !== undefined ? Number(entry.scores[key]) : 80;
+      }
+
+      await api.correctSetoran(entry.id, {
+        targetSubcategoryId: targetCat.id,
+        scores: newScores,
+        scoreFieldKeys: targetFields,
+        referenceStart: entry.referenceStart,
+        referenceEnd: entry.referenceEnd,
+        keterangan: entry.keterangan,
+      });
+
+      toast.success(`Kategori berhasil diubah ke ${targetCat.name}`);
+      setIsCategoryModalOpen(false);
+
+      // Redirect ke tab kategori yang baru
+      const targetCode = targetCat.code?.toLowerCase() || "";
+      const routePrefix = targetCode.includes("ziyadah")
+        ? "ziyadah"
+        : targetCode.includes("muroja")
+        ? "murojaah"
+        : targetCode.includes("sabiq")
+        ? "sabiq"
+        : "talaqi";
+
+      window.location.hash = `#/${routePrefix}-view?studentId=${student?.id}&date=${routeDate}`;
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengubah kategori");
+    } finally {
+      setSubmittingChange(false);
     }
   }
 
@@ -293,17 +346,123 @@ export function TeacherTTQViewPage({
             )}
           </div>
 
-          {/* 6. Action Button: Ubah Penilaian */}
-          <button
-            type="button"
-            onClick={handleEdit}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3.5 text-xs font-extrabold tracking-wider text-white shadow-sm transition-all"
-          >
-            <Edit className="h-4 w-4" />
-            <span>UBAH PENILAIAN</span>
-          </button>
+          {/* 6. Action Buttons: Ubah Penilaian & Ubah Kategori (Sejajar) */}
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3.5 text-xs font-extrabold tracking-wider text-white shadow-sm transition-all"
+            >
+              <Edit className="h-4 w-4" />
+              <span>UBAH PENILAIAN</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const other = categories.find((c) => c.id !== entry?.subcategoryId);
+                setSelectedTargetCatId(other?.id || "");
+                setIsCategoryModalOpen(true);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-brand-cyan bg-white text-brand-cyan hover:bg-brand-cyan/10 active:scale-[0.99] py-3.5 text-xs font-extrabold tracking-wider shadow-sm transition-all"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>UBAH KATEGORI</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Modal Dialog Ubah Kategori */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-brand-line bg-white p-5 shadow-xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-brand-line/60 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-cyan/10 text-brand-cyan">
+                  <RefreshCw className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-extrabold text-brand-navy">
+                  Ubah Kategori Setoran
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-brand-text-muted">
+                Pindahkan nilai setoran santri dari kategori <b>{categoryTitle}</b> ke kategori yang seharusnya:
+              </p>
+
+              <div className="space-y-2">
+                {categories.map((cat) => {
+                  const isCurrent = cat.id === entry?.subcategoryId;
+                  const isSelected = selectedTargetCatId === cat.id;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      disabled={isCurrent}
+                      onClick={() => setSelectedTargetCatId(cat.id)}
+                      className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                        isCurrent
+                          ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                          : isSelected
+                          ? "border-brand-cyan bg-cyan-50/50 shadow-xs ring-1 ring-brand-cyan"
+                          : "border-brand-line hover:border-brand-cyan/60"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-brand-navy">
+                          {cat.name}
+                        </p>
+                        <p className="text-[10px] text-brand-text-muted">
+                          {isCurrent ? "Kategori saat ini" : `${cat.scoreFields?.length || 0} kriteria penilaian`}
+                        </p>
+                      </div>
+                      {isSelected && !isCurrent && (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-cyan text-white">
+                          <Check className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-xl bg-amber-50 p-2.5 text-[11px] text-amber-800 border border-amber-200/60">
+                Poin EXP santri tetap aman dan tidak akan terhitung ganda (double).
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                disabled={submittingChange}
+                className="flex-1 rounded-xl border border-brand-line py-2.5 text-xs font-bold text-brand-navy hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCategoryChange}
+                disabled={submittingChange || !selectedTargetCatId}
+                className="flex-1 rounded-xl bg-brand-cyan hover:bg-[#1bb0c7] py-2.5 text-xs font-extrabold text-white shadow-xs transition-all disabled:opacity-50"
+              >
+                {submittingChange ? "Menyimpan..." : "Terapkan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

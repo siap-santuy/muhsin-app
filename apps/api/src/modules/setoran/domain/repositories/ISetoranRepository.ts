@@ -32,4 +32,5 @@ export interface ISetoranRepository {
     schoolId: string
   ): Promise<SetoranEntryEntity[]>;
   getActiveSubcategories(schoolId: string): Promise<AssessmentSubcategoryInfo[]>;
+  update(entity: SetoranEntryEntity): Promise<SetoranEntryEntity>;
 }
