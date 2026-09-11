@@ -71,6 +71,7 @@ import { GetMyMunaqosahExamsUseCase } from "../modules/munaqosah/application/use
 import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
 import { UpdateMunaqosahStatusUseCase } from "../modules/munaqosah/application/use-cases/UpdateMunaqosahStatusUseCase";
 import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
+import { ManageMunaqosahExaminersUseCase } from "../modules/munaqosah/application/use-cases/ManageMunaqosahExaminersUseCase";
 import { SubmitMunaqosahResultUseCase } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
 import { createMunaqosahRoutes } from "../modules/munaqosah/presentation/routes";
 
@@ -137,6 +138,7 @@ export interface ContainerDeps {
   createMunaqosahRequestUseCase: CreateMunaqosahRequestUseCase;
   updateMunaqosahStatusUseCase: UpdateMunaqosahStatusUseCase;
   scheduleMunaqosahUseCase: ScheduleMunaqosahUseCase;
+  manageMunaqosahExaminersUseCase: ManageMunaqosahExaminersUseCase;
   submitMunaqosahResultUseCase: SubmitMunaqosahResultUseCase;
   // Kurikulum
   getKurikulumCategoriesUseCase: GetKurikulumCategoriesUseCase;
@@ -285,6 +287,7 @@ export function createApp(deps: ContainerDeps): Hono {
     createRequestUseCase: deps.createMunaqosahRequestUseCase,
     updateStatusUseCase: deps.updateMunaqosahStatusUseCase,
     scheduleUseCase: deps.scheduleMunaqosahUseCase,
+    examinersUseCase: deps.manageMunaqosahExaminersUseCase,
     submitResultUseCase: deps.submitMunaqosahResultUseCase,
   });
   app.use("/munaqosah/*", protectedAuth, tenantScopeMiddleware);
@@ -402,6 +405,7 @@ export function buildContainer() {
   const createMunaqosahRequestUseCase = new CreateMunaqosahRequestUseCase(munaqosahRepo);
   const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo);
   const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo, notificationRepo);
+  const manageMunaqosahExaminersUseCase = new ManageMunaqosahExaminersUseCase(munaqosahRepo);
   const submitMunaqosahResultUseCase = new SubmitMunaqosahResultUseCase(munaqosahRepo, addExpUseCase);
 
   // UseCases — Kurikulum
@@ -448,6 +452,7 @@ export function buildContainer() {
       createMunaqosahRequestUseCase,
       updateMunaqosahStatusUseCase,
       scheduleMunaqosahUseCase,
+      manageMunaqosahExaminersUseCase,
       submitMunaqosahResultUseCase,
       getKurikulumCategoriesUseCase,
       createCategoryUseCase,

@@ -1,6 +1,20 @@
 import type { IMunaqosahRepository } from "../../domain/repositories/IMunaqosahRepository";
 import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
 
+export class ExaminerNotInPoolError extends Error {
+  readonly code = "EXAMINER_NOT_IN_POOL";
+  constructor() {
+    super("Penguji belum terdaftar di pool periode ini");
+  }
+}
+
+export class ExaminerCapacityFullError extends Error {
+  readonly code = "EXAMINER_CAPACITY_FULL";
+  constructor(kapasitas: number) {
+    super(`Kapasitas penguji penuh (${kapasitas} siswa)`);
+  }
+}
+
 export class ScheduleMunaqosahUseCase {
   constructor(
     private readonly repo: IMunaqosahRepository,
@@ -16,6 +30,18 @@ export class ScheduleMunaqosahUseCase {
     assignedBy: string;
     schoolId: string;
   }) {
+    const capacity = await this.repo.checkExaminerCapacity(
+      params.periodId,
+      params.examinerTeacherId,
+      params.schoolId
+    );
+    if (!capacity) {
+      throw new ExaminerNotInPoolError();
+    }
+    if (capacity.penuh) {
+      throw new ExaminerCapacityFullError(capacity.kapasitas);
+    }
+
     const assignmentId = await this.repo.createAssignment({
       requestId: params.requestId,
       periodId: params.periodId,

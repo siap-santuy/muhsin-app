@@ -4,13 +4,15 @@ import {
   classes,
   studentClassEnrollment,
   parentStudentMapping,
+  munaqosahPeriods,
+  munaqosahExaminers,
   munaqosahRequests,
   munaqosahAssignments,
   studentAchievements,
 } from "../../../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import type { IMunaqosahRepository } from "../domain/repositories/IMunaqosahRepository";
-import type { MunaqosahRequestItem } from "../domain/entities/Munaqosah";
+import type { MunaqosahRequestItem, MunaqosahExaminerItem } from "../domain/entities/Munaqosah";
 
 export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
   constructor(private readonly db: Db) {}
@@ -287,6 +289,153 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
       .limit(1);
 
     return rows[0] ?? null;
+  }
+
+  async findExaminers(periodId: string, schoolId: string): Promise<MunaqosahExaminerItem[]> {
+    const rows = await this.db
+      .select({
+        id: munaqosahExaminers.id,
+        periodId: munaqosahExaminers.munaqosahPeriodId,
+        teacherId: munaqosahExaminers.teacherId,
+        teacherName: users.name,
+        kapasitasSiswa: munaqosahExaminers.kapasitasSiswa,
+      })
+      .from(munaqosahExaminers)
+      .innerJoin(users, eq(users.id, munaqosahExaminers.teacherId))
+      .innerJoin(munaqosahPeriods, eq(munaqosahPeriods.id, munaqosahExaminers.munaqosahPeriodId))
+      .where(
+        and(
+          eq(munaqosahExaminers.munaqosahPeriodId, periodId),
+          eq(munaqosahPeriods.schoolId, schoolId)
+        )
+      );
+
+    const result: MunaqosahExaminerItem[] = [];
+    for (const r of rows) {
+      const used = await this.db
+        .select({ n: count() })
+        .from(munaqosahAssignments)
+        .where(
+          and(
+            eq(munaqosahAssignments.periodId, periodId),
+            eq(munaqosahAssignments.examinerTeacherId, r.teacherId)
+          )
+        );
+      result.push({
+        id: r.id,
+        periodId: r.periodId,
+        teacherId: r.teacherId,
+        teacherName: r.teacherName,
+        kapasitasSiswa: r.kapasitasSiswa,
+        terpakai: used[0]?.n ?? 0,
+      });
+    }
+    return result;
+  }
+
+  async upsertExaminer(params: {
+    periodId: string;
+    teacherId: string;
+    kapasitasSiswa: number;
+    assignedBy: string;
+    schoolId: string;
+  }): Promise<string> {
+    const period = await this.db
+      .select({ id: munaqosahPeriods.id })
+      .from(munaqosahPeriods)
+      .where(
+        and(
+          eq(munaqosahPeriods.id, params.periodId),
+          eq(munaqosahPeriods.schoolId, params.schoolId)
+        )
+      )
+      .limit(1);
+    if (!period[0]) throw new Error("Periode munaqosah tidak ditemukan");
+
+    const existing = await this.db
+      .select({ id: munaqosahExaminers.id })
+      .from(munaqosahExaminers)
+      .where(
+        and(
+          eq(munaqosahExaminers.munaqosahPeriodId, params.periodId),
+          eq(munaqosahExaminers.teacherId, params.teacherId)
+        )
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      await this.db
+        .update(munaqosahExaminers)
+        .set({ kapasitasSiswa: params.kapasitasSiswa })
+        .where(eq(munaqosahExaminers.id, existing[0].id));
+      return existing[0].id;
+    }
+
+    const rows = await this.db
+      .insert(munaqosahExaminers)
+      .values({
+        munaqosahPeriodId: params.periodId,
+        teacherId: params.teacherId,
+        kapasitasSiswa: params.kapasitasSiswa,
+        assignedBy: params.assignedBy,
+      })
+      .returning({ id: munaqosahExaminers.id });
+    return rows[0].id;
+  }
+
+  async removeExaminer(periodId: string, teacherId: string, schoolId: string): Promise<void> {
+    const period = await this.db
+      .select({ id: munaqosahPeriods.id })
+      .from(munaqosahPeriods)
+      .where(
+        and(
+          eq(munaqosahPeriods.id, periodId),
+          eq(munaqosahPeriods.schoolId, schoolId)
+        )
+      )
+      .limit(1);
+    if (!period[0]) throw new Error("Periode munaqosah tidak ditemukan");
+
+    await this.db
+      .delete(munaqosahExaminers)
+      .where(
+        and(
+          eq(munaqosahExaminers.munaqosahPeriodId, periodId),
+          eq(munaqosahExaminers.teacherId, teacherId)
+        )
+      );
+  }
+
+  async checkExaminerCapacity(
+    periodId: string,
+    examinerTeacherId: string,
+    schoolId: string
+  ): Promise<{ kapasitas: number; terpakai: number; penuh: boolean } | null> {
+    const pool = await this.db
+      .select({ kapasitasSiswa: munaqosahExaminers.kapasitasSiswa })
+      .from(munaqosahExaminers)
+      .innerJoin(munaqosahPeriods, eq(munaqosahPeriods.id, munaqosahExaminers.munaqosahPeriodId))
+      .where(
+        and(
+          eq(munaqosahExaminers.munaqosahPeriodId, periodId),
+          eq(munaqosahExaminers.teacherId, examinerTeacherId),
+          eq(munaqosahPeriods.schoolId, schoolId)
+        )
+      )
+      .limit(1);
+    if (!pool[0]) return null;
+
+    const used = await this.db
+      .select({ n: count() })
+      .from(munaqosahAssignments)
+      .where(
+        and(
+          eq(munaqosahAssignments.periodId, periodId),
+          eq(munaqosahAssignments.examinerTeacherId, examinerTeacherId)
+        )
+      );
+    const terpakai = used[0]?.n ?? 0;
+    return { kapasitas: pool[0].kapasitasSiswa, terpakai, penuh: terpakai >= pool[0].kapasitasSiswa };
   }
 
   async submitResult(params: {

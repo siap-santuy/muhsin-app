@@ -36,7 +36,10 @@ export function KoorMunaqosahPage() {
   const [jadwalTanggal, setJadwalTanggal] = useState("");
   const [jadwalWaktu, setJadwalWaktu] = useState("");
   const [scheduleTarget, setScheduleTarget] = useState<MunaqosahRequestItem | null>(null);
-  const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history" | "pool">("pending");
+  const [examiners, setExaminers] = useState<Array<{ id: string; teacherId: string; teacherName: string; kapasitasSiswa: number; terpakai: number }>>([]);
+  const [poolTeacherId, setPoolTeacherId] = useState("");
+  const [poolKapasitas, setPoolKapasitas] = useState(10);
   const [actionLoading, setActionLoading] = useState(false);
   const [scheduledPage, setScheduledPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
@@ -68,6 +71,13 @@ export function KoorMunaqosahPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!selectedPeriodId) return;
+    api.getMunaqosahExaminers(selectedPeriodId)
+      .then((list) => setExaminers(Array.isArray(list) ? list : []))
+      .catch(() => setExaminers([]));
+  }, [selectedPeriodId]);
 
   const pendingList = requests.filter((r) => r.status === "diajukan");
   const scheduledList = requests.filter(
@@ -141,6 +151,45 @@ export function KoorMunaqosahPage() {
     }
   }
 
+  async function refreshPool() {
+    if (!selectedPeriodId) return;
+    try {
+      const list = await api.getMunaqosahExaminers(selectedPeriodId);
+      setExaminers(Array.isArray(list) ? list : []);
+    } catch {
+      setExaminers([]);
+    }
+  }
+
+  async function handleSavePool() {
+    const teacherId = poolTeacherId || selectedTeacherId;
+    if (!selectedPeriodId || !teacherId) {
+      alert("Pilih periode dan guru penguji");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await api.saveMunaqosahExaminer(selectedPeriodId, { teacherId, kapasitasSiswa: poolKapasitas });
+      setPoolTeacherId("");
+      await refreshPool();
+    } catch (err: any) {
+      alert(err.message || "Gagal menyimpan penguji");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleRemovePool(teacherId: string, teacherName: string) {
+    if (!selectedPeriodId) return;
+    if (!confirm(`Hapus ${teacherName} dari pool penguji?`)) return;
+    try {
+      await api.removeMunaqosahExaminer(selectedPeriodId, teacherId);
+      await refreshPool();
+    } catch (err: any) {
+      alert(err.message || "Gagal menghapus penguji");
+    }
+  }
+
   return (
     <KoorShell
       activePath="munaqosah"
@@ -178,6 +227,7 @@ export function KoorMunaqosahPage() {
             { key: "pending", label: `Perlu Review (${pendingList.length})` },
             { key: "scheduled", label: `Dijadwalkan (${scheduledList.length})` },
             { key: "history", label: `Riwayat Ujian (${historyList.length})` },
+            { key: "pool", label: `Pool Penguji (${examiners.length})` },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -349,6 +399,81 @@ export function KoorMunaqosahPage() {
                 )}
               </div>
             )}
+
+            {/* Tab 4: Pool Penguji */}
+            {activeTab === "pool" && (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-bold text-brand-navy">Tambah Penguji ke Pool</h3>
+                  <p className="text-xs text-brand-text-muted">
+                    Periode: {periods.find((p) => p.id === selectedPeriodId)?.nama ?? "-"}
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <select
+                      value={poolTeacherId || selectedTeacherId}
+                      onChange={(e) => {
+                        setPoolTeacherId(e.target.value);
+                        setSelectedTeacherId(e.target.value);
+                      }}
+                      className="rounded-xl border border-brand-line p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    >
+                      <option value="">Pilih Guru...</option>
+                      {teachers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={poolKapasitas}
+                      onChange={(e) => setPoolKapasitas(Number(e.target.value))}
+                      title="Kapasitas siswa"
+                      className="rounded-xl border border-brand-line p-2.5 text-xs font-bold text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSavePool}
+                      disabled={actionLoading}
+                      className="h-10 rounded-xl bg-brand-navy text-xs font-bold text-white"
+                    >
+                      {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Simpan Penguji"}
+                    </Button>
+                  </div>
+                </div>
+
+                {examiners.length === 0 ? (
+                  <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+                    Belum ada penguji di pool periode ini.
+                  </div>
+                ) : (
+                  examiners.map((ex) => (
+                    <div
+                      key={ex.id}
+                      className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
+                    >
+                      <div>
+                        <h3 className="text-sm font-bold text-brand-navy">{ex.teacherName}</h3>
+                        <p className="text-xs text-brand-text-muted">
+                          Terpakai {ex.terpakai}/{ex.kapasitasSiswa} siswa
+                          {ex.terpakai >= ex.kapasitasSiswa ? " • PENUH" : ""}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleRemovePool(ex.teacherId, ex.teacherName)}
+                        className="h-9 rounded-xl border-red-200 text-xs font-bold text-red-600 hover:bg-red-50"
+                      >
+                        <X className="mr-1 h-3.5 w-3.5" /> Hapus
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -458,15 +583,18 @@ export function KoorMunaqosahPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-brand-navy">Guru Penguji</label>
+                  <label className="font-bold text-brand-navy">Guru Penguji (dari pool)</label>
                   <select
                     value={selectedTeacherId}
                     onChange={(e) => setSelectedTeacherId(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                   >
-                    {teachers.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
+                    {examiners.length === 0 && (
+                      <option value="">Belum ada penguji di pool periode ini</option>
+                    )}
+                    {examiners.map((ex) => (
+                      <option key={ex.teacherId} value={ex.teacherId}>
+                        {ex.teacherName} ({ex.terpakai}/{ex.kapasitasSiswa})
                       </option>
                     ))}
                   </select>

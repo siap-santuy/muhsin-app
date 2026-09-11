@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
 import { GetMyMunaqosahExamsUseCase } from "../modules/munaqosah/application/use-cases/GetMyMunaqosahExamsUseCase";
-import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
+import {
+  ScheduleMunaqosahUseCase,
+  ExaminerNotInPoolError,
+  ExaminerCapacityFullError,
+} from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
+import { ManageMunaqosahExaminersUseCase } from "../modules/munaqosah/application/use-cases/ManageMunaqosahExaminersUseCase";
 import {
   SubmitMunaqosahResultUseCase,
   AssignmentForbiddenError,
@@ -18,6 +23,10 @@ function baseMockRepo(): IMunaqosahRepository {
     findParentIdsByStudent: vi.fn(),
     findMyExams: vi.fn(),
     getAssignmentOwner: vi.fn(),
+    findExaminers: vi.fn(),
+    upsertExaminer: vi.fn(),
+    removeExaminer: vi.fn(),
+    checkExaminerCapacity: vi.fn(),
     submitResult: vi.fn(),
     grantAchievement: vi.fn(),
   };
@@ -61,6 +70,7 @@ describe("Munaqosah Module UseCases", () => {
 
   it("ScheduleMunaqosahUseCase notifies student and parents", async () => {
     const mockRepo = baseMockRepo();
+    (mockRepo.checkExaminerCapacity as any).mockResolvedValue({ kapasitas: 10, terpakai: 2, penuh: false });
     (mockRepo.createAssignment as any).mockResolvedValue("assign-1");
     (mockRepo.getRequestDetail as any).mockResolvedValue({
       studentId: "student-1",
@@ -91,6 +101,7 @@ describe("Munaqosah Module UseCases", () => {
 
   it("ScheduleMunaqosahUseCase still succeeds when notification fails", async () => {
     const mockRepo = baseMockRepo();
+    (mockRepo.checkExaminerCapacity as any).mockResolvedValue({ kapasitas: 10, terpakai: 2, penuh: false });
     (mockRepo.createAssignment as any).mockResolvedValue("assign-1");
     (mockRepo.getRequestDetail as any).mockRejectedValue(new Error("db down"));
     const mockNotif = { createNotification: vi.fn() } as any;
@@ -107,6 +118,59 @@ describe("Munaqosah Module UseCases", () => {
 
     expect(result).toBe("assign-1");
     expect(mockRepo.updateRequestStatus).toHaveBeenCalledWith("req-1", "school-1", "dijadwalkan");
+  });
+
+  it("ScheduleMunaqosahUseCase rejects examiner not in pool", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.checkExaminerCapacity as any).mockResolvedValue(null);
+    const mockNotif = { createNotification: vi.fn() } as any;
+
+    const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
+    await expect(
+      useCase.execute({
+        requestId: "req-1",
+        periodId: "period-1",
+        examinerTeacherId: "teacher-x",
+        jadwalTanggal: "2026-09-20",
+        assignedBy: "koor-1",
+        schoolId: "school-1",
+      })
+    ).rejects.toBeInstanceOf(ExaminerNotInPoolError);
+    expect(mockRepo.createAssignment).not.toHaveBeenCalled();
+  });
+
+  it("ScheduleMunaqosahUseCase rejects examiner at full capacity", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.checkExaminerCapacity as any).mockResolvedValue({ kapasitas: 5, terpakai: 5, penuh: true });
+    const mockNotif = { createNotification: vi.fn() } as any;
+
+    const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
+    await expect(
+      useCase.execute({
+        requestId: "req-1",
+        periodId: "period-1",
+        examinerTeacherId: "teacher-2",
+        jadwalTanggal: "2026-09-20",
+        assignedBy: "koor-1",
+        schoolId: "school-1",
+      })
+    ).rejects.toBeInstanceOf(ExaminerCapacityFullError);
+    expect(mockRepo.createAssignment).not.toHaveBeenCalled();
+  });
+
+  it("ManageMunaqosahExaminersUseCase rejects zero capacity", async () => {
+    const mockRepo = baseMockRepo();
+    const useCase = new ManageMunaqosahExaminersUseCase(mockRepo);
+    await expect(
+      useCase.add({
+        periodId: "period-1",
+        teacherId: "teacher-2",
+        kapasitasSiswa: 0,
+        assignedBy: "koor-1",
+        schoolId: "school-1",
+      })
+    ).rejects.toThrow();
+    expect(mockRepo.upsertExaminer).not.toHaveBeenCalled();
   });
 
   it("GetMyMunaqosahExamsUseCase scopes exams by examiner and school", async () => {

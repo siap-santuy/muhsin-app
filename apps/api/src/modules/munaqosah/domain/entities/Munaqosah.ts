@@ -17,3 +17,12 @@ export interface MunaqosahRequestItem {
   scores?: Record<string, number> | null;
   catatanPenguji?: string | null;
 }
+
+export interface MunaqosahExaminerItem {
+  id: string;
+  periodId: string;
+  teacherId: string;
+  teacherName: string;
+  kapasitasSiswa: number;
+  terpakai: number;
+}

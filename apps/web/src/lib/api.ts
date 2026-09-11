@@ -434,6 +434,25 @@ class ApiClient {
     return this.request("GET", `/munaqosah/my-exams`);
   }
 
+  async getMunaqosahExaminers(periodId: string): Promise<Array<{
+    id: string;
+    periodId: string;
+    teacherId: string;
+    teacherName: string;
+    kapasitasSiswa: number;
+    terpakai: number;
+  }>> {
+    return this.request("GET", `/munaqosah/periods/${periodId}/examiners`);
+  }
+
+  async saveMunaqosahExaminer(periodId: string, input: { teacherId: string; kapasitasSiswa: number }) {
+    return this.request("POST", `/munaqosah/periods/${periodId}/examiners`, input);
+  }
+
+  async removeMunaqosahExaminer(periodId: string, teacherId: string) {
+    return this.request("DELETE", `/munaqosah/periods/${periodId}/examiners/${teacherId}`);
+  }
+
   async submitMunaqosahResult(assignmentId: string, input: {
     scores: Record<string, number>;
     hasil: "lulus" | "tidak_lulus";

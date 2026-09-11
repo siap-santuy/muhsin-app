@@ -1,4 +1,4 @@
-import type { MunaqosahRequestItem } from "../entities/Munaqosah";
+import type { MunaqosahRequestItem, MunaqosahExaminerItem } from "../entities/Munaqosah";
 
 export interface IMunaqosahRepository {
   findRequests(schoolId: string, status?: string): Promise<MunaqosahRequestItem[]>;
@@ -31,6 +31,20 @@ export interface IMunaqosahRepository {
     assignmentId: string,
     schoolId: string
   ): Promise<{ examinerTeacherId: string } | null>;
+  findExaminers(periodId: string, schoolId: string): Promise<MunaqosahExaminerItem[]>;
+  upsertExaminer(params: {
+    periodId: string;
+    teacherId: string;
+    kapasitasSiswa: number;
+    assignedBy: string;
+    schoolId: string;
+  }): Promise<string>;
+  removeExaminer(periodId: string, teacherId: string, schoolId: string): Promise<void>;
+  checkExaminerCapacity(
+    periodId: string,
+    examinerTeacherId: string,
+    schoolId: string
+  ): Promise<{ kapasitas: number; terpakai: number; penuh: boolean } | null>;
   submitResult(params: {
     assignmentId: string;
     scores: Record<string, number>;

@@ -7,6 +7,7 @@ import type { GetMyMunaqosahExamsUseCase } from "../application/use-cases/GetMyM
 import type { CreateMunaqosahRequestUseCase } from "../application/use-cases/CreateMunaqosahRequestUseCase";
 import type { UpdateMunaqosahStatusUseCase } from "../application/use-cases/UpdateMunaqosahStatusUseCase";
 import type { ScheduleMunaqosahUseCase } from "../application/use-cases/ScheduleMunaqosahUseCase";
+import type { ManageMunaqosahExaminersUseCase } from "../application/use-cases/ManageMunaqosahExaminersUseCase";
 import type { SubmitMunaqosahResultUseCase } from "../application/use-cases/SubmitMunaqosahResultUseCase";
 
 const createRequestBodySchema = z.object({
@@ -21,6 +22,11 @@ const scheduleBodySchema = z.object({
   jadwalWaktu: z.string().optional(),
 });
 
+const examinerBodySchema = z.object({
+  teacherId: z.string().uuid(),
+  kapasitasSiswa: z.number().int().min(1).max(100),
+});
+
 const resultBodySchema = z.object({
   scores: z.record(z.number().min(0).max(100)),
   hasil: z.enum(["lulus", "tidak_lulus"]),
@@ -33,6 +39,7 @@ export interface MunaqosahRoutesDeps {
   createRequestUseCase: CreateMunaqosahRequestUseCase;
   updateStatusUseCase: UpdateMunaqosahStatusUseCase;
   scheduleUseCase: ScheduleMunaqosahUseCase;
+  examinersUseCase: ManageMunaqosahExaminersUseCase;
   submitResultUseCase: SubmitMunaqosahResultUseCase;
 }
 
@@ -156,6 +163,60 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
       });
 
       return c.json({ data: { assignmentId, message: "Jadwal dan penguji berhasil ditetapkan" }, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /munaqosah/periods/:periodId/examiners — pool penguji per periode
+  app.get(
+    "/periods/:periodId/examiners",
+    requireRole("koordinator_ttq", "teacher"),
+    async (c) => {
+      const user = c.get("user");
+      const periodId = c.req.param("periodId") ?? "";
+      const list = await deps.examinersUseCase.list(periodId, user.schoolId);
+      return c.json({ data: list, error: null, meta: null }, 200);
+    }
+  );
+
+  // POST /munaqosah/periods/:periodId/examiners — tambah/update penguji + kapasitas
+  app.post(
+    "/periods/:periodId/examiners",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const periodId = c.req.param("periodId") ?? "";
+      const body = await c.req.json();
+      const parsed = examinerBodySchema.safeParse(body);
+
+      if (!parsed.success) {
+        return c.json(
+          { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+          400
+        );
+      }
+
+      const id = await deps.examinersUseCase.add({
+        periodId,
+        teacherId: parsed.data.teacherId,
+        kapasitasSiswa: parsed.data.kapasitasSiswa,
+        assignedBy: user.userId,
+        schoolId: user.schoolId,
+      });
+
+      return c.json({ data: { id, message: "Penguji berhasil disimpan" }, error: null, meta: null }, 201);
+    }
+  );
+
+  // DELETE /munaqosah/periods/:periodId/examiners/:teacherId — hapus dari pool
+  app.delete(
+    "/periods/:periodId/examiners/:teacherId",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const periodId = c.req.param("periodId") ?? "";
+      const teacherId = c.req.param("teacherId") ?? "";
+      await deps.examinersUseCase.remove(periodId, teacherId, user.schoolId);
+      return c.json({ data: { message: "Penguji dihapus dari pool" }, error: null, meta: null }, 200);
     }
   );
 

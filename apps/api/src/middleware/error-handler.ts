@@ -7,6 +7,10 @@ import {
   EmailAlreadyUsedError,
 } from "../modules/auth/domain/errors/AuthErrors";
 import { AssignmentForbiddenError } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
+import {
+  ExaminerNotInPoolError,
+  ExaminerCapacityFullError,
+} from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
 
 export function errorHandler(err: unknown, c: Context): Response {
   const errCode = (err as any)?.code;
@@ -72,6 +76,18 @@ export function errorHandler(err: unknown, c: Context): Response {
     return c.json(
       { data: null, error: { code: "ASSIGNMENT_FORBIDDEN", message: (err as Error).message }, meta: null },
       403
+    );
+  }
+
+  if (
+    errCode === "EXAMINER_NOT_IN_POOL" ||
+    errCode === "EXAMINER_CAPACITY_FULL" ||
+    err instanceof ExaminerNotInPoolError ||
+    err instanceof ExaminerCapacityFullError
+  ) {
+    return c.json(
+      { data: null, error: { code: errCode || (err as Error).name, message: (err as Error).message }, meta: null },
+      422
     );
   }
 
