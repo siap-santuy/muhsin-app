@@ -1,4 +1,4 @@
-export type NotificationType = "yaumiyah" | "setoran" | "system" | "raport";
+export type NotificationType = "yaumiyah" | "setoran" | "system" | "raport" | "munaqosah";
 
 export interface NotificationEntity {
   id: string;

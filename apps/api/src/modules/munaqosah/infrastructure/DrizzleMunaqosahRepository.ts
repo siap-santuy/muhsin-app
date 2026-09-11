@@ -3,6 +3,7 @@ import {
   users,
   classes,
   studentClassEnrollment,
+  parentStudentMapping,
   munaqosahRequests,
   munaqosahAssignments,
   studentAchievements,
@@ -161,6 +162,44 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
       .returning({ id: munaqosahAssignments.id });
 
     return rows[0].id;
+  }
+
+  async getRequestDetail(
+    requestId: string,
+    schoolId: string
+  ): Promise<{ studentId: string; studentName: string; juzKe: number; schoolId: string } | null> {
+    const rows = await this.db
+      .select({
+        studentId: munaqosahRequests.studentId,
+        studentName: users.name,
+        juzKe: munaqosahRequests.juzKe,
+        schoolId: munaqosahRequests.schoolId,
+      })
+      .from(munaqosahRequests)
+      .innerJoin(users, eq(users.id, munaqosahRequests.studentId))
+      .where(
+        and(
+          eq(munaqosahRequests.id, requestId),
+          eq(munaqosahRequests.schoolId, schoolId)
+        )
+      )
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+
+  async findParentIdsByStudent(studentId: string, schoolId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ parentId: parentStudentMapping.parentId })
+      .from(parentStudentMapping)
+      .where(
+        and(
+          eq(parentStudentMapping.studentId, studentId),
+          eq(parentStudentMapping.schoolId, schoolId)
+        )
+      );
+
+    return rows.map((r) => r.parentId);
   }
 
   async submitResult(params: {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
+import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
 import { SubmitMunaqosahResultUseCase } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
 import type { IMunaqosahRepository } from "../modules/munaqosah/domain/repositories/IMunaqosahRepository";
 
@@ -10,6 +11,8 @@ describe("Munaqosah Module UseCases", () => {
       createRequest: vi.fn().mockResolvedValue("req-1"),
       updateRequestStatus: vi.fn(),
       createAssignment: vi.fn(),
+      getRequestDetail: vi.fn(),
+      findParentIdsByStudent: vi.fn(),
       submitResult: vi.fn(),
       grantAchievement: vi.fn(),
     };
@@ -37,6 +40,8 @@ describe("Munaqosah Module UseCases", () => {
       createRequest: vi.fn(),
       updateRequestStatus: vi.fn(),
       createAssignment: vi.fn(),
+      getRequestDetail: vi.fn(),
+      findParentIdsByStudent: vi.fn(),
       submitResult: vi.fn(),
       grantAchievement: vi.fn(),
     };
@@ -52,12 +57,77 @@ describe("Munaqosah Module UseCases", () => {
     ).rejects.toThrow();
   });
 
+  it("ScheduleMunaqosahUseCase notifies student and parents", async () => {
+    const mockRepo: IMunaqosahRepository = {
+      findRequests: vi.fn(),
+      createRequest: vi.fn(),
+      updateRequestStatus: vi.fn(),
+      createAssignment: vi.fn().mockResolvedValue("assign-1"),
+      getRequestDetail: vi.fn().mockResolvedValue({
+        studentId: "student-1",
+        studentName: "Ananda",
+        juzKe: 5,
+        schoolId: "school-1",
+      }),
+      findParentIdsByStudent: vi.fn().mockResolvedValue(["parent-1", "parent-2"]),
+      submitResult: vi.fn(),
+      grantAchievement: vi.fn(),
+    };
+    const mockNotif = { createNotification: vi.fn().mockResolvedValue({}) } as any;
+
+    const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
+    const result = await useCase.execute({
+      requestId: "req-1",
+      periodId: "period-1",
+      examinerTeacherId: "teacher-2",
+      jadwalTanggal: "2026-09-20",
+      jadwalWaktu: "08:00",
+      assignedBy: "koor-1",
+      schoolId: "school-1",
+    });
+
+    expect(result).toBe("assign-1");
+    expect(mockNotif.createNotification).toHaveBeenCalledTimes(3);
+    expect(mockNotif.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "student-1", type: "munaqosah" })
+    );
+  });
+
+  it("ScheduleMunaqosahUseCase still succeeds when notification fails", async () => {
+    const mockRepo: IMunaqosahRepository = {
+      findRequests: vi.fn(),
+      createRequest: vi.fn(),
+      updateRequestStatus: vi.fn(),
+      createAssignment: vi.fn().mockResolvedValue("assign-1"),
+      getRequestDetail: vi.fn().mockRejectedValue(new Error("db down")),
+      findParentIdsByStudent: vi.fn(),
+      submitResult: vi.fn(),
+      grantAchievement: vi.fn(),
+    };
+    const mockNotif = { createNotification: vi.fn() } as any;
+
+    const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
+    const result = await useCase.execute({
+      requestId: "req-1",
+      periodId: "period-1",
+      examinerTeacherId: "teacher-2",
+      jadwalTanggal: "2026-09-20",
+      assignedBy: "koor-1",
+      schoolId: "school-1",
+    });
+
+    expect(result).toBe("assign-1");
+    expect(mockRepo.updateRequestStatus).toHaveBeenCalledWith("req-1", "school-1", "dijadwalkan");
+  });
+
   it("SubmitMunaqosahResultUseCase grants achievement & EXP when passed", async () => {
     const mockRepo: IMunaqosahRepository = {
       findRequests: vi.fn(),
       createRequest: vi.fn(),
       updateRequestStatus: vi.fn(),
       createAssignment: vi.fn(),
+      getRequestDetail: vi.fn(),
+      findParentIdsByStudent: vi.fn(),
       submitResult: vi.fn().mockResolvedValue({
         studentId: "student-1",
         juzKe: 30,

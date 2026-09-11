@@ -116,7 +116,7 @@ export const hafalanTargets = pgTable("hafalan_targets", {
 
 // --- Notifications ---
 
-export const notificationType = ["yaumiyah", "setoran", "system", "raport"] as const;
+export const notificationType = ["yaumiyah", "setoran", "system", "raport", "munaqosah"] as const;
 export type NotificationType = (typeof notificationType)[number];
 
 export const notifications = pgTable("notifications", {

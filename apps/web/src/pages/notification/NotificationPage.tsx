@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import {
   ArrowLeft,
+  Award,
   Bell,
   BookOpen,
   CheckCheck,
@@ -69,6 +70,8 @@ export function NotificationPage() {
                 ? BookOpen
                 : item.type === "raport"
                 ? Bell
+                : item.type === "munaqosah"
+                ? Award
                 : Info;
 
             const iconColor =
@@ -78,6 +81,8 @@ export function NotificationPage() {
                 ? "bg-cyan-50 text-brand-cyan"
                 : item.type === "raport"
                 ? "bg-amber-50 text-amber-600"
+                : item.type === "munaqosah"
+                ? "bg-emerald-50 text-emerald-600"
                 : "bg-gray-100 text-gray-600";
 
             return (

@@ -21,6 +21,11 @@ export interface IMunaqosahRepository {
     jadwalWaktu?: string;
     assignedBy: string;
   }): Promise<string>;
+  getRequestDetail(
+    requestId: string,
+    schoolId: string
+  ): Promise<{ studentId: string; studentName: string; juzKe: number; schoolId: string } | null>;
+  findParentIdsByStudent(studentId: string, schoolId: string): Promise<string[]>;
   submitResult(params: {
     assignmentId: string;
     scores: Record<string, number>;

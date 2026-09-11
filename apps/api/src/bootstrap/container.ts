@@ -397,7 +397,7 @@ export function buildContainer() {
   const getMunaqosahRequestsUseCase = new GetMunaqosahRequestsUseCase(munaqosahRepo);
   const createMunaqosahRequestUseCase = new CreateMunaqosahRequestUseCase(munaqosahRepo);
   const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo);
-  const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo);
+  const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo, notificationRepo);
   const submitMunaqosahResultUseCase = new SubmitMunaqosahResultUseCase(munaqosahRepo, addExpUseCase);
 
   // UseCases — Kurikulum

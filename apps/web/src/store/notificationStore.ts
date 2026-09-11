@@ -7,7 +7,7 @@ export interface NotificationItem {
   message: string;
   time: string;
   read: boolean;
-  type: "yaumiyah" | "setoran" | "system" | "raport";
+  type: "yaumiyah" | "setoran" | "system" | "raport" | "munaqosah";
 }
 
 interface NotificationState {
