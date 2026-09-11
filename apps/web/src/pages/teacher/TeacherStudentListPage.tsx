@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   ArrowUpDown,
+  Award,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -571,26 +572,37 @@ export function TeacherStudentListPage() {
                       </div>
                     )}
 
-                    {/* 1-Click Action Button */}
-                    {isRated ? (
+                    {/* 1-Click Action Buttons */}
+                    <div className="flex gap-2">
+                      {isRated ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAction(s.id, true)}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#22bad0] hover:bg-[#1bb0c5] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span>LIHAT {categoryLabel.toUpperCase()}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAction(s.id, false)}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          <span>INPUT {categoryLabel.toUpperCase()}</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleAction(s.id, true)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#22bad0] hover:bg-[#1bb0c5] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
+                        onClick={() => (window.location.hash = `#/munaqosah?studentId=${s.id}`)}
+                        title="Ajukan Munaqosah"
+                        className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-purple-300 bg-purple-50 px-3 py-3 text-[11px] font-extrabold text-purple-700 shadow-xs transition-all hover:bg-purple-100 active:scale-[0.99]"
                       >
-                        <Eye className="h-4 w-4" />
-                        <span>LIHAT PENILAIAN {categoryLabel.toUpperCase()}</span>
+                        <Award className="h-4 w-4" />
+                        <span>MUNAQOSAH</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleAction(s.id, false)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f5a623] hover:bg-[#e09612] active:scale-[0.99] py-3 text-xs font-extrabold tracking-wider text-white shadow-xs transition-all"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                        <span>INPUT {categoryLabel.toUpperCase()}</span>
-                      </button>
-                    )}
+                    </div>
                   </div>
                 );
               })}

@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
-export function TeacherMunaqosahRequestPage() {
+export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStudentId?: string }) {
   const [students, setStudents] = useState<Array<{ id: string; name: string; className?: string | null }>>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(initialStudentId ?? "");
   const [juzKe, setJuzKe] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,11 @@ export function TeacherMunaqosahRequestPage() {
       try {
         const data = await api.getStudents();
         setStudents(data);
-        if (data.length) setSelectedStudentId(data[0].id);
+        if (initialStudentId && data.some((s: { id: string }) => s.id === initialStudentId)) {
+          setSelectedStudentId(initialStudentId);
+        } else if (data.length && !selectedStudentId) {
+          setSelectedStudentId(data[0].id);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat daftar siswa");
       } finally {

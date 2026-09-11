@@ -187,7 +187,7 @@ function renderContent(
       case "talaqi-view":
         return <TeacherTalaqiViewPage />;
       case "munaqosah":
-        return <TeacherMunaqosahRequestPage />;
+        return <TeacherMunaqosahRequestPage initialStudentId={searchParams.get("studentId") || undefined} />;
       case "raport":
         return <TeacherRaportPage />;
       case "monthly-raport":
