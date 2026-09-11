@@ -21,6 +21,7 @@ import { StudentYaumiyahInputPage } from "@/pages/student/StudentYaumiyahInputPa
 import { StudentYaumiyahPage } from "@/pages/student/StudentYaumiyahPage";
 import { StudentYaumiyahViewPage } from "@/pages/student/StudentYaumiyahViewPage";
 import { TeacherDashboardPage } from "@/pages/teacher/TeacherDashboardPage";
+import { TeacherExaminerPage } from "@/pages/teacher/TeacherExaminerPage";
 import { TeacherMonthlyRaportPage } from "@/pages/teacher/TeacherMonthlyRaportPage";
 import { TeacherMunaqosahRequestPage } from "@/pages/teacher/TeacherMunaqosahRequestPage";
 import { TeacherMurojaahInputPage } from "@/pages/teacher/TeacherMurojaahInputPage";
@@ -188,6 +189,9 @@ function renderContent(
         return <TeacherTalaqiViewPage />;
       case "munaqosah":
         return <TeacherMunaqosahRequestPage initialStudentId={searchParams.get("studentId") || undefined} />;
+      case "examiner":
+      case "tugas-penguji":
+        return <TeacherExaminerPage />;
       case "raport":
         return <TeacherRaportPage />;
       case "monthly-raport":

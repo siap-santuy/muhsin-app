@@ -26,6 +26,11 @@ export interface IMunaqosahRepository {
     schoolId: string
   ): Promise<{ studentId: string; studentName: string; juzKe: number; schoolId: string } | null>;
   findParentIdsByStudent(studentId: string, schoolId: string): Promise<string[]>;
+  findMyExams(examinerTeacherId: string, schoolId: string): Promise<MunaqosahRequestItem[]>;
+  getAssignmentOwner(
+    assignmentId: string,
+    schoolId: string
+  ): Promise<{ examinerTeacherId: string } | null>;
   submitResult(params: {
     assignmentId: string;
     scores: Record<string, number>;

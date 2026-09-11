@@ -48,6 +48,7 @@ const app = createApp({
   getSemesterRaportUseCase: {} as never,
   getDashboardSummaryUseCase: {} as never,
   getMunaqosahRequestsUseCase: {} as never,
+  getMyMunaqosahExamsUseCase: {} as never,
   createMunaqosahRequestUseCase: {} as never,
   updateMunaqosahStatusUseCase: {} as never,
   scheduleMunaqosahUseCase: {} as never,

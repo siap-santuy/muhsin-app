@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   AlertTriangle,
+  Award,
   Calendar,
   ChevronRight,
   Edit3,
@@ -119,6 +120,16 @@ export function TeacherDashboardPage() {
               >
                 <Edit3 className="h-4 w-4" />
                 <span>BERIKAN PENILAIAN HARI INI</span>
+              </button>
+
+              {/* Action Button: Tugas Penguji Munaqosah */}
+              <button
+                type="button"
+                onClick={() => (window.location.hash = "#/examiner")}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-purple-300 bg-purple-50 py-3 text-xs font-bold tracking-wider text-purple-700 shadow-sm transition-all hover:bg-purple-100 active:scale-[0.99]"
+              >
+                <Award className="h-4 w-4" />
+                <span>TUGAS PENGUJI MUNAQOSAH</span>
               </button>
 
               {/* Section: Progres Bulan Ini */}

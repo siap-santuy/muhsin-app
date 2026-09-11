@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetMunaqosahRequestsUseCase } from "../application/use-cases/GetMunaqosahRequestsUseCase";
+import type { GetMyMunaqosahExamsUseCase } from "../application/use-cases/GetMyMunaqosahExamsUseCase";
 import type { CreateMunaqosahRequestUseCase } from "../application/use-cases/CreateMunaqosahRequestUseCase";
 import type { UpdateMunaqosahStatusUseCase } from "../application/use-cases/UpdateMunaqosahStatusUseCase";
 import type { ScheduleMunaqosahUseCase } from "../application/use-cases/ScheduleMunaqosahUseCase";
@@ -28,6 +29,7 @@ const resultBodySchema = z.object({
 
 export interface MunaqosahRoutesDeps {
   getRequestsUseCase: GetMunaqosahRequestsUseCase;
+  getMyExamsUseCase: GetMyMunaqosahExamsUseCase;
   createRequestUseCase: CreateMunaqosahRequestUseCase;
   updateStatusUseCase: UpdateMunaqosahStatusUseCase;
   scheduleUseCase: ScheduleMunaqosahUseCase;
@@ -49,6 +51,17 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
         status
       );
       return c.json({ data: requests, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /munaqosah/my-exams — tugas penguji milik guru login
+  app.get(
+    "/my-exams",
+    requireRole("teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const exams = await deps.getMyExamsUseCase.execute(user.userId, user.schoolId);
+      return c.json({ data: exams, error: null, meta: null }, 200);
     }
   );
 
@@ -151,6 +164,7 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     "/assignments/:id/result",
     requireRole("teacher", "koordinator_ttq"),
     async (c) => {
+      const user = c.get("user");
       const assignmentId = c.req.param("id") ?? "";
       const body = await c.req.json();
       const parsed = resultBodySchema.safeParse(body);
@@ -167,6 +181,9 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
         scores: parsed.data.scores,
         hasil: parsed.data.hasil,
         catatanPenguji: parsed.data.catatanPenguji,
+        actorUserId: user.userId,
+        actorRole: user.role,
+        schoolId: user.schoolId,
       });
 
       return c.json({ data: { message: "Hasil munaqosah berhasil disimpan" }, error: null, meta: null }, 200);

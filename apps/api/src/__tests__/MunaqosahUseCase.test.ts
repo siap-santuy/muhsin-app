@@ -1,21 +1,32 @@
 import { describe, it, expect, vi } from "vitest";
 import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
+import { GetMyMunaqosahExamsUseCase } from "../modules/munaqosah/application/use-cases/GetMyMunaqosahExamsUseCase";
 import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
-import { SubmitMunaqosahResultUseCase } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
+import {
+  SubmitMunaqosahResultUseCase,
+  AssignmentForbiddenError,
+} from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
 import type { IMunaqosahRepository } from "../modules/munaqosah/domain/repositories/IMunaqosahRepository";
+
+function baseMockRepo(): IMunaqosahRepository {
+  return {
+    findRequests: vi.fn(),
+    createRequest: vi.fn(),
+    updateRequestStatus: vi.fn(),
+    createAssignment: vi.fn(),
+    getRequestDetail: vi.fn(),
+    findParentIdsByStudent: vi.fn(),
+    findMyExams: vi.fn(),
+    getAssignmentOwner: vi.fn(),
+    submitResult: vi.fn(),
+    grantAchievement: vi.fn(),
+  };
+}
 
 describe("Munaqosah Module UseCases", () => {
   it("creates munaqosah request for valid juz", async () => {
-    const mockRepo: IMunaqosahRepository = {
-      findRequests: vi.fn(),
-      createRequest: vi.fn().mockResolvedValue("req-1"),
-      updateRequestStatus: vi.fn(),
-      createAssignment: vi.fn(),
-      getRequestDetail: vi.fn(),
-      findParentIdsByStudent: vi.fn(),
-      submitResult: vi.fn(),
-      grantAchievement: vi.fn(),
-    };
+    const mockRepo = baseMockRepo();
+    (mockRepo.createRequest as any).mockResolvedValue("req-1");
 
     const useCase = new CreateMunaqosahRequestUseCase(mockRepo);
     const result = await useCase.execute({
@@ -35,16 +46,7 @@ describe("Munaqosah Module UseCases", () => {
   });
 
   it("throws error for invalid juz (<1 or >30)", async () => {
-    const mockRepo: IMunaqosahRepository = {
-      findRequests: vi.fn(),
-      createRequest: vi.fn(),
-      updateRequestStatus: vi.fn(),
-      createAssignment: vi.fn(),
-      getRequestDetail: vi.fn(),
-      findParentIdsByStudent: vi.fn(),
-      submitResult: vi.fn(),
-      grantAchievement: vi.fn(),
-    };
+    const mockRepo = baseMockRepo();
 
     const useCase = new CreateMunaqosahRequestUseCase(mockRepo);
     await expect(
@@ -58,21 +60,15 @@ describe("Munaqosah Module UseCases", () => {
   });
 
   it("ScheduleMunaqosahUseCase notifies student and parents", async () => {
-    const mockRepo: IMunaqosahRepository = {
-      findRequests: vi.fn(),
-      createRequest: vi.fn(),
-      updateRequestStatus: vi.fn(),
-      createAssignment: vi.fn().mockResolvedValue("assign-1"),
-      getRequestDetail: vi.fn().mockResolvedValue({
-        studentId: "student-1",
-        studentName: "Ananda",
-        juzKe: 5,
-        schoolId: "school-1",
-      }),
-      findParentIdsByStudent: vi.fn().mockResolvedValue(["parent-1", "parent-2"]),
-      submitResult: vi.fn(),
-      grantAchievement: vi.fn(),
-    };
+    const mockRepo = baseMockRepo();
+    (mockRepo.createAssignment as any).mockResolvedValue("assign-1");
+    (mockRepo.getRequestDetail as any).mockResolvedValue({
+      studentId: "student-1",
+      studentName: "Ananda",
+      juzKe: 5,
+      schoolId: "school-1",
+    });
+    (mockRepo.findParentIdsByStudent as any).mockResolvedValue(["parent-1", "parent-2"]);
     const mockNotif = { createNotification: vi.fn().mockResolvedValue({}) } as any;
 
     const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
@@ -94,16 +90,9 @@ describe("Munaqosah Module UseCases", () => {
   });
 
   it("ScheduleMunaqosahUseCase still succeeds when notification fails", async () => {
-    const mockRepo: IMunaqosahRepository = {
-      findRequests: vi.fn(),
-      createRequest: vi.fn(),
-      updateRequestStatus: vi.fn(),
-      createAssignment: vi.fn().mockResolvedValue("assign-1"),
-      getRequestDetail: vi.fn().mockRejectedValue(new Error("db down")),
-      findParentIdsByStudent: vi.fn(),
-      submitResult: vi.fn(),
-      grantAchievement: vi.fn(),
-    };
+    const mockRepo = baseMockRepo();
+    (mockRepo.createAssignment as any).mockResolvedValue("assign-1");
+    (mockRepo.getRequestDetail as any).mockRejectedValue(new Error("db down"));
     const mockNotif = { createNotification: vi.fn() } as any;
 
     const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
@@ -120,21 +109,67 @@ describe("Munaqosah Module UseCases", () => {
     expect(mockRepo.updateRequestStatus).toHaveBeenCalledWith("req-1", "school-1", "dijadwalkan");
   });
 
-  it("SubmitMunaqosahResultUseCase grants achievement & EXP when passed", async () => {
-    const mockRepo: IMunaqosahRepository = {
-      findRequests: vi.fn(),
-      createRequest: vi.fn(),
-      updateRequestStatus: vi.fn(),
-      createAssignment: vi.fn(),
-      getRequestDetail: vi.fn(),
-      findParentIdsByStudent: vi.fn(),
-      submitResult: vi.fn().mockResolvedValue({
-        studentId: "student-1",
-        juzKe: 30,
+  it("GetMyMunaqosahExamsUseCase scopes exams by examiner and school", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.findMyExams as any).mockResolvedValue([{ id: "req-1" }]);
+
+    const useCase = new GetMyMunaqosahExamsUseCase(mockRepo);
+    const result = await useCase.execute("teacher-2", "school-1");
+
+    expect(mockRepo.findMyExams).toHaveBeenCalledWith("teacher-2", "school-1");
+    expect(result).toEqual([{ id: "req-1" }]);
+  });
+
+  it("SubmitMunaqosahResultUseCase rejects teacher who is not the assigned examiner", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.getAssignmentOwner as any).mockResolvedValue({ examinerTeacherId: "teacher-9" });
+    const mockAddExp = { execute: vi.fn() } as any;
+
+    const useCase = new SubmitMunaqosahResultUseCase(mockRepo, mockAddExp);
+    await expect(
+      useCase.execute({
+        assignmentId: "assign-1",
+        scores: { tajwid: 80, kelancaran: 85 },
+        hasil: "lulus",
+        actorUserId: "teacher-2",
+        actorRole: "teacher",
         schoolId: "school-1",
-      }),
-      grantAchievement: vi.fn().mockResolvedValue(undefined),
-    };
+      })
+    ).rejects.toBeInstanceOf(AssignmentForbiddenError);
+    expect(mockRepo.submitResult).not.toHaveBeenCalled();
+  });
+
+  it("SubmitMunaqosahResultUseCase allows the assigned examiner", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.getAssignmentOwner as any).mockResolvedValue({ examinerTeacherId: "teacher-2" });
+    (mockRepo.submitResult as any).mockResolvedValue({
+      studentId: "student-1",
+      juzKe: 30,
+      schoolId: "school-1",
+    });
+    const mockAddExp = { execute: vi.fn().mockResolvedValue({}) } as any;
+
+    const useCase = new SubmitMunaqosahResultUseCase(mockRepo, mockAddExp);
+    await useCase.execute({
+      assignmentId: "assign-1",
+      scores: { tajwid: 90, kelancaran: 95 },
+      hasil: "lulus",
+      actorUserId: "teacher-2",
+      actorRole: "teacher",
+      schoolId: "school-1",
+    });
+
+    expect(mockRepo.submitResult).toHaveBeenCalledTimes(1);
+    expect(mockRepo.grantAchievement).toHaveBeenCalledTimes(1);
+  });
+
+  it("SubmitMunaqosahResultUseCase grants achievement & EXP when passed", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.submitResult as any).mockResolvedValue({
+      studentId: "student-1",
+      juzKe: 30,
+      schoolId: "school-1",
+    });
 
     const mockAddExp = {
       execute: vi.fn().mockResolvedValue({ newTotalExp: 100, newLevel: 2 }),

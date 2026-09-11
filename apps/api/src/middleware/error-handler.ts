@@ -6,6 +6,7 @@ import {
   WrongPasswordError,
   EmailAlreadyUsedError,
 } from "../modules/auth/domain/errors/AuthErrors";
+import { AssignmentForbiddenError } from "../modules/munaqosah/application/use-cases/SubmitMunaqosahResultUseCase";
 
 export function errorHandler(err: unknown, c: Context): Response {
   const errCode = (err as any)?.code;
@@ -64,6 +65,13 @@ export function errorHandler(err: unknown, c: Context): Response {
     return c.json(
       { data: null, error: { code: errCode || "AUTH_ERROR", message: (err as Error).message }, meta: null },
       401
+    );
+  }
+
+  if (errCode === "ASSIGNMENT_FORBIDDEN" || err instanceof AssignmentForbiddenError) {
+    return c.json(
+      { data: null, error: { code: "ASSIGNMENT_FORBIDDEN", message: (err as Error).message }, meta: null },
+      403
     );
   }
 

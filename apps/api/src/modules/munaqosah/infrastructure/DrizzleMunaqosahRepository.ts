@@ -202,6 +202,93 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
     return rows.map((r) => r.parentId);
   }
 
+  async findMyExams(examinerTeacherId: string, schoolId: string): Promise<MunaqosahRequestItem[]> {
+    const rows = await this.db
+      .select({
+        id: munaqosahRequests.id,
+        assignmentId: munaqosahAssignments.id,
+        studentId: munaqosahRequests.studentId,
+        studentName: users.name,
+        teacherId: munaqosahRequests.teacherId,
+        juzKe: munaqosahRequests.juzKe,
+        status: munaqosahRequests.status,
+        createdAt: munaqosahRequests.createdAt,
+        jadwalTanggal: munaqosahAssignments.jadwalTanggal,
+        jadwalWaktu: munaqosahAssignments.jadwalWaktu,
+        hasil: munaqosahAssignments.hasil,
+        scores: munaqosahAssignments.scores,
+        catatanPenguji: munaqosahAssignments.catatanPenguji,
+      })
+      .from(munaqosahAssignments)
+      .innerJoin(munaqosahRequests, eq(munaqosahRequests.id, munaqosahAssignments.requestId))
+      .innerJoin(users, eq(users.id, munaqosahRequests.studentId))
+      .where(
+        and(
+          eq(munaqosahAssignments.examinerTeacherId, examinerTeacherId),
+          eq(munaqosahRequests.schoolId, schoolId)
+        )
+      )
+      .orderBy(desc(munaqosahAssignments.jadwalTanggal));
+
+    const result: MunaqosahRequestItem[] = [];
+
+    for (const r of rows) {
+      const teacher = await this.db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, r.teacherId))
+        .limit(1);
+
+      const classRow = await this.db
+        .select({ name: classes.name })
+        .from(studentClassEnrollment)
+        .innerJoin(classes, eq(classes.id, studentClassEnrollment.classId))
+        .where(eq(studentClassEnrollment.studentId, r.studentId))
+        .limit(1);
+
+      result.push({
+        id: r.id,
+        assignmentId: r.assignmentId,
+        studentId: r.studentId,
+        studentName: r.studentName,
+        className: classRow[0]?.name ?? "-",
+        teacherId: r.teacherId,
+        teacherName: teacher[0]?.name ?? "-",
+        juzKe: r.juzKe,
+        status: r.status as any,
+        submissionDate: r.createdAt.toISOString().slice(0, 10),
+        assignedExaminerName: null,
+        examinerTeacherId,
+        examDate: r.jadwalTanggal,
+        examTime: r.jadwalWaktu,
+        hasil: r.hasil,
+        scores: (r.scores as any) ?? null,
+        catatanPenguji: r.catatanPenguji,
+      });
+    }
+
+    return result;
+  }
+
+  async getAssignmentOwner(
+    assignmentId: string,
+    schoolId: string
+  ): Promise<{ examinerTeacherId: string } | null> {
+    const rows = await this.db
+      .select({ examinerTeacherId: munaqosahAssignments.examinerTeacherId })
+      .from(munaqosahAssignments)
+      .innerJoin(munaqosahRequests, eq(munaqosahRequests.id, munaqosahAssignments.requestId))
+      .where(
+        and(
+          eq(munaqosahAssignments.id, assignmentId),
+          eq(munaqosahRequests.schoolId, schoolId)
+        )
+      )
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+
   async submitResult(params: {
     assignmentId: string;
     scores: Record<string, number>;

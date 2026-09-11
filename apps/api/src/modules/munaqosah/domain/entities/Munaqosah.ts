@@ -1,5 +1,6 @@
 export interface MunaqosahRequestItem {
   id: string;
+  assignmentId?: string | null;
   studentId: string;
   studentName: string;
   className: string;

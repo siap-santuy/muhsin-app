@@ -420,6 +420,20 @@ class ApiClient {
     return this.request("POST", `/munaqosah/requests/${id}/schedule`, input);
   }
 
+  async getMyMunaqosahExams(): Promise<Array<{
+    id: string;
+    assignmentId: string | null;
+    studentName: string;
+    className: string;
+    juzKe: number;
+    status: string;
+    examDate: string | null;
+    examTime: string | null;
+    hasil: string | null;
+  }>> {
+    return this.request("GET", `/munaqosah/my-exams`);
+  }
+
   async submitMunaqosahResult(assignmentId: string, input: {
     scores: Record<string, number>;
     hasil: "lulus" | "tidak_lulus";

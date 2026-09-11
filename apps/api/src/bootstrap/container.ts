@@ -67,6 +67,7 @@ import { createDashboardRoutes } from "../modules/dashboard/presentation/routes"
 // Munaqosah module
 import { DrizzleMunaqosahRepository } from "../modules/munaqosah/infrastructure/DrizzleMunaqosahRepository";
 import { GetMunaqosahRequestsUseCase } from "../modules/munaqosah/application/use-cases/GetMunaqosahRequestsUseCase";
+import { GetMyMunaqosahExamsUseCase } from "../modules/munaqosah/application/use-cases/GetMyMunaqosahExamsUseCase";
 import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/use-cases/CreateMunaqosahRequestUseCase";
 import { UpdateMunaqosahStatusUseCase } from "../modules/munaqosah/application/use-cases/UpdateMunaqosahStatusUseCase";
 import { ScheduleMunaqosahUseCase } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
@@ -132,6 +133,7 @@ export interface ContainerDeps {
   getDashboardSummaryUseCase: GetDashboardSummaryUseCase;
   // Munaqosah
   getMunaqosahRequestsUseCase: GetMunaqosahRequestsUseCase;
+  getMyMunaqosahExamsUseCase: GetMyMunaqosahExamsUseCase;
   createMunaqosahRequestUseCase: CreateMunaqosahRequestUseCase;
   updateMunaqosahStatusUseCase: UpdateMunaqosahStatusUseCase;
   scheduleMunaqosahUseCase: ScheduleMunaqosahUseCase;
@@ -279,6 +281,7 @@ export function createApp(deps: ContainerDeps): Hono {
   // Munaqosah
   const munaqosahRoutes = createMunaqosahRoutes({
     getRequestsUseCase: deps.getMunaqosahRequestsUseCase,
+    getMyExamsUseCase: deps.getMyMunaqosahExamsUseCase,
     createRequestUseCase: deps.createMunaqosahRequestUseCase,
     updateStatusUseCase: deps.updateMunaqosahStatusUseCase,
     scheduleUseCase: deps.scheduleMunaqosahUseCase,
@@ -395,6 +398,7 @@ export function buildContainer() {
 
   // UseCases — Munaqosah
   const getMunaqosahRequestsUseCase = new GetMunaqosahRequestsUseCase(munaqosahRepo);
+  const getMyMunaqosahExamsUseCase = new GetMyMunaqosahExamsUseCase(munaqosahRepo);
   const createMunaqosahRequestUseCase = new CreateMunaqosahRequestUseCase(munaqosahRepo);
   const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo);
   const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo, notificationRepo);
@@ -440,6 +444,7 @@ export function buildContainer() {
       getSemesterRaportUseCase,
       getDashboardSummaryUseCase,
       getMunaqosahRequestsUseCase,
+      getMyMunaqosahExamsUseCase,
       createMunaqosahRequestUseCase,
       updateMunaqosahStatusUseCase,
       scheduleMunaqosahUseCase,
