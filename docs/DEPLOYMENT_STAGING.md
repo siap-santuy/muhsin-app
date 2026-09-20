@@ -56,7 +56,12 @@ DB_PASSWORD=muhsin_staging_secure_password_123
 DB_NAME=muhsin_staging_db
 JWT_SECRET=staging-jwt-secret-min-32-chars-random!
 JWT_REFRESH_SECRET=staging-jwt-refresh-secret-min-32-chars-random!
+VITE_API_URL=https://api-staging.muhsin.id
+VITE_DEFAULT_SCHOOL_SLUG=alfitrah
 ```
+
+> **Catatan Multi-Tenant Staging:**
+> Subdomain `staging` dan `api-staging` masuk exclusion list slug sekolah. Akses frontend di `https://staging.muhsin.id` otomatis menggunakan `VITE_DEFAULT_SCHOOL_SLUG` (`alfitrah`). Untuk menguji slug tenant lain di staging, gunakan query param URL: `https://staging.muhsin.id/?school=<slug>`.
 
 ---
 

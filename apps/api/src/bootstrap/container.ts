@@ -175,11 +175,10 @@ export function createApp(deps: ContainerDeps): Hono {
           "http://localhost:8081",
           "https://muhsin.id",
           "https://www.muhsin.id",
+          "https://alfitrah.muhsin.id",
           "https://api.muhsin.id",
           "https://staging.muhsin.id",
-          "https://api-staging.muhsin.id",
-          "http://staging.muhsin.id",
-          "http://api-staging.muhsin.id",
+          "https://api-staging.muhsin.id"
         ];
 
         if (allowedExact.includes(origin)) return origin;

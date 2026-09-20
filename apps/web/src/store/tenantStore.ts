@@ -38,10 +38,11 @@ export function detectSchoolSlugFromUrl(): string {
     if (hashSlug) return hashSlug.trim().toLowerCase();
   }
 
-  // 3. Check hostname: e.g. alfitrah.muhsin.app -> alfitrah
+  // 3. Check hostname: e.g. alfitrah.muhsin.id -> alfitrah
   const hostname = window.location.hostname.toLowerCase();
   const parts = hostname.split(".");
-  if (parts.length > 2 && parts[0] !== "www" && parts[0] !== "stage" && parts[0] !== "api") {
+  const RESERVED_SUBDOMAINS = ["www", "stage", "staging", "api", "api-staging"];
+  if (parts.length > 2 && !RESERVED_SUBDOMAINS.includes(parts[0])) {
     return parts[0];
   }
 

@@ -9,8 +9,12 @@ Panduan ini berisi daftar kredensial bawaan dari hasil *database seeding* (`docs
 - **Nama Sekolah**: SMP IT Al Fitrah - Demo
 - **School Slug**: `alfitrah`
 - **Tahun Ajaran Aktif**: `2025/2026` (Semester Ganjil)
-- **URL Staging**: `https://staging.muhsin.id` (atau `http://staging.muhsin.id`)
-- **API Staging**: `https://api-staging.muhsin.id` (atau `http://api-staging.muhsin.id`)
+- **URL Staging**: `https://staging.muhsin.id` (otomatis merujuk ke sekolah default `alfitrah`)
+- **API Staging**: `https://api-staging.muhsin.id`
+- **Akses Multi-Tenant di Staging**:
+  Frontend staging mengabaikan subdomain `staging` sebagai slug sekolah. Untuk berganti atau menguji slug sekolah lain di staging, gunakan query param:
+  - `https://staging.muhsin.id/?school=alfitrah`
+  - `https://staging.muhsin.id/?school=<slug-sekolah-lain>`
 
 ---
 
