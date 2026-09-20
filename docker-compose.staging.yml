@@ -44,6 +44,8 @@ services:
       PORT: 3001
     ports:
       - "127.0.0.1:3002:3001"
+    volumes:
+      - ./docs/data-seed.xlsx:/app/docs/data-seed.xlsx:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,7 +57,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_URL: http://localhost:3002
+        VITE_API_URL: ${VITE_API_URL:-https://api-staging.muhsin.id}
         VITE_DEFAULT_SCHOOL_SLUG: alfitrah
     container_name: muhsin_staging_web
     restart: unless-stopped

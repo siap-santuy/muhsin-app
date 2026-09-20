@@ -170,20 +170,27 @@ export function createApp(deps: ContainerDeps): Hono {
           "http://localhost:5173",
           "http://localhost:5174",
           "http://localhost:3001",
+          "http://localhost:3002",
+          "http://localhost:8080",
+          "http://localhost:8081",
           "https://muhsin.id",
           "https://www.muhsin.id",
           "https://api.muhsin.id",
+          "https://staging.muhsin.id",
+          "https://api-staging.muhsin.id",
+          "http://staging.muhsin.id",
+          "http://api-staging.muhsin.id",
         ];
 
         if (allowedExact.includes(origin)) return origin;
 
-        // Allow all subdomains of muhsin.id (e.g. alfitrah.muhsin.id)
-        if (/^https:\/\/([a-z0-9-]+\.)*muhsin\.id$/i.test(origin)) {
+        // Allow all subdomains of muhsin.id (HTTP & HTTPS, with optional port)
+        if (/^https?:\/\/([a-z0-9-]+\.)*muhsin\.id(:[0-9]+)?$/i.test(origin)) {
           return origin;
         }
 
         // Allow devtunnels / local testing domains
-        if (/^https:\/\/[a-z0-9-]+\.asse\.devtunnels\.ms$/i.test(origin)) {
+        if (/^https?:\/\/[a-z0-9-]+\.asse\.devtunnels\.ms$/i.test(origin)) {
           return origin;
         }
 
@@ -191,7 +198,13 @@ export function createApp(deps: ContainerDeps): Hono {
       },
       credentials: true,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
+      allowHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+      ],
     })
   );
 
