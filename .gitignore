@@ -4,6 +4,7 @@ dev-dist/
 build/
 .env
 .env.local
+.env.staging
 *.log
 .DS_Store
 .idea/

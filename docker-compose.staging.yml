@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: muhsin_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-muhsin_staging_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-muhsin_staging_secure_password_123}
+      POSTGRES_DB: ${DB_NAME:-muhsin_staging_db}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-muhsin_staging_admin} -d ${DB_NAME:-muhsin_staging_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: muhsin_staging_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_staging_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: muhsin_staging_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-muhsin_staging_admin}:${DB_PASSWORD:-muhsin_staging_secure_password_123}@postgres:5432/${DB_NAME:-muhsin_staging_db}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-staging-secret-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-staging-refresh-secret-min-32-chars}
+      ACCESS_TOKEN_TTL: 900
+      REFRESH_TOKEN_TTL: 604800
+      PORT: 3001
+    ports:
+      - "127.0.0.1:3002:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3002
+        VITE_DEFAULT_SCHOOL_SLUG: alfitrah
+    container_name: muhsin_staging_web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
