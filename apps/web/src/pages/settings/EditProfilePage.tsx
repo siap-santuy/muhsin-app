@@ -7,7 +7,7 @@ import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 
 const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80";
+  "https://i.pinimg.com/736x/0a/aa/f6/0aaaf68b00bf54b01ae506c8bbe03622.jpg";
 
 export function EditProfilePage() {
   const user = useAuthStore((s) => s.user);

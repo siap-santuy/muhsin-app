@@ -51,7 +51,7 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
   const avatarUrl =
     profile?.avatarUrl ||
     storeUser?.avatarUrl ||
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80";
+    "https://i.pinimg.com/736x/0a/aa/f6/0aaaf68b00bf54b01ae506c8bbe03622.jpg";
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">

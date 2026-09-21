@@ -181,5 +181,5 @@ sudo certbot --nginx -d muhsin.id -d *.muhsin.id -d api.muhsin.id
   ```
 - **Backup Database PostgreSQL**:
   ```bash
-  docker compose exec postgres pg_dump -U muhsin_admin muhsin_prod_db > backup_$(date +%F).sql
+  docker compose exec postgres pg_dump -U muhsin_admin muhsin_prod > backup_$(date +%F).sql
   ```
