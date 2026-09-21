@@ -18,6 +18,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
+import { exportStudentListToExcel } from "@/lib/exportRaportExcel";
 
 interface StudentRecord {
   id: string;
@@ -199,11 +200,17 @@ export function KoorStudentPage() {
 
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={async () => {
+                try {
+                  await exportStudentListToExcel(filtered, "SMP IT Al Fitrah");
+                } catch (e: any) {
+                  toast.warning(e.message || "Gagal mengunduh data Excel");
+                }
+              }}
               className="flex items-center gap-1.5 rounded-xl border border-brand-line bg-white px-4 py-2 text-xs font-bold text-brand-navy shadow-sm hover:border-brand-cyan"
             >
               <Download className="h-4 w-4 text-brand-navy/60" />
-              <span>Cetak Laporan</span>
+              <span>Ekspor Excel</span>
             </button>
           </div>
         </div>

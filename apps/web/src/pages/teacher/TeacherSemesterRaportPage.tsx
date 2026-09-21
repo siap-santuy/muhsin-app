@@ -10,6 +10,7 @@ import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { SumatifSection } from "@/components/raport/SumatifSection";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { exportRaportExcel, type SemesterRaportData } from "@/lib/exportRaportExcel";
 
 interface TeacherSemesterRaportPageProps {
   onBack?: () => void;
@@ -24,7 +25,7 @@ export function TeacherSemesterRaportPage({
   semester = "Ganjil",
   year = "2026/2027",
 }: TeacherSemesterRaportPageProps) {
-  const [raport, setRaport] = useState<any>(null);
+  const [raport, setRaport] = useState<SemesterRaportData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function TeacherSemesterRaportPage({
           semester,
           tahunAjaran: year,
         });
-        setRaport(data);
+        setRaport(data as SemesterRaportData);
       } catch (err) {
         console.error("Failed to load teacher semester raport:", err);
       } finally {
@@ -51,6 +52,15 @@ export function TeacherSemesterRaportPage({
       onBack();
     } else {
       window.location.hash = "#/raport";
+    }
+  }
+
+  async function handleExportExcel() {
+    if (!raport) return;
+    try {
+      await exportRaportExcel(raport, "SMP IT Al Fitrah", "semester");
+    } catch (error) {
+      console.error("Failed to export Excel:", error);
     }
   }
 
@@ -137,7 +147,7 @@ export function TeacherSemesterRaportPage({
           <div className="pt-2">
             <Button
               type="button"
-              onClick={() => window.print()}
+              onClick={handleExportExcel}
               className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />

@@ -8,6 +8,7 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { exportRaportExcel, type MonthlyRaportData } from "@/lib/exportRaportExcel";
 
 interface ParentMonthlyRaportPageProps {
   onBack?: () => void;
@@ -35,7 +36,7 @@ export function ParentMonthlyRaportPage({
   month = "September",
   year = "2026/2027",
 }: ParentMonthlyRaportPageProps) {
-  const [raport, setRaport] = useState<any>(null);
+  const [raport, setRaport] = useState<MonthlyRaportData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const cleanMonth = (month || "").trim().toLowerCase();
@@ -49,7 +50,7 @@ export function ParentMonthlyRaportPage({
     async function load() {
       try {
         const data = await api.getMonthlyRaport({ month: monthCode });
-        setRaport(data);
+        setRaport(data as MonthlyRaportData);
       } catch (err) {
         console.error("Failed to load monthly raport:", err);
       } finally {
@@ -64,6 +65,15 @@ export function ParentMonthlyRaportPage({
       onBack();
     } else {
       window.location.hash = "#/raport";
+    }
+  }
+
+  async function handleExportExcel() {
+    if (!raport) return;
+    try {
+      await exportRaportExcel(raport, "SMP IT Al Fitrah", "monthly");
+    } catch (error) {
+      console.error("Failed to export Excel:", error);
     }
   }
 
@@ -136,9 +146,8 @@ export function ParentMonthlyRaportPage({
           <div className="pt-2">
             <Button
               type="button"
-              variant="outline"
-              onClick={() => window.print()}
-              className="h-11 w-full rounded-2xl border-2 border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10 print:hidden"
+              onClick={handleExportExcel}
+              className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />
               UNDUH RAPORT ANANDA

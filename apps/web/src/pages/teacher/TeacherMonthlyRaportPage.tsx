@@ -8,6 +8,7 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { exportRaportExcel, type MonthlyRaportData } from "@/lib/exportRaportExcel";
 
 const MONTH_MAP: Record<string, string> = {
   juli: "07",
@@ -37,7 +38,7 @@ export function TeacherMonthlyRaportPage({
   month = "September",
   year = "2026/2027",
 }: TeacherMonthlyRaportPageProps) {
-  const [raport, setRaport] = useState<any>(null);
+  const [raport, setRaport] = useState<MonthlyRaportData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const cleanMonth = (month || "").trim().toLowerCase();
@@ -55,7 +56,7 @@ export function TeacherMonthlyRaportPage({
           studentId: targetId,
           month: monthCode,
         });
-        setRaport(data);
+        setRaport(data as MonthlyRaportData);
       } catch (err) {
         console.error("Failed to load teacher monthly raport:", err);
       } finally {
@@ -70,6 +71,15 @@ export function TeacherMonthlyRaportPage({
       onBack();
     } else {
       window.location.hash = "#/raport";
+    }
+  }
+
+  async function handleExportExcel() {
+    if (!raport) return;
+    try {
+      await exportRaportExcel(raport, "SMP IT Al Fitrah", "monthly");
+    } catch (error) {
+      console.error("Failed to export Excel:", error);
     }
   }
 
@@ -145,7 +155,7 @@ export function TeacherMonthlyRaportPage({
           <div className="pt-2">
             <Button
               type="button"
-              onClick={() => window.print()}
+              onClick={handleExportExcel}
               className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />
