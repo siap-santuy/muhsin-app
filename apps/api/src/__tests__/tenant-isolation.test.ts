@@ -47,6 +47,11 @@ const app = createApp({
   getMonthlyRaportUseCase: {} as never,
   getSemesterRaportUseCase: {} as never,
   getDashboardSummaryUseCase: {} as never,
+  getKoorStudentActivityUseCase: {} as never,
+  getKoorTeacherActivityUseCase: {} as never,
+  recordParentViewUseCase: {} as never,
+  remindParentUseCase: {} as never,
+  remindStudentUseCase: {} as never,
   getMunaqosahRequestsUseCase: {} as never,
   getMyMunaqosahExamsUseCase: {} as never,
   createMunaqosahRequestUseCase: {} as never,
@@ -61,6 +66,9 @@ const app = createApp({
   getNotificationsUseCase: {} as never,
   markNotificationReadUseCase: {} as never,
   markAllNotificationsReadUseCase: {} as never,
+  savePushSubscriptionUseCase: {} as never,
+  removePushSubscriptionUseCase: {} as never,
+  sendPushToUserUseCase: {} as never,
   notificationRepo: {} as never,
 });
 

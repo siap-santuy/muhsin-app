@@ -91,6 +91,20 @@ export function errorHandler(err: unknown, c: Context): Response {
     );
   }
 
+  if (errCode === "RATE_LIMITED") {
+    return c.json(
+      { data: null, error: { code: "RATE_LIMITED", message: (err as Error).message }, meta: null },
+      429
+    );
+  }
+
+  if (errCode === "ALREADY_FILLED") {
+    return c.json(
+      { data: null, error: { code: "ALREADY_FILLED", message: (err as Error).message }, meta: null },
+      422
+    );
+  }
+
   // 500 Uncaught / Internal Server Error with full stack trace
   console.error(`[ERROR] ${timestamp} [500] ${method} ${path}:`, err);
   return c.json(

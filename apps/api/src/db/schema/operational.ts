@@ -7,6 +7,7 @@ import {
   jsonb,
   timestamp,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 import { schools, users } from "./tenancy";
 import { assessmentSubcategories } from "./assessment";
@@ -134,6 +135,65 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- Parent Views (Ortu Buka Dashboard/Raport Anak) ---
+
+export const parentViewSource = ["dashboard", "raport"] as const;
+export type ParentViewSource = (typeof parentViewSource)[number];
+
+export const parentViews = pgTable(
+  "parent_views",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    parentId: uuid("parent_id")
+      .notNull()
+      .references(() => users.id),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => users.id),
+    source: text("source", { enum: parentViewSource }).notNull(),
+    viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    idxStudentViewed: index("parent_views_student_viewed_idx").on(
+      t.schoolId,
+      t.studentId,
+      t.viewedAt
+    ),
+    idxParentViewed: index("parent_views_parent_viewed_idx").on(
+      t.schoolId,
+      t.parentId,
+      t.viewedAt
+    ),
+  })
+);
+
+// --- Push Subscriptions (Alamat Device Web Push) ---
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    idxUserSubs: index("push_subscriptions_user_idx").on(t.schoolId, t.userId),
+  })
+);
+
 // --- Types ---
 
 export type DailyIbadah = typeof dailyIbadah.$inferSelect;
@@ -142,5 +202,9 @@ export type SetoranEntry = typeof setoranEntries.$inferSelect;
 export type NewSetoranEntry = typeof setoranEntries.$inferInsert;
 export type EvaluasiBulanan = typeof evaluasiBulanan.$inferSelect;
 export type HafalanTarget = typeof hafalanTargets.$inferSelect;
+export type ParentView = typeof parentViews.$inferSelect;
+export type NewParentView = typeof parentViews.$inferInsert;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;

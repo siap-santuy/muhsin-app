@@ -61,7 +61,13 @@ import { createRaportRoutes } from "../modules/reports/presentation/routes";
 
 // Dashboard module
 import { DrizzleDashboardRepository } from "../modules/dashboard/infrastructure/DrizzleDashboardRepository";
+import { DrizzleActivityRepository } from "../modules/dashboard/infrastructure/DrizzleActivityRepository";
 import { GetDashboardSummaryUseCase } from "../modules/dashboard/application/use-cases/GetDashboardSummaryUseCase";
+import { GetKoorStudentActivityUseCase } from "../modules/dashboard/application/use-cases/GetKoorStudentActivityUseCase";
+import { GetKoorTeacherActivityUseCase } from "../modules/dashboard/application/use-cases/GetKoorTeacherActivityUseCase";
+import { RecordParentViewUseCase } from "../modules/dashboard/application/use-cases/RecordParentViewUseCase";
+import { RemindParentUseCase } from "../modules/dashboard/application/use-cases/RemindParentUseCase";
+import { RemindStudentUseCase } from "../modules/dashboard/application/use-cases/RemindStudentUseCase";
 import { createDashboardRoutes } from "../modules/dashboard/presentation/routes";
 
 // Munaqosah module
@@ -84,9 +90,14 @@ import { createKurikulumRoutes } from "../modules/kurikulum/presentation/routes"
 
 // Notifications module
 import { DrizzleCachedNotificationRepository } from "../modules/notifications/infrastructure/DrizzleCachedNotificationRepository";
+import { DrizzlePushSubscriptionRepository } from "../modules/notifications/infrastructure/DrizzlePushSubscriptionRepository";
+import { WebPushSender } from "../modules/notifications/infrastructure/WebPushSender";
 import { GetNotificationsUseCase } from "../modules/notifications/application/use-cases/GetNotificationsUseCase";
 import { MarkNotificationReadUseCase } from "../modules/notifications/application/use-cases/MarkNotificationReadUseCase";
 import { MarkAllNotificationsReadUseCase } from "../modules/notifications/application/use-cases/MarkAllNotificationsReadUseCase";
+import { SavePushSubscriptionUseCase } from "../modules/notifications/application/use-cases/SavePushSubscriptionUseCase";
+import { RemovePushSubscriptionUseCase } from "../modules/notifications/application/use-cases/RemovePushSubscriptionUseCase";
+import { SendPushToUserUseCase } from "../modules/notifications/application/use-cases/SendPushToUserUseCase";
 import { createNotificationRoutes } from "../modules/notifications/presentation/routes";
 
 // Middlewares
@@ -132,6 +143,11 @@ export interface ContainerDeps {
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
   // Dashboard
   getDashboardSummaryUseCase: GetDashboardSummaryUseCase;
+  getKoorStudentActivityUseCase: GetKoorStudentActivityUseCase;
+  getKoorTeacherActivityUseCase: GetKoorTeacherActivityUseCase;
+  recordParentViewUseCase: RecordParentViewUseCase;
+  remindParentUseCase: RemindParentUseCase;
+  remindStudentUseCase: RemindStudentUseCase;
   // Munaqosah
   getMunaqosahRequestsUseCase: GetMunaqosahRequestsUseCase;
   getMyMunaqosahExamsUseCase: GetMyMunaqosahExamsUseCase;
@@ -149,6 +165,9 @@ export interface ContainerDeps {
   getNotificationsUseCase: GetNotificationsUseCase;
   markNotificationReadUseCase: MarkNotificationReadUseCase;
   markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase;
+  savePushSubscriptionUseCase: SavePushSubscriptionUseCase;
+  removePushSubscriptionUseCase: RemovePushSubscriptionUseCase;
+  sendPushToUserUseCase: SendPushToUserUseCase;
   notificationRepo: DrizzleCachedNotificationRepository;
 }
 
@@ -281,13 +300,21 @@ export function createApp(deps: ContainerDeps): Hono {
   const raportRoutes = createRaportRoutes({
     getMonthlyRaportUseCase: deps.getMonthlyRaportUseCase,
     getSemesterRaportUseCase: deps.getSemesterRaportUseCase,
+    recordParentViewUseCase: deps.recordParentViewUseCase,
   });
   app.use("/raport/*", protectedAuth, tenantScopeMiddleware);
   app.use("/raport", protectedAuth, tenantScopeMiddleware);
   app.route("/raport", raportRoutes);
 
   // Dashboard
-  const dashboardRoutes = createDashboardRoutes(deps.getDashboardSummaryUseCase);
+  const dashboardRoutes = createDashboardRoutes({
+    summaryUseCase: deps.getDashboardSummaryUseCase,
+    studentActivityUseCase: deps.getKoorStudentActivityUseCase,
+    teacherActivityUseCase: deps.getKoorTeacherActivityUseCase,
+    recordParentViewUseCase: deps.recordParentViewUseCase,
+    remindParentUseCase: deps.remindParentUseCase,
+    remindStudentUseCase: deps.remindStudentUseCase,
+  });
   app.use("/dashboard/*", protectedAuth, tenantScopeMiddleware);
   app.use("/dashboard", protectedAuth, tenantScopeMiddleware);
   app.route("/dashboard", dashboardRoutes);
@@ -322,6 +349,8 @@ export function createApp(deps: ContainerDeps): Hono {
     getNotificationsUseCase: deps.getNotificationsUseCase,
     markNotificationReadUseCase: deps.markNotificationReadUseCase,
     markAllNotificationsReadUseCase: deps.markAllNotificationsReadUseCase,
+    savePushSubscriptionUseCase: deps.savePushSubscriptionUseCase,
+    removePushSubscriptionUseCase: deps.removePushSubscriptionUseCase,
   });
   app.use("/notifications/*", protectedAuth, tenantScopeMiddleware);
   app.use("/notifications", protectedAuth, tenantScopeMiddleware);
@@ -408,8 +437,24 @@ export function buildContainer() {
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
   const getSemesterRaportUseCase = new GetSemesterRaportUseCase(raportRepo);
 
+  // UseCases — Notifications (sebelum Dashboard karena remind butuh push)
+  const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepo);
+  const markNotificationReadUseCase = new MarkNotificationReadUseCase(notificationRepo);
+  const markAllNotificationsReadUseCase = new MarkAllNotificationsReadUseCase(notificationRepo);
+  const pushSubscriptionRepo = new DrizzlePushSubscriptionRepository(db);
+  const pushSender = new WebPushSender();
+  const savePushSubscriptionUseCase = new SavePushSubscriptionUseCase(pushSubscriptionRepo);
+  const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
+  const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
+
   // UseCases — Dashboard
   const getDashboardSummaryUseCase = new GetDashboardSummaryUseCase(dashboardRepo);
+  const activityRepo = new DrizzleActivityRepository(db);
+  const getKoorStudentActivityUseCase = new GetKoorStudentActivityUseCase(activityRepo);
+  const getKoorTeacherActivityUseCase = new GetKoorTeacherActivityUseCase(activityRepo);
+  const recordParentViewUseCase = new RecordParentViewUseCase(activityRepo);
+  const remindParentUseCase = new RemindParentUseCase(activityRepo, notificationRepo, sendPushToUserUseCase);
+  const remindStudentUseCase = new RemindStudentUseCase(activityRepo, notificationRepo, dailyIbadahRepo, sendPushToUserUseCase);
 
   // UseCases — Munaqosah
   const getMunaqosahRequestsUseCase = new GetMunaqosahRequestsUseCase(munaqosahRepo);
@@ -424,11 +469,6 @@ export function buildContainer() {
   const getKurikulumCategoriesUseCase = new GetKurikulumCategoriesUseCase(kurikulumRepo);
   const createCategoryUseCase = new CreateCategoryUseCase(kurikulumRepo);
   const createSubcategoryUseCase = new CreateSubcategoryUseCase(kurikulumRepo);
-
-  // UseCases — Notifications
-  const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepo);
-  const markNotificationReadUseCase = new MarkNotificationReadUseCase(notificationRepo);
-  const markAllNotificationsReadUseCase = new MarkAllNotificationsReadUseCase(notificationRepo);
 
   return {
     app: createApp({
@@ -459,6 +499,11 @@ export function buildContainer() {
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
       getDashboardSummaryUseCase,
+      getKoorStudentActivityUseCase,
+      getKoorTeacherActivityUseCase,
+      recordParentViewUseCase,
+      remindParentUseCase,
+      remindStudentUseCase,
       getMunaqosahRequestsUseCase,
       getMyMunaqosahExamsUseCase,
       createMunaqosahRequestUseCase,
@@ -473,6 +518,9 @@ export function buildContainer() {
       getNotificationsUseCase,
       markNotificationReadUseCase,
       markAllNotificationsReadUseCase,
+      savePushSubscriptionUseCase,
+      removePushSubscriptionUseCase,
+      sendPushToUserUseCase,
       notificationRepo,
     }),
     db,

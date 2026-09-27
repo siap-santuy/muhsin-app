@@ -153,6 +153,27 @@ export const correctSetoranInputSchema = z.object({
 });
 export type CorrectSetoranInput = z.infer<typeof correctSetoranInputSchema>;
 
+// --- Activity & Remind Schemas ---
+
+export const parentViewSourceSchema = z.enum(["dashboard", "raport"]);
+export type ParentViewSource = z.infer<typeof parentViewSourceSchema>;
+
+export const koorStudentActivityQuerySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  classId: z.string().uuid().optional(),
+});
+export type KoorStudentActivityQuery = z.infer<typeof koorStudentActivityQuerySchema>;
+
+export const remindParentInputSchema = z.object({
+  studentId: z.string().uuid(),
+});
+export type RemindParentInput = z.infer<typeof remindParentInputSchema>;
+
+export const remindStudentInputSchema = z.object({
+  studentId: z.string().uuid().optional(),
+});
+export type RemindStudentInput = z.infer<typeof remindStudentInputSchema>;
+
 // --- Surah Reference ---
 export * from "./surah";
 

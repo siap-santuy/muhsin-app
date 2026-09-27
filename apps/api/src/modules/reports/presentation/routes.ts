@@ -3,10 +3,31 @@ import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetMonthlyRaportUseCase } from "../application/use-cases/GetMonthlyRaportUseCase";
 import type { GetSemesterRaportUseCase } from "../application/use-cases/GetSemesterRaportUseCase";
+import type { RecordParentViewUseCase } from "../../dashboard/application/use-cases/RecordParentViewUseCase";
 
 export interface RaportRoutesDeps {
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
+  recordParentViewUseCase?: RecordParentViewUseCase;
+}
+
+function trackParentView(
+  recordUseCase: RecordParentViewUseCase | undefined,
+  user: { userId: string; schoolId: string; role: string },
+  studentId: string | undefined
+) {
+  if (!recordUseCase || user.role !== "parent") return;
+  const target = studentId && studentId.length > 0 ? studentId : undefined;
+  const resolve = target
+    ? Promise.resolve(target)
+    : recordUseCase.resolveFirstChild(user.userId, user.schoolId);
+  void resolve
+    .then((id) =>
+      id
+        ? recordUseCase.execute({ schoolId: user.schoolId, parentId: user.userId, studentId: id, source: "raport" })
+        : undefined
+    )
+    .catch(() => {});
 }
 
 export function createRaportRoutes(deps: RaportRoutesDeps) {
@@ -26,6 +47,8 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
         month,
         user.schoolId
       );
+
+      trackParentView(deps.recordParentViewUseCase, user, c.req.query("studentId"));
 
       return c.json({ data: raport, error: null, meta: null }, 200);
     }
@@ -47,6 +70,8 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
         tahunAjaran,
         user.schoolId
       );
+
+      trackParentView(deps.recordParentViewUseCase, user, c.req.query("studentId"));
 
       return c.json({ data: raport, error: null, meta: null }, 200);
     }
