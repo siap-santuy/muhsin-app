@@ -3,10 +3,11 @@ import { Heart, ShieldCheck, Star, Sparkles, ChevronRight } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { VersionSliderDrawer } from "@/components/versioning/VersionSliderDrawer";
 import versionsData from "@/data/versions.json";
+import { APP_VERSION } from "@/lib/appVersion";
 
 export function AboutPage() {
   const [isSliderOpen, setIsSliderOpen] = useState(false);
-  const latestVersion = versionsData[0]?.version || "v1.0.1";
+  const latestVersion = versionsData[0]?.version || APP_VERSION;
 
   return (
     <SettingsPageShell title="Tentang Muhsin App" subtitle="Informasi versi &amp; pengembang">

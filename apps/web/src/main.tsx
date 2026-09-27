@@ -58,6 +58,16 @@ import "@/index.css";
 // Auto-register service worker for PWA capabilities
 registerSW({ immediate: true });
 
+// Push notification click dari SW saat aplikasi terbuka: navigasi hash
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (event: any) => {
+    const url = event?.data?.url;
+    if (typeof url === "string" && url.startsWith("#/")) {
+      window.location.hash = url;
+    }
+  });
+}
+
 const queryClient = new QueryClient();
 
 function useHashRoute(): string {

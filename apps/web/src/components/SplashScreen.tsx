@@ -1,3 +1,5 @@
+import { APP_VERSION } from "@/lib/appVersion";
+
 export function SplashScreen() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-between bg-gradient-to-b from-[#EFF8FC] via-[#F5FAFD] to-[#FFFFFF] px-6 py-10 text-center">
@@ -31,7 +33,7 @@ export function SplashScreen() {
           <p>
             Powered by <span className="font-semibold text-slate-600">MuhsinApp</span>
           </p>
-          <p className="text-[10px] text-slate-400">v1.0.1</p>
+          <p className="text-[10px] text-slate-400">{APP_VERSION}</p>
         </div>
       </div>
     </div>

@@ -26,8 +26,23 @@ interface TeacherRecord {
   studentCount: number;
 }
 
+interface TeacherActivityInfo {
+  lastAssessmentAt: string | null;
+  assessedToday: boolean;
+  countToday: number;
+}
+
+function formatDateTime(iso: string | null) {
+  if (!iso) return "Belum pernah";
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return `${date} ${time}`;
+}
+
 export function KoorTeacherPage() {
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [activityMap, setActivityMap] = useState<Map<string, TeacherActivityInfo>>(new Map());
   const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [substitutions, setSubstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +80,12 @@ export function KoorTeacherPage() {
       setTeachers(data);
       setClassOptions(classes);
       setSubstitutions(subs);
+      try {
+        const activity = await api.getKoorTeacherActivity();
+        setActivityMap(new Map(activity.map((a) => [a.teacherId, a])));
+      } catch {
+        setActivityMap(new Map());
+      }
     } catch {
       // Fallback
     } finally {
@@ -321,19 +342,22 @@ export function KoorTeacherPage() {
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Kelas Bimbingan</th>
                     <th className="px-4 py-3">Total Siswa</th>
-                    <th className="px-4 py-3 text-center">Status</th>
+                    <th className="px-4 py-3">Penilaian Terakhir</th>
+                    <th className="px-4 py-3 text-center">Hari Ini</th>
                     <th className="px-4 py-3 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-line/40 font-medium">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-xs text-brand-text-muted">
+                      <td colSpan={7} className="py-8 text-center text-xs text-brand-text-muted">
                         Tidak ada guru ditemukan.
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((t) => (
+                    filtered.map((t) => {
+                      const act = activityMap.get(t.id);
+                      return (
                       <tr key={t.id} className="hover:bg-brand-page/50">
                         <td className="px-4 py-3 font-bold text-brand-navy">{t.name}</td>
                         <td className="px-4 py-3 text-brand-text-muted">{t.email}</td>
@@ -347,9 +371,12 @@ export function KoorTeacherPage() {
                         <td className="px-4 py-3 font-bold text-brand-navy">
                           {t.studentCount} Siswa
                         </td>
+                        <td className="px-4 py-3 font-semibold text-brand-navy">
+                          {formatDateTime(act?.lastAssessmentAt ?? null)}
+                        </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                            Aktif
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${act?.assessedToday ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                            {act?.assessedToday ? `Sudah (${act.countToday})` : "Belum"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -382,7 +409,8 @@ export function KoorTeacherPage() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

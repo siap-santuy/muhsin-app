@@ -31,8 +31,40 @@ interface StudentRecord {
   currentStreak: number;
 }
 
+interface ActivityRow {
+  studentId: string;
+  studentName: string;
+  className: string | null;
+  yaumiyahStatus: "missing" | "draft" | "submitted";
+  parentLastViewAt: string | null;
+  parentLastSource: "dashboard" | "raport" | null;
+  parentName: string | null;
+}
+
+function yaumiyahBadge(status: ActivityRow["yaumiyahStatus"]) {
+  if (status === "submitted") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (status === "draft") return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-red-50 text-red-600 border-red-200";
+}
+
+function yaumiyahLabel(status: ActivityRow["yaumiyahStatus"]) {
+  if (status === "submitted") return "Sudah Isi";
+  if (status === "draft") return "Draft";
+  return "Belum Isi";
+}
+
+function formatDateTime(iso: string | null) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return `${date} ${time}`;
+}
+
 export function KoorStudentPage() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [activityMap, setActivityMap] = useState<Map<string, ActivityRow>>(new Map());
+  const [activityDate, setActivityDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -62,6 +94,15 @@ export function KoorStudentPage() {
       ]);
       setStudents(data);
       setClassOptions(classes);
+      try {
+        const activity = await api.getKoorStudentActivity({
+          date: activityDate,
+          ...(classFilter !== "all" ? { classId: classFilter } : {}),
+        });
+        setActivityMap(new Map(activity.map((a) => [a.studentId, a])));
+      } catch {
+        setActivityMap(new Map());
+      }
     } catch {
       // Fallback
     } finally {
@@ -71,7 +112,16 @@ export function KoorStudentPage() {
 
   useEffect(() => {
     load();
-  }, [classFilter]);
+  }, [classFilter, activityDate]);
+
+  async function handleRemindParent(studentId: string, studentName: string) {
+    try {
+      await api.remindParent(studentId);
+      toast.success(`Pengingat terkirim ke ortu ${studentName}`);
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal mengirim pengingat");
+    }
+  }
 
   async function handleSaveStudent(e: React.FormEvent) {
     e.preventDefault();
@@ -184,6 +234,17 @@ export function KoorStudentPage() {
                 ))}
               </select>
             </div>
+
+            <input
+              type="date"
+              value={activityDate}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => {
+                if (e.target.value) setActivityDate(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-xl border border-brand-line/60 bg-brand-page px-3 py-2 text-xs font-semibold text-brand-navy outline-none"
+            />
 
             <button
               type="button"
@@ -318,8 +379,8 @@ export function KoorStudentPage() {
                   <tr>
                     <th className="px-4 py-3">Nama Siswa</th>
                     <th className="px-4 py-3">Kelas</th>
-                    <th className="px-4 py-3">Level / EXP</th>
-                    <th className="px-4 py-3">Streak Yaumiyah</th>
+                    <th className="px-4 py-3">Yaumiyah</th>
+                    <th className="px-4 py-3">Ortu Terakhir Lihat</th>
                     <th className="px-4 py-3 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -331,7 +392,10 @@ export function KoorStudentPage() {
                       </td>
                     </tr>
                   ) : (
-                    paginatedStudents.map((st) => (
+                    paginatedStudents.map((st) => {
+                      const act = activityMap.get(st.id);
+                      const yaumiyah = act?.yaumiyahStatus ?? "missing";
+                      return (
                       <tr key={st.id} className="hover:bg-brand-page/50">
                         <td className="px-4 py-3">
                           <p className="font-bold text-brand-navy">{st.name}</p>
@@ -340,14 +404,28 @@ export function KoorStudentPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3 font-semibold">{st.className ?? "-"}</td>
-                        <td className="px-4 py-3 font-bold text-brand-cyan">
-                          Lv. {st.level} ({st.totalExp} EXP)
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${yaumiyahBadge(yaumiyah)}`}>
+                            {yaumiyahLabel(yaumiyah)}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 font-semibold text-brand-amber">
-                          🔥 {st.currentStreak} Hari
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-brand-navy">{formatDateTime(act?.parentLastViewAt ?? null)}</p>
+                          <p className="text-[10px] text-brand-text-muted">
+                            {act?.parentLastSource ? `via ${act.parentLastSource}` : "belum terpantau"}
+                            {act?.parentName ? ` • ${act.parentName}` : ""}
+                          </p>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRemindParent(st.id, st.name)}
+                              className="rounded-lg bg-brand-amber/15 px-2.5 py-1 text-[11px] font-bold text-brand-amber hover:bg-brand-amber hover:text-white transition-all"
+                              title="Ingatkan orang tua"
+                            >
+                              Ingatkan
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -386,7 +464,8 @@ export function KoorStudentPage() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

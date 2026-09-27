@@ -392,6 +392,41 @@ class ApiClient {
     return this.request<T>("GET", `/dashboard/summary`);
   }
 
+  async getKoorStudentActivity(params: { date?: string; classId?: string } = {}): Promise<Array<{
+    studentId: string;
+    studentName: string;
+    className: string | null;
+    yaumiyahStatus: "missing" | "draft" | "submitted";
+    parentLastViewAt: string | null;
+    parentLastSource: "dashboard" | "raport" | null;
+    parentName: string | null;
+  }>> {
+    const query = new URLSearchParams();
+    if (params.date) query.set("date", params.date);
+    if (params.classId) query.set("classId", params.classId);
+    const qs = query.toString();
+    return this.request("GET", qs ? `/dashboard/koor-student-activity?${qs}` : `/dashboard/koor-student-activity`);
+  }
+
+  async getKoorTeacherActivity(date?: string): Promise<Array<{
+    teacherId: string;
+    teacherName: string;
+    classes: Array<{ id: string; name: string }>;
+    lastAssessmentAt: string | null;
+    assessedToday: boolean;
+    countToday: number;
+  }>> {
+    return this.request("GET", date ? `/dashboard/koor-teacher-activity?date=${date}` : `/dashboard/koor-teacher-activity`);
+  }
+
+  async remindParent(studentId: string): Promise<{ reminded: number }> {
+    return this.request("POST", `/dashboard/remind-parent`, { studentId });
+  }
+
+  async remindStudent(studentId?: string): Promise<{ reminded: boolean }> {
+    return this.request("POST", `/dashboard/remind-student`, studentId ? { studentId } : {});
+  }
+
   async getMunaqosahRequests(status?: string) {
     const url = status
       ? `/munaqosah/requests?status=${status}`
@@ -729,6 +764,18 @@ class ApiClient {
 
   async getNotifications() {
     return this.request("GET", `/notifications`);
+  }
+
+  async getPushPublicKey(): Promise<{ publicKey: string }> {
+    return this.request("GET", `/notifications/push-public-key`);
+  }
+
+  async savePushSubscription(input: { endpoint: string; p256dh: string; auth: string; userAgent?: string | null }) {
+    return this.request("POST", `/notifications/push-subscriptions`, input);
+  }
+
+  async removePushSubscription(endpoint: string) {
+    return this.request("DELETE", `/notifications/push-subscriptions`, { endpoint });
   }
 
   async markNotificationRead(id: string) {

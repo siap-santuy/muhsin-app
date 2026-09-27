@@ -17,6 +17,7 @@ import { ReminderBanner } from "@/components/ui/ReminderBanner";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
 import { getDisplayName } from "@/lib/utils";
+import { toast } from "@/store/toastStore";
 
 const QUOTE = {
   text: '"Sesungguhnya Allah mencintai orang-orang yang berbuat ihsan."',
@@ -127,6 +128,14 @@ export function ParentDashboardPage() {
             <ReminderBanner
               text={`${childName} belum mengisi ibadah yaumiyah hari ini.`}
               action="Ingatkan"
+              onAction={async () => {
+                try {
+                  await api.remindStudent();
+                  toast.success("Pengingat terkirim ke ananda");
+                } catch (err: any) {
+                  toast.warning(err.message || "Gagal mengirim pengingat");
+                }
+              }}
             />
           ) : null}
 

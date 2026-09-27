@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useTenantStore } from "@/store/tenantStore";
 import { Button } from "@/components/ui/button";
 import { PWAInstallLoginBanner } from "@/components/pwa/PWAInstallPrompt";
+import { APP_VERSION } from "@/lib/appVersion";
 
 export function LoginPage() {
   const login = useAuthStore((s) => s.login);
@@ -141,7 +142,7 @@ export function LoginPage() {
       <p>
         Powered by <span className="font-semibold text-slate-600">MuhsinApp</span>
       </p>
-      <p className="text-[10px] text-slate-400">v1.0.1</p>
+      <p className="text-[10px] text-slate-400">{APP_VERSION}</p>
     </div>
   );
 

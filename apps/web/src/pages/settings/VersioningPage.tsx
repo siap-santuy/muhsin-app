@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import versionsData from "@/data/versions.json";
+import { APP_VERSION } from "@/lib/appVersion";
 import type { AppVersionItem } from "@/components/versioning/VersionSliderDrawer";
 
 export function VersioningPage() {
@@ -70,7 +71,7 @@ export function VersioningPage() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-extrabold text-brand-navy">
-                Muhsin App {versions[0]?.version || "v1.0.1"}
+                Muhsin App {versions[0]?.version || APP_VERSION}
               </h3>
               <span className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white">
                 Versi Saat Ini

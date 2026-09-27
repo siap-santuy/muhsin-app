@@ -1,8 +1,48 @@
 [
   {
+    "version": "v1.0.4",
+    "releaseDate": "27 September 2026",
+    "isLatest": true,
+    "badge": "Terbaru",
+    "title": "Tabel Aktivitas Koor, Pantauan Ortu & Web Push Notification",
+    "summary": "Koordinator kini memantau aktivitas harian siswa dan guru dalam tabel: status yaumiyah per siswa, kapan ortu terakhir melihat, kapan guru terakhir menilai, plus tombol ingatkan. Pengingat terkirim sebagai web push notification yang sampai walau tab aplikasi ditutup.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel aktivitas siswa harian di halaman koordinator: filter tanggal dan kelas, status yaumiyah (Belum Isi/Draft/Sudah Isi), kolom Ortu Terakhir Lihat (tanggal, jam, via dashboard/raport), dan tombol Ingatkan Ortu per siswa."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel aktivitas guru di halaman koordinator: kolom Penilaian Terakhir (tanggal dan jam) serta badge Sudah/Belum Menilai hari ini."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Web push notification tanpa Firebase: toggle manual di Profil (ortu, siswa, guru), banner sampai walau tab ditutup, klik banner membuka halaman yang relevan. iPhone didukung mulai iOS 16.4+ setelah PWA dipasang via Add to Home Screen."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tombol Ingatkan di dashboard orang tua kini hidup: mengirim pengingat in-app dan push ke ananda jika yaumiyah hari ini belum terisi."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Aturan Bisnis",
+        "description": "Rate-limit pengingat 1x per hari per target agar koordinator dan orang tua tidak bisa spam notifikasi."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan UI/UX",
+        "description": "Kolom Level/EXP/Streak dihapus dari tabel koordinator agar laporan tidak tercampur data gamifikasi (hanya tampil di dashboard live siswa dan orang tua)."
+      }
+    ]
+  },
+  {
     "version": "v1.0.3",
     "releaseDate": "11 September 2026",
-    "isLatest": true,
+    "isLatest": false,
     "badge": "Terbaru",
     "title": "Integrasi Penuh Halaman Koordinator: Dashboard Live, CRUD, Substitusi & Penjadwalan",
     "summary": "Seluruh halaman koordinator kini terhubung API tanpa data dummy: dashboard agregat live 7 hari, CRUD siswa/guru/kelas, penugasan guru pengganti, penjadwalan munaqosah dengan penguji dan tanggal, serta kurikulum dengan field penilaian dinamis.",

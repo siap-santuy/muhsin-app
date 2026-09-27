@@ -44,6 +44,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Handler push notification digabung ke service worker Workbox
+        importScripts: ["/push-handler.js"],
         // Cache static assets: JS, CSS, HTML, Fonts, Images
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB to cover brand assets
