@@ -82,9 +82,10 @@ export function TeacherTTQInputPage({
         if (foundStudent) {
           const cat = catList.find(
             (c: any) =>
-              c.code === initialCategory ||
+              c.code?.toLowerCase() === initialCategory.toLowerCase() ||
+              c.code?.toLowerCase().includes(initialCategory.toLowerCase()) ||
               c.name
-                .toLowerCase()
+                ?.toLowerCase()
                 .includes(initialCategory === "murojaah" ? "muroja" : initialCategory)
           );
 
@@ -136,8 +137,9 @@ export function TeacherTTQInputPage({
   function getSubcategoryId(catType: TTQCategoryType): string | null {
     const found = categories.find(
       (c) =>
-        c.code === catType ||
-        c.name.toLowerCase().includes(catType === "murojaah" ? "muroja" : catType)
+        c.code?.toLowerCase() === catType.toLowerCase() ||
+        c.code?.toLowerCase().includes(catType.toLowerCase()) ||
+        c.name?.toLowerCase().includes(catType === "murojaah" ? "muroja" : catType)
     );
     return found?.id || categories[0]?.id || null;
   }
@@ -255,6 +257,12 @@ export function TeacherTTQInputPage({
       toast.success(`Penilaian ${categoryTitle} berhasil disimpan`);
 
       sessionStorage.setItem("selectedStudentId", student.id);
+      try {
+        const raw = sessionStorage.getItem("muhsin_ttq_filter_state");
+        const parsed = raw ? JSON.parse(raw) : {};
+        parsed.statusFilter = "all";
+        sessionStorage.setItem("muhsin_ttq_filter_state", JSON.stringify(parsed));
+      } catch {}
       window.location.hash = `#/student-list`;
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan sistem");

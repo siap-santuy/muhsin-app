@@ -68,9 +68,10 @@ export function TeacherTTQViewPage({
         if (currentStudent) {
           const cat = catList.find(
             (c) =>
-              c.code === initialCategory ||
+              c.code?.toLowerCase() === initialCategory.toLowerCase() ||
+              c.code?.toLowerCase().includes(initialCategory.toLowerCase()) ||
               c.name
-                .toLowerCase()
+                ?.toLowerCase()
                 .includes(initialCategory === "murojaah" ? "muroja" : initialCategory)
           );
 

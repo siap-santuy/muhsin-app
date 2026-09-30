@@ -178,16 +178,16 @@ export class DrizzleStudentRepository implements IStudentRepository {
       const latestSetoran = studentSetorans[0] || null;
 
       const ziyadahSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+        (s) => s.subcategoryCode?.toLowerCase().includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
       );
       const murojaahSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+        (s) => s.subcategoryCode?.toLowerCase().includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
       );
       const sabiqSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+        (s) => s.subcategoryCode?.toLowerCase().includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
       );
       const talaqiSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+        (s) => s.subcategoryCode?.toLowerCase().includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
       );
 
       const categorySetoranStatus = {
@@ -375,16 +375,16 @@ export class DrizzleStudentRepository implements IStudentRepository {
       const latestSetoran = studentSetorans[0] || null;
 
       const ziyadahSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
+        (s) => s.subcategoryCode?.toLowerCase().includes("ziyadah") || s.subcategoryName?.toLowerCase().includes("ziyadah")
       );
       const murojaahSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
+        (s) => s.subcategoryCode?.toLowerCase().includes("murojaah") || s.subcategoryName?.toLowerCase().includes("muroja")
       );
       const sabiqSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
+        (s) => s.subcategoryCode?.toLowerCase().includes("sabiq") || s.subcategoryName?.toLowerCase().includes("sabiq")
       );
       const talaqiSetoran = studentSetorans.find(
-        (s) => s.subcategoryCode?.includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
+        (s) => s.subcategoryCode?.toLowerCase().includes("talaqi") || s.subcategoryName?.toLowerCase().includes("talaqi")
       );
 
       const categorySetoranStatus = {
