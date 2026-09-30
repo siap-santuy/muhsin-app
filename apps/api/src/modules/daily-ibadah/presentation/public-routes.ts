@@ -189,10 +189,11 @@ export function createPublicDailyIbadahRoutes(deps: PublicDailyIbadahRoutesDeps)
     }
 
     try {
+      const { studentId: _, ...ibadahFields } = parsed.data;
       const result = await deps.submitUseCase.execute({
         schoolId: school.id,
         studentId: student.id,
-        ...parsed.data,
+        ...ibadahFields,
       });
 
       return c.json({ data: result, error: null, meta: null }, 200);

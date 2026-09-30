@@ -9,7 +9,7 @@ describe("Public Daily Ibadah Routes", () => {
   it("lists classes for a school", async () => {
     const mockDb = {
       select: vi.fn().mockImplementation(() => ({
-        from: vi.fn().mockImplementation((table) => ({
+        from: vi.fn().mockImplementation(() => ({
           where: vi.fn().mockImplementation(() => ({
             limit: vi.fn().mockResolvedValue([{ id: schoolId, slug: "smp-alfitrah", name: "SMP IT Al Fitrah" }]),
             orderBy: vi.fn().mockResolvedValue([
@@ -29,19 +29,24 @@ describe("Public Daily Ibadah Routes", () => {
 
     const res = await app.request("/smp-alfitrah/classes");
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.data).toHaveLength(2);
     expect(json.data[0].name).toBe("Kelas 7A");
   });
 
   it("submits yaumiyah successfully for student of the school", async () => {
+    let call = 0;
     const mockDb = {
       select: vi.fn().mockImplementation(() => ({
         from: vi.fn().mockImplementation(() => ({
           where: vi.fn().mockImplementation(() => ({
-            limit: vi.fn().mockImplementation(() =>
-              Promise.resolve([{ id: schoolId, slug: "smp-alfitrah", name: "SMP IT Al Fitrah", role: "student" }])
-            ),
+            limit: vi.fn().mockImplementation(() => {
+              call++;
+              if (call === 1) {
+                return Promise.resolve([{ id: schoolId, slug: "smp-alfitrah", name: "SMP IT Al Fitrah" }]);
+              }
+              return Promise.resolve([{ id: studentId, role: "student" }]);
+            }),
           })),
         })),
       })),
@@ -80,7 +85,7 @@ describe("Public Daily Ibadah Routes", () => {
     });
 
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.data.expEarned).toBe(25);
     expect(mockSubmitUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -133,7 +138,7 @@ describe("Public Daily Ibadah Routes", () => {
     });
 
     expect(res.status).toBe(403);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.error.code).toBe("FORBIDDEN");
     expect(mockSubmitUseCase.execute).not.toHaveBeenCalled();
   });

@@ -90,7 +90,7 @@ describe("Setoran HTTP Integration & Input Verification", () => {
     });
 
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.data.scores.tajwid).toBe(85);
     expect(json.data.teacherId).toBe(teacherId);
     expect(mockRepo.create).toHaveBeenCalledTimes(1);
@@ -100,7 +100,7 @@ describe("Setoran HTTP Integration & Input Verification", () => {
   });
 
   it("handles non-Hadir status (Sakit/Izin/Alpa) without errors or EXP", async () => {
-    const { app, mockRepo, mockAddExpUseCase } = createTestApp("teacher");
+    const { app, mockAddExpUseCase } = createTestApp("teacher");
 
     const payload = {
       studentId,
@@ -120,7 +120,7 @@ describe("Setoran HTTP Integration & Input Verification", () => {
     });
 
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.data.keterangan).toBe("[Sakit] Demam");
     expect(mockAddExpUseCase.execute).not.toHaveBeenCalled();
   });

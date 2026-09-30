@@ -12,6 +12,7 @@
     "db:create": "bun run src/db/manage-db.ts create",
     "db:reset": "bun run src/db/manage-db.ts reset && bun run db:migrate",
     "db:seed": "bun run src/db/seed.ts",
+    "db:seed:sim": "bun run src/db/seed-simulation.ts",
     "db:purge-views": "bun run src/db/purge-parent-views.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
