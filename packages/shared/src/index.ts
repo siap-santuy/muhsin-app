@@ -93,6 +93,18 @@ export const dailyIbadahInputSchema = z.object({
 });
 export type DailyIbadahInput = z.infer<typeof dailyIbadahInputSchema>;
 
+export const publicDailyIbadahSubmitSchema = dailyIbadahInputSchema.extend({
+  studentId: z.string().uuid(),
+});
+export type PublicDailyIbadahSubmitInput = z.infer<typeof publicDailyIbadahSubmitSchema>;
+
+export const publicStudentItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  classId: z.string().uuid().nullable().optional(),
+});
+export type PublicStudentItem = z.infer<typeof publicStudentItemSchema>;
+
 // --- User Profile Schemas ---
 
 export const updateProfileInputSchema = z.object({

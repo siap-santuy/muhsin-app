@@ -48,6 +48,7 @@ import { ChangePasswordPage } from "@/pages/settings/ChangePasswordPage";
 import { EditProfilePage } from "@/pages/settings/EditProfilePage";
 import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
+import { PublicYaumiyahPage } from "@/pages/public/PublicYaumiyahPage";
 import { MobileAppShell } from "@/components/layout/MobileAppShell";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -55,7 +56,7 @@ import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { registerSW } from "virtual:pwa-register";
 import "@/index.css";
 
-// Auto-register service worker for PWA capabilities
+// Register service worker for PWA (mode prompt: no sudden auto-reloads)
 registerSW({ immediate: true });
 
 // Push notification click dari SW saat aplikasi terbuka: navigasi hash
@@ -258,13 +259,26 @@ function App() {
     return <SplashScreen />;
   }
 
-  if (!user) {
-    return <LoginPage />;
-  }
-
   const rawHash = route.replace("#/", "").replace("#", "");
   const [path, queryString] = rawHash.split("?");
   const searchParams = new URLSearchParams(queryString || "");
+
+  // Public Routes (Accessible without login)
+  if (
+    path === "isi-yaumiyah" ||
+    path === "public/yaumiyah" ||
+    path === "public-yaumiyah"
+  ) {
+    return (
+      <MobileAppShell>
+        <PublicYaumiyahPage />
+      </MobileAppShell>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
 
   // Role: KOORDINATOR TTQ (Full Desktop Shell Layout)
   if (user.role === "koordinator_ttq") {

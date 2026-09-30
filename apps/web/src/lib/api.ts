@@ -3,6 +3,7 @@ import type {
   LoginOutput,
   GamificationSummary,
   DailyIbadahInput,
+  PublicDailyIbadahSubmitInput,
   CreateSetoranInput,
   UpdateProfileInput,
   ChangePasswordInput,
@@ -12,11 +13,24 @@ import {
   addToOfflineQueue,
   getOfflineQueue,
   removeFromOfflineQueue,
+  incrementRetryCount,
 } from "./offlineQueue";
 import { getActiveSchoolId } from "@/store/tenantStore";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 export const SCHOOL_ID = import.meta.env.VITE_SCHOOL_ID || "school-default-id";
+
+export class ApiHttpError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+    public readonly details?: any
+  ) {
+    super(message);
+    this.name = "ApiHttpError";
+  }
+}
 
 const GENERIC_ERROR = "Terjadi kesalahan server";
 const OFFLINE_CACHE_PREFIX = "muhsin_offline_get_";
@@ -155,11 +169,16 @@ async function handleResponse<T = any>(res: Response, retryFn?: (newToken: strin
 
   // Expose backend error message for all 4xx client errors (400, 401, 403, 404, 422, etc.)
   if (res.status >= 400 && res.status < 500) {
-    throw new Error(json.error?.message || json.message || "Permintaan tidak valid");
+    throw new ApiHttpError(
+      res.status,
+      json.error?.code || "CLIENT_ERROR",
+      json.error?.message || json.message || "Permintaan tidak valid",
+      json.error?.details
+    );
   }
 
   // 500+ server errors
-  throw new Error(GENERIC_ERROR);
+  throw new ApiHttpError(res.status, "SERVER_ERROR", GENERIC_ERROR);
 }
 
 let isProcessingOfflineQueue = false;
@@ -247,6 +266,9 @@ class ApiClient {
       });
       return res;
     } catch (err) {
+      if (err instanceof ApiHttpError) {
+        throw err;
+      }
       // Offline fallback: queue draft mutation and update local date cache
       const raw = localStorage.getItem("muhsin-auth");
       const user = raw ? JSON.parse(raw)?.state?.user : null;
@@ -274,6 +296,9 @@ class ApiClient {
       });
       return res;
     } catch (err) {
+      if (err instanceof ApiHttpError) {
+        throw err;
+      }
       // Offline fallback: queue submission mutation and update local date cache
       const raw = localStorage.getItem("muhsin-auth");
       const user = raw ? JSON.parse(raw)?.state?.user : null;
@@ -296,6 +321,9 @@ class ApiClient {
     try {
       return await this.request("POST", `/setoran`, input);
     } catch (err) {
+      if (err instanceof ApiHttpError) {
+        throw err;
+      }
       const raw = localStorage.getItem("muhsin-auth");
       const user = raw ? JSON.parse(raw)?.state?.user : null;
       addToOfflineQueue({
@@ -333,8 +361,17 @@ class ApiClient {
           await this.request(item.method, item.endpoint, item.body);
           removeFromOfflineQueue(item.id);
           processed++;
-        } catch {
-          // Stop on first failure if offline
+        } catch (err: any) {
+          // If server rejected with 4xx client/validation error:
+          // Data is invalid or permanently rejected. Drop immediately so it doesn't block other items.
+          if (err instanceof ApiHttpError && err.status >= 400 && err.status < 500) {
+            removeFromOfflineQueue(item.id);
+            console.warn(`[OfflineSync] Dropped rejected item ${item.endpoint}: ${err.message}`);
+            continue;
+          }
+
+          // If network offline or 5xx server error, increment retry and stop loop to retry later
+          incrementRetryCount(item.id);
           break;
         }
       }
@@ -784,6 +821,30 @@ class ApiClient {
 
   async markAllNotificationsRead() {
     return this.request("PATCH", `/notifications/read-all`);
+  }
+
+  async getPublicClasses(slug: string): Promise<Array<{ id: string; name: string }>> {
+    return this.request("GET", `/public/daily-ibadah/${slug}/classes`);
+  }
+
+  async getPublicStudents(slug: string, classId?: string): Promise<Array<{ id: string; name: string; classId?: string | null }>> {
+    const qs = classId ? `?classId=${encodeURIComponent(classId)}` : "";
+    return this.request("GET", `/public/daily-ibadah/${slug}/students${qs}`);
+  }
+
+  async getPublicDailyIbadahStatus(
+    slug: string,
+    studentId: string,
+    date: string
+  ): Promise<{ status: "submitted" | "draft" | null; record?: any }> {
+    return this.request(
+      "GET",
+      `/public/daily-ibadah/${slug}/status?studentId=${encodeURIComponent(studentId)}&date=${encodeURIComponent(date)}`
+    );
+  }
+
+  async submitPublicDailyIbadah(slug: string, input: PublicDailyIbadahSubmitInput) {
+    return this.request("POST", `/public/daily-ibadah/${slug}/submit`, input);
   }
 }
 

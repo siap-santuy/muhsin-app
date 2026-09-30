@@ -104,6 +104,7 @@ import { createNotificationRoutes } from "../modules/notifications/presentation/
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
 import { createPublicSchoolRoutes, createSchoolAdminRoutes } from "../modules/schools/presentation/routes";
+import { createPublicDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/public-routes";
 import { DrizzleSchoolAdminRepository } from "../modules/schools/infrastructure/DrizzleSchoolAdminRepository";
 import { ManageStudentUseCase, ManageTeacherUseCase } from "../modules/schools/application/use-cases/ManageSchoolUserUseCase";
 import { errorHandler } from "../middleware/error-handler";
@@ -229,6 +230,14 @@ export function createApp(deps: ContainerDeps): Hono {
   // Public auth & school routes
   app.route("/auth", buildAuthRoutes(deps));
   app.route("/schools", createPublicSchoolRoutes(deps.db));
+  app.route(
+    "/public/daily-ibadah",
+    createPublicDailyIbadahRoutes({
+      db: deps.db,
+      submitUseCase: deps.submitDailyIbadahUseCase,
+      repo: deps.dailyIbadahRepo,
+    })
+  );
 
   // Protected middleware for all /api/* routes
   const protectedAuth = authMiddleware(deps.tokenService);

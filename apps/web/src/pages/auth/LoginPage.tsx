@@ -133,6 +133,24 @@ export function LoginPage() {
             Hubungi admin sekolah
           </a>
         </p>
+
+        <div className="relative my-1">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-200/80" />
+          </div>
+          <div className="relative flex justify-center text-[10px] uppercase">
+            <span className="bg-white px-2 font-bold text-slate-400">uji coba</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => (window.location.hash = "#/isi-yaumiyah")}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#1CB8CE]/30 bg-[#1CB8CE]/5 py-2.5 text-xs font-bold text-[#0E7A8A] hover:bg-[#1CB8CE]/15 transition-all"
+        >
+          <span>Isi Jurnal Yaumiyah Mandiri</span>
+          <span>&rarr;</span>
+        </button>
       </form>
     </div>
   );
