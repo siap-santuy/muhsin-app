@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach, mock } from "bun:test";
 
 // Mock localStorage in bun test environment
 const storage: Record<string, string> = {};
@@ -17,8 +17,15 @@ globalThis.localStorage = {
   key: () => null,
 } as any;
 
-import { api } from "./api";
-import { getOfflineQueue, clearOfflineQueue } from "./offlineQueue";
+import { api, ApiHttpError } from "./api";
+import {
+  getOfflineQueue,
+  clearOfflineQueue,
+  addToOfflineQueue,
+  incrementRetryCount,
+  MAX_QUEUE_AGE_MS,
+  MAX_RETRIES,
+} from "./offlineQueue";
 
 describe("ApiClient Offline Cache & Queue Mechanism", () => {
   beforeEach(() => {
@@ -65,5 +72,63 @@ describe("ApiClient Offline Cache & Queue Mechanism", () => {
     const cached = await api.getDailyIbadah("2026-09-02");
     expect(cached.status).toBe("submitted");
     expect(cached.tahajud).toBe(true);
+  });
+
+  it("should auto-purge queue items older than 48 hours (TTL)", () => {
+    const oldTimestamp = Date.now() - (MAX_QUEUE_AGE_MS + 1000);
+    const staleItem = {
+      id: "stale-1",
+      endpoint: "/setoran",
+      method: "POST" as const,
+      body: { test: 1 },
+      createdAt: oldTimestamp,
+      schoolId: "s-1",
+      userId: "u-1",
+      retryCount: 0,
+    };
+    const freshItem = {
+      id: "fresh-1",
+      endpoint: "/setoran",
+      method: "POST" as const,
+      body: { test: 2 },
+      createdAt: Date.now(),
+      schoolId: "s-1",
+      userId: "u-1",
+      retryCount: 0,
+    };
+
+    localStorage.setItem("muhsin_offline_sync_queue", JSON.stringify([staleItem, freshItem]));
+
+    const activeQueue = getOfflineQueue();
+    expect(activeQueue.length).toBe(1);
+    expect(activeQueue[0].id).toBe("fresh-1");
+  });
+
+  it("should increment retry count and purge items exceeding MAX_RETRIES (3)", () => {
+    addToOfflineQueue({
+      endpoint: "/setoran",
+      method: "POST",
+      body: { data: "test" },
+      schoolId: "s-1",
+      userId: "u-1",
+    });
+
+    let queue = getOfflineQueue();
+    const itemId = queue[0].id;
+
+    // Retry 1
+    incrementRetryCount(itemId);
+    queue = getOfflineQueue();
+    expect(queue[0].retryCount).toBe(1);
+
+    // Retry 2
+    incrementRetryCount(itemId);
+    queue = getOfflineQueue();
+    expect(queue[0].retryCount).toBe(2);
+
+    // Retry 3 (exceeds MAX_RETRIES = 3, auto-purged)
+    incrementRetryCount(itemId);
+    queue = getOfflineQueue();
+    expect(queue.length).toBe(0);
   });
 });

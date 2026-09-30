@@ -1,9 +1,49 @@
 [
   {
-    "version": "v1.0.4",
-    "releaseDate": "27 September 2026",
+    "version": "v1.0.5",
+    "releaseDate": "30 September 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Jurnal Yaumiyah Mandiri, Perbaikan Ekspor Raport & Stabilitas PWA",
+    "summary": "Fitur pengisian jurnal yaumiyah mandiri tanpa login, perbaikan tata letak & perataan margin ekspor raport PDF, stabilisasi siklus Service Worker PWA tanpa reload mendadak, serta perlindungan antrean offline tangguh.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Halaman publik input yaumiyah mandiri tanpa login di route #/isi-yaumiyah dengan pemilihan kelas dinamis, pencarian nama siswa, dan pencegahan pengisian ganda di tanggal yang sama."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan format ekspor raport PDF: margin kertas terpasang proporsional dan seluruh teks nilai sel tabel tertata rapi di tengah vertikal tanpa menabrak garis border."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Pencegahan reload otomatis mendadak saat pertama kali membuka aplikasi via mode registrasi PWA prompt."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Pemisahan penanganan respon error server (HTTP 4xx) dari kegagalan jaringan offline, mencegah error validasi tersimpan semu di antrean offline lokal."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan Sistem",
+        "description": "Mekanisme pembersihan antrean offline cerdas: batas usia maksimal 48 jam (TTL), batas retry maksimal 3 kali untuk kendala jaringan, dan pembersihan otomatis untuk request yang ditolak server."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Normalisasi kode subkategori penilaian (case-insensitive) pada database query dan halaman guru untuk menjamin status setoran Ziyadah, Muroja'ah, Sabiq, dan Talaqi terdeteksi akurat."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.4",
+    "releaseDate": "27 September 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Tabel Aktivitas Koor, Pantauan Ortu & Web Push Notification",
     "summary": "Koordinator kini memantau aktivitas harian siswa dan guru dalam tabel: status yaumiyah per siswa, kapan ortu terakhir melihat, kapan guru terakhir menilai, plus tombol ingatkan. Pengingat terkirim sebagai web push notification yang sampai walau tab aplikasi ditutup.",
     "changes": [
