@@ -143,6 +143,9 @@ sudo certbot --nginx -d muhsin.id -d *.muhsin.id -d api.muhsin.id
    DB_NAME=muhsin_prod_db
    JWT_SECRET=super-secure-jwt-secret-min-32-chars-random!
    JWT_REFRESH_SECRET=super-secure-jwt-refresh-secret-min-32-chars-random!
+   VAPID_PUBLIC_KEY=change-me-production-vapid-public
+   VAPID_PRIVATE_KEY=change-me-production-vapid-private
+   VAPID_SUBJECT=mailto:admin@muhsin.id
    ```
 
 3. **Jalankan Container Docker**:
@@ -169,17 +172,33 @@ sudo certbot --nginx -d muhsin.id -d *.muhsin.id -d api.muhsin.id
 
 ## 5. Perintah Berguna / Maintenance
 
+- **Backup Database PostgreSQL (Direkomendasikan Sebelum Update)**:
+  ```bash
+  docker exec muhsin_postgres pg_dump -U muhsin_admin muhsin_prod_db > ~/backup_prod_$(date +%F_%H%M).sql
+  ```
+  *(Catatan Keamanan: Jangan pernah menggunakan perintah `docker compose down -v` karena flag `-v` akan menghapus storage volume database! Gunakan `docker compose down` tanpa `-v`).*
+
 - **Update Code / Redeploy Versi Baru**:
   ```bash
   git pull origin main
   docker compose up -d --build
   docker compose exec api bun run db:migrate
   ```
+
 - **Restart Seluruh Service**:
   ```bash
   docker compose restart
   ```
-- **Backup Database PostgreSQL**:
+
+- **Menjalankan Bersamaan dengan Staging**:
+  Lingkungan Production dan Staging diisolasi 100% sehingga dapat hidup bersamaan di 1 VPS:
   ```bash
-  docker compose exec postgres pg_dump -U muhsin_admin muhsin_prod > backup_$(date +%F).sql
+  # 1. Jalankan Production:
+  docker compose up -d
+
+  # 2. Jalankan Staging:
+  docker compose -f docker-compose.staging.yml --env-file .env.staging up -d --build
+
+  # 3. Cek seluruh container aktif:
+  docker ps
   ```

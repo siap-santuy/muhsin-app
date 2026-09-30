@@ -13,7 +13,17 @@ Lingkungan staging berjalan berdampingan dengan production tanpa tabrakan port a
 | **PostgreSQL** | `127.0.0.1:5433` | `muhsin_staging_postgres` | Isolated volume `postgres_staging_data` |
 | **Redis** | `127.0.0.1:6380` | `muhsin_staging_redis` | Isolated volume `redis_staging_data` |
 | **Backend API** | `127.0.0.1:3002` | `muhsin_staging_api` | Internal container port 3001 |
-| **Frontend Web**| `127.0.0.1:8081` | `muhsin_staging_web` | Build arg `VITE_API_URL: http://localhost:3002` |
+| **Frontend Web**| `127.0.0.1:8081` | `muhsin_staging_web` | Build arg `VITE_API_URL: https://api-staging.muhsin.id` |
+
+> **Keamanan & Isolasi Staging vs Production:**
+> 1. **Project Name Terisolasi**: `docker-compose.staging.yml` menggunakan `name: muhsin_staging`. Docker memisahkan network dan container 100% dari production, sehingga keduanya dapat **hidup berdampingan secara bersamaan**.
+> 2. **Volume Database Mandiri**: Staging menggunakan volume `postgres_staging_data`, production menggunakan `postgres_data`. Data database production tidak akan tersentuh.
+> 3. **PENTING - Larangan Flag `-v`**: Jangan pernah menjalankan `docker compose down -v` karena flag `-v` akan menghapus storage volume database. Gunakan `down` tanpa `-v`.
+> 4. **Swap Memory (Cegah Crash saat Build)**: Proses build image frontend web membutuhkan lonjakan RAM ~1.5 GB. Jika VPS memiliki RAM terbatas (1-2 GB), pastikan Swap 4GB aktif agar container production tidak dibunuh paksa oleh kernel (OOM Killer):
+>    ```bash
+>    sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+>    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+>    ```
 
 ---
 
@@ -58,6 +68,9 @@ JWT_SECRET=staging-jwt-secret-min-32-chars-random!
 JWT_REFRESH_SECRET=staging-jwt-refresh-secret-min-32-chars-random!
 VITE_API_URL=https://api-staging.muhsin.id
 VITE_DEFAULT_SCHOOL_SLUG=alfitrah
+VAPID_PUBLIC_KEY=change-me-staging-vapid-public
+VAPID_PRIVATE_KEY=change-me-staging-vapid-private
+VAPID_SUBJECT=mailto:admin@muhsin.id
 ```
 
 > **Catatan Multi-Tenant Staging:**
@@ -91,18 +104,22 @@ docker compose -f docker-compose.staging.yml --env-file .env.staging run --rm ap
 
 ---
 
-### Step 5: Jalankan Database Seeding
+### Step 5: Jalankan Database Seeding & Simulasi 1 Bulan
 
 Populasikan data demo (sekolah, periode akademik, skala nilai, kategori tahfidz/tahsin, akun admin, guru, siswa, kelas):
 
 ```bash
+# 1. Seed struktur awal & user demo
 docker compose -f docker-compose.staging.yml --env-file .env.staging run --rm api bun run db:seed
+
+# 2. Seed simulasi 1 bulan penuh khusus staging (Anak, Ortu, Guru terhubung + 30 hari mutaba'ah + setoran + raport)
+docker compose -f docker-compose.staging.yml --env-file .env.staging run --rm api bun run db:seed:sim
 ```
 
-> **Data Default Seeding:**
-> - Akun Admin: `admin@alfitrah.sch.id`
-> - Default Password: `muhsin123`
-> - School Slug: `alfitrah`
+> **Akun Simulasi 1 Bulan Penuh (September 2026):**
+> - **Siswa**: `nengdara.hdr@gmail.com` / `muhsin123` (Abdul Rayhan Pradipta, Level 7, Streak 30 Hari)
+> - **Orang Tua**: `ortu_daraindahpertiwi` / `muhsin123` (Dara Indah Pertiwi)
+> - **Guru**: `arai@teacher.alfitrah.sch.id` / `muhsin123` (Arai Kurnia Ramadhan, S.Pd.)
 
 ---
 

@@ -1,3 +1,5 @@
+name: muhsin_staging
+
 version: '3.8'
 
 services:
@@ -42,6 +44,9 @@ services:
       ACCESS_TOKEN_TTL: 900
       REFRESH_TOKEN_TTL: 604800
       PORT: 3001
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@muhsin.id}
     ports:
       - "127.0.0.1:3002:3001"
     volumes:
