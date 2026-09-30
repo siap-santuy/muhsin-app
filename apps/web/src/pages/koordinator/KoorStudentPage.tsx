@@ -18,7 +18,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
-import { exportStudentListToExcel } from "@/lib/exportRaportExcel";
+import { exportStudentListPdf } from "@/lib/exportStudentListPdf";
 
 interface StudentRecord {
   id: string;
@@ -263,7 +263,7 @@ export function KoorStudentPage() {
               type="button"
               onClick={async () => {
                 try {
-                  await exportStudentListToExcel(filtered, "SMP IT Al Fitrah");
+                  await exportStudentListPdf(filtered, "SMP ISLAM TERPADU AL FITRAH");
                 } catch (e: any) {
                   toast.warning(e.message || "Gagal mengunduh data Excel");
                 }
@@ -271,7 +271,7 @@ export function KoorStudentPage() {
               className="flex items-center gap-1.5 rounded-xl border border-brand-line bg-white px-4 py-2 text-xs font-bold text-brand-navy shadow-sm hover:border-brand-cyan"
             >
               <Download className="h-4 w-4 text-brand-navy/60" />
-              <span>Ekspor Excel</span>
+              <span>Ekspor PDF</span>
             </button>
           </div>
         </div>

@@ -23,5 +23,8 @@
     "db:migrate": "bun --filter @muhsin/api db:migrate",
     "db:seed": "bun --filter @muhsin/api db:seed",
     "db:reset": "bun --filter @muhsin/api db:reset"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "^6.3.289"
   }
 }

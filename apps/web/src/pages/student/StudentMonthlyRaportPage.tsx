@@ -8,7 +8,7 @@ import { NilaiTtqSection } from "@/components/raport/NilaiTtqSection";
 import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { exportRaportExcel, type MonthlyRaportData } from "@/lib/exportRaportExcel";
+import { exportRaportPdf, type MonthlyRaportData } from "@/lib/exportRaportPdf";
 
 interface StudentMonthlyRaportPageProps {
   onBack?: () => void;
@@ -68,12 +68,12 @@ export function StudentMonthlyRaportPage({
     }
   }
 
-  async function handleExportExcel() {
+  async function handleExportPdf() {
     if (!raport) return;
     try {
-      await exportRaportExcel(raport, "SMP IT Al Fitrah", "monthly");
+      await exportRaportPdf(raport, "SMP ISLAM TERPADU AL FITRAH", "monthly");
     } catch (error) {
-      console.error("Failed to export Excel:", error);
+      console.error("Failed to export PDF:", error);
     }
   }
 
@@ -152,7 +152,7 @@ export function StudentMonthlyRaportPage({
           <div className="pt-2">
             <Button
               type="button"
-              onClick={handleExportExcel}
+              onClick={handleExportPdf}
               className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />

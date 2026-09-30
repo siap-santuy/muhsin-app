@@ -10,7 +10,7 @@ import { RaportStudentHeader } from "@/components/raport/RaportStudentHeader";
 import { SumatifSection } from "@/components/raport/SumatifSection";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { exportRaportExcel, type SemesterRaportData } from "@/lib/exportRaportExcel";
+import { exportRaportPdf, type SemesterRaportData } from "@/lib/exportRaportPdf";
 
 interface ParentSemesterRaportPageProps {
   onBack?: () => void;
@@ -51,12 +51,12 @@ export function ParentSemesterRaportPage({
     }
   }
 
-  async function handleExportExcel() {
+  async function handleExportPdf() {
     if (!raport) return;
     try {
-      await exportRaportExcel(raport, "SMP IT Al Fitrah", "semester");
+      await exportRaportPdf(raport, "SMP ISLAM TERPADU AL FITRAH", "semester");
     } catch (error) {
-      console.error("Failed to export Excel:", error);
+      console.error("Failed to export PDF:", error);
     }
   }
 
@@ -144,7 +144,7 @@ export function ParentSemesterRaportPage({
           <div className="pt-2">
             <Button
               type="button"
-              onClick={handleExportExcel}
+              onClick={handleExportPdf}
               className="h-11 w-full rounded-2xl bg-brand-cyan text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark print:hidden"
             >
               <Download className="mr-2 h-4 w-4" />
