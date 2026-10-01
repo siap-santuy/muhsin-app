@@ -50,6 +50,12 @@ export function TeacherTTQInputPage({
   const [jilidEnd, setJilidEnd] = useState("");
   const [halamanEnd, setHalamanEnd] = useState("");
 
+  // Mode Sabiq: Harian vs Ujian Semester (Tes Tertulis Ilmu Tajwid)
+  const [sabiqMode, setSabiqMode] = useState<"harian" | "ujian_semester">("harian");
+  const [examScore, setExamScore] = useState<number>(0);
+  const [examMateri, setExamMateri] = useState<string>("Pengetahuan Ilmu Tajwid Metode Sabiq");
+  const [existingExamId, setExistingExamId] = useState<string | null>(null);
+
   // Scores (Default 0 untuk penilaian pertama kali)
   const [tajwid, setTajwid] = useState(0);
   const [kelancaran, setKelancaran] = useState(0);
@@ -94,7 +100,31 @@ export function TeacherTTQInputPage({
               studentId: foundStudent.id,
               subcategoryId: cat.id,
             });
-            const existing = history.find((h: any) => h.date === routeDate);
+
+            // Periksa apakah sudah ada data Ujian Semester untuk Sabiq
+            if (initialCategory === "sabiq") {
+              const examEntry = history.find(
+                (h: any) =>
+                  h.keterangan?.includes("[Ujian Semester]") ||
+                  h.scores?.isExam ||
+                  h.referenceStart?.isExam
+              );
+              if (examEntry) {
+                setExistingExamId(examEntry.id);
+                const rawVal =
+                  typeof examEntry.scores?.tertulis === "number"
+                    ? examEntry.scores.tertulis
+                    : typeof examEntry.scores?.score === "number"
+                    ? examEntry.scores.score
+                    : undefined;
+                if (rawVal !== undefined) setExamScore(Number(rawVal));
+                if (examEntry.referenceStart?.materi) {
+                  setExamMateri(examEntry.referenceStart.materi);
+                }
+              }
+            }
+
+            const existing = history.find((h: any) => h.date === routeDate && !h.keterangan?.includes("[Ujian Semester]"));
             if (existing) {
               if (existing.scores?.tajwid !== undefined) setTajwid(Number(existing.scores.tajwid));
               if (existing.scores?.kelancaran !== undefined) setKelancaran(Number(existing.scores.kelancaran));
@@ -164,6 +194,56 @@ export function TeacherTTQInputPage({
     if (!subcategoryId) {
       toast.error(`Kategori ${categoryTitle} belum dikonfigurasi`);
       return;
+    }
+
+    // Alur Khusus: Ujian Semester Sabiq (Tes Tertulis Pengetahuan Ilmu Tajwid)
+    if (initialCategory === "sabiq" && sabiqMode === "ujian_semester") {
+      setLoading(true);
+      try {
+        const payloadKeterangan = catatan
+          ? `[${statusKehadiran}] [Ujian Semester] ${examMateri}: ${catatan}`
+          : `[${statusKehadiran}] [Ujian Semester] ${examMateri}`;
+
+        if (existingExamId) {
+          await api.correctSetoran(existingExamId, {
+            targetSubcategoryId: subcategoryId,
+            scores: { tertulis: Number(examScore) },
+            scoreFieldKeys: ["tertulis"],
+            referenceStart: {
+              type: "ujian_semester",
+              materi: examMateri,
+              isExam: true,
+            },
+            referenceEnd: null,
+            keterangan: payloadKeterangan,
+          });
+        } else {
+          await api.createSetoran({
+            studentId: student.id,
+            subcategoryId,
+            date: routeDate,
+            scores: { tertulis: Number(examScore) },
+            scoreFieldKeys: ["tertulis"],
+            referenceStart: {
+              type: "ujian_semester",
+              materi: examMateri,
+              isExam: true,
+            },
+            referenceEnd: null,
+            keterangan: payloadKeterangan,
+          });
+        }
+
+        toast.success("Nilai Ujian Semester (Tes Tertulis) berhasil disimpan");
+        sessionStorage.setItem("selectedStudentId", student.id);
+        window.location.hash = "#/student-list";
+        return;
+      } catch (err: any) {
+        toast.error(err.message || "Gagal menyimpan nilai ujian semester");
+        return;
+      } finally {
+        setLoading(false);
+      }
     }
 
     setLoading(true);
@@ -316,6 +396,34 @@ export function TeacherTTQInputPage({
             </span>
           </div>
 
+          {/* Mode Switcher khusus Tahsin Sabiq: Setoran Harian vs Ujian Semester */}
+          {initialCategory === "sabiq" && (
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-brand-line bg-white p-1.5 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setSabiqMode("harian")}
+                className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                  sabiqMode === "harian"
+                    ? "bg-brand-navy text-white shadow-xs"
+                    : "text-brand-text-muted hover:text-brand-navy"
+                }`}
+              >
+                Setoran Harian
+              </button>
+              <button
+                type="button"
+                onClick={() => setSabiqMode("ujian_semester")}
+                className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                  sabiqMode === "ujian_semester"
+                    ? "bg-brand-cyan text-white shadow-xs"
+                    : "text-brand-text-muted hover:text-brand-navy"
+                }`}
+              >
+                Ujian Semester (Tertulis)
+              </button>
+            </div>
+          )}
+
           {/* 2. Status Kehadiran (Horizontal Row) */}
           <TTQAttendanceRow
             mode="input"
@@ -326,198 +434,256 @@ export function TeacherTTQInputPage({
           {/* Form Setoran & Penilaian hanya tampil jika status Hadir */}
           {statusKehadiran === "Hadir" && (
             <>
-              {/* 3. Form Awal & Akhir Setoran Sesuai Kategori */}
-              <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
-                <div className="flex items-center gap-2 mb-3">
-                  <BookOpen className="h-5 w-5 text-brand-navy" />
-                  <h3 className="text-sm font-extrabold text-brand-navy">
-                    {categoryTitle}
-                  </h3>
-                </div>
+              {initialCategory === "sabiq" && sabiqMode === "ujian_semester" ? (
+                /* Form Ujian Semester: Tes Tertulis Pengetahuan Ilmu Tajwid Metode Sabiq */
+                <>
+                  <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-brand-navy" />
+                        <h3 className="text-sm font-extrabold text-brand-navy">
+                          Ujian Semester Tahsin Sabiq
+                        </h3>
+                      </div>
+                      {existingExamId && (
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                          Sudah Ada Nilai
+                        </span>
+                      )}
+                    </div>
 
-                {initialCategory === "sabiq" ? (
-                  /* Form Sabiq (Jilid & Halaman) */
-                  <div className="grid grid-cols-2 gap-3 items-center">
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AWAL JILID
-                      </label>
-                      <select
-                        value={jilidStart}
-                        onChange={(e) => setJilidStart(e.target.value)}
-                        className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-3 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        <option value="">Pilih Jilid...</option>
-                        {[1, 2, 3, 4, 5, 6].map((j) => (
-                          <option key={j} value={j}>
-                            Jilid {j}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="mb-4 rounded-xl bg-cyan-50/60 border border-brand-cyan/20 p-3 text-xs text-brand-navy">
+                      <p className="font-bold text-[#159db5]">Penilaian 1x Per Semester</p>
+                      <p className="mt-0.5 text-[11px] text-brand-text-muted leading-relaxed">
+                        Nilai tes tertulis ini akan masuk ke bagian <strong>Asesmen Sumatif</strong> pada Raport Semester siswa.
+                      </p>
                     </div>
 
                     <div>
                       <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        HALAMAN
+                        MATERI UJIAN TERTULIS
                       </label>
                       <input
-                        type="number"
-                        min="1"
-                        placeholder="Contoh: 1"
-                        value={halamanStart}
-                        onChange={(e) => setHalamanStart(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AKHIR JILID
-                      </label>
-                      <select
-                        value={jilidEnd}
-                        onChange={(e) => setJilidEnd(e.target.value)}
-                        className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-3 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        <option value="">Pilih Jilid...</option>
-                        {[1, 2, 3, 4, 5, 6].map((j) => (
-                          <option key={j} value={j}>
-                            Jilid {j}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        HALAMAN
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="Contoh: 5"
-                        value={halamanEnd}
-                        onChange={(e) => setHalamanEnd(e.target.value)}
+                        type="text"
+                        value={examMateri}
+                        onChange={(e) => setExamMateri(e.target.value)}
+                        placeholder="Pengetahuan Ilmu Tajwid Metode Sabiq"
                         className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                       />
                     </div>
                   </div>
-                ) : (
-                  /* Form Surah & Ayat untuk Ziyadah, Murojaah, Talaqi */
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AWAL SURAH
-                      </label>
-                      <select
-                        value={surahStart}
-                        onChange={(e) => setSurahStart(e.target.value)}
-                        className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        <option value="">Pilih Surah...</option>
-                        {SURAH_LIST.map((s) => (
-                          <option key={s.no} value={s.no}>
-                            {s.no}. {s.nameLatin}
-                          </option>
-                        ))}
-                      </select>
+
+                  <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-brand-navy">Nilai Tes Tertulis (0 - 100)</h3>
+                      <span className="rounded-full bg-brand-cyan/10 px-2.5 py-0.5 text-xs font-extrabold text-[#159db5]">
+                        Predikat: {examScore >= 93 ? "A (Sangat Baik)" : examScore >= 84 ? "B (Baik)" : examScore >= 75 ? "C (Cukup)" : examScore > 0 ? "D (Kurang)" : "-"}
+                      </span>
                     </div>
-
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AYAT
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="Contoh: 1"
-                        value={ayatStart}
-                        onChange={(e) => setAyatStart(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AKHIR SURAH
-                      </label>
-                      <select
-                        value={surahEnd}
-                        onChange={(e) => setSurahEnd(e.target.value)}
-                        className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        <option value="">Pilih Surah...</option>
-                        {SURAH_LIST.map((s) => (
-                          <option key={s.no} value={s.no}>
-                            {s.no}. {s.nameLatin}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                        AYAT
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="Contoh: 5"
-                        value={ayatEnd}
-                        onChange={(e) => setAyatEnd(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Card Penilaian Range Sliders */}
-              <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
-                <h3 className="mb-4 text-xs font-bold text-brand-navy">Penilaian</h3>
-
-                {initialCategory === "sabiq" ? (
-                  <div className="flex flex-col gap-4">
                     <TTQScoreSlider
-                      label="Makhraj"
-                      value={makhraj}
-                      onChange={setMakhraj}
-                    />
-                    <TTQScoreSlider label="Mad" value={mad} onChange={setMad} />
-                    <TTQScoreSlider
-                      label="Ghunnah"
-                      value={ghunnah}
-                      onChange={setGhunnah}
-                    />
-                    <TTQScoreSlider
-                      label="Qolqolah"
-                      value={qolqolah}
-                      onChange={setQolqolah}
+                      label="Skor Pengetahuan Ilmu Tajwid"
+                      value={examScore}
+                      onChange={setExamScore}
                     />
                   </div>
-                ) : initialCategory === "talaqi" ? (
-                  <div className="flex flex-col gap-4">
-                    <TTQScoreSlider
-                      label="Kelancaran"
-                      value={kelancaran}
-                      onChange={setKelancaran}
-                    />
+                </>
+              ) : (
+                /* Form Setoran Harian */
+                <>
+                  {/* 3. Form Awal & Akhir Setoran Sesuai Kategori */}
+                  <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BookOpen className="h-5 w-5 text-brand-navy" />
+                      <h3 className="text-sm font-extrabold text-brand-navy">
+                        {categoryTitle}
+                      </h3>
+                    </div>
+
+                    {initialCategory === "sabiq" ? (
+                      /* Form Sabiq (Jilid & Halaman) */
+                      <div className="grid grid-cols-2 gap-3 items-center">
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AWAL JILID
+                          </label>
+                          <select
+                            value={jilidStart}
+                            onChange={(e) => setJilidStart(e.target.value)}
+                            className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-3 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          >
+                            <option value="">Pilih Jilid...</option>
+                            {[1, 2, 3, 4, 5, 6].map((j) => (
+                              <option key={j} value={j}>
+                                Jilid {j}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            HALAMAN
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 1"
+                            value={halamanStart}
+                            onChange={(e) => setHalamanStart(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AKHIR JILID
+                          </label>
+                          <select
+                            value={jilidEnd}
+                            onChange={(e) => setJilidEnd(e.target.value)}
+                            className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-3 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          >
+                            <option value="">Pilih Jilid...</option>
+                            {[1, 2, 3, 4, 5, 6].map((j) => (
+                              <option key={j} value={j}>
+                                Jilid {j}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            HALAMAN
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 5"
+                            value={halamanEnd}
+                            onChange={(e) => setHalamanEnd(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* Form Surah & Ayat untuk Ziyadah, Murojaah, Talaqi */
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AWAL SURAH
+                          </label>
+                          <select
+                            value={surahStart}
+                            onChange={(e) => setSurahStart(e.target.value)}
+                            className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          >
+                            <option value="">Pilih Surah...</option>
+                            {SURAH_LIST.map((s) => (
+                              <option key={s.no} value={s.no}>
+                                {s.no}. {s.nameLatin}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AYAT
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 1"
+                            value={ayatStart}
+                            onChange={(e) => setAyatStart(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AKHIR SURAH
+                          </label>
+                          <select
+                            value={surahEnd}
+                            onChange={(e) => setSurahEnd(e.target.value)}
+                            className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          >
+                            <option value="">Pilih Surah...</option>
+                            {SURAH_LIST.map((s) => (
+                              <option key={s.no} value={s.no}>
+                                {s.no}. {s.nameLatin}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
+                            AYAT
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 5"
+                            value={ayatEnd}
+                            onChange={(e) => setAyatEnd(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <TTQScoreSlider
-                      label="Tajwid"
-                      value={tajwid}
-                      onChange={setTajwid}
-                    />
-                    <TTQScoreSlider
-                      label="Kelancaran"
-                      value={kelancaran}
-                      onChange={setKelancaran}
-                    />
+
+                  {/* 4. Card Penilaian Range Sliders */}
+                  <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+                    <h3 className="mb-4 text-xs font-bold text-brand-navy">Penilaian</h3>
+
+                    {initialCategory === "sabiq" ? (
+                      <div className="flex flex-col gap-4">
+                        <TTQScoreSlider
+                          label="Makhraj"
+                          value={makhraj}
+                          onChange={setMakhraj}
+                        />
+                        <TTQScoreSlider label="Mad" value={mad} onChange={setMad} />
+                        <TTQScoreSlider
+                          label="Ghunnah"
+                          value={ghunnah}
+                          onChange={setGhunnah}
+                        />
+                        <TTQScoreSlider
+                          label="Qolqolah"
+                          value={qolqolah}
+                          onChange={setQolqolah}
+                        />
+                      </div>
+                    ) : initialCategory === "talaqi" ? (
+                      <div className="flex flex-col gap-4">
+                        <TTQScoreSlider
+                          label="Kelancaran"
+                          value={kelancaran}
+                          onChange={setKelancaran}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <TTQScoreSlider
+                          label="Tajwid"
+                          value={tajwid}
+                          onChange={setTajwid}
+                        />
+                        <TTQScoreSlider
+                          label="Kelancaran"
+                          value={kelancaran}
+                          onChange={setKelancaran}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </>
           )}
 

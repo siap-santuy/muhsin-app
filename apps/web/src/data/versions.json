@@ -1,9 +1,34 @@
 [
   {
-    "version": "v1.0.5",
-    "releaseDate": "30 September 2026",
+    "version": "v1.0.6",
+    "releaseDate": "1 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Input Ujian Semester Sabiq, Raport PDF Bulanan Bersih & PWA Auto-Update",
+    "summary": "Fitur input nilai Ujian Semester (Tes Tertulis Tajwid) di menu TTQ Sabiq guru, pembersihan blok sumatif pada PDF raport bulanan, serta pembaruan otomatis Service Worker PWA tanpa kendala cache nyangkut di HP.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Mode input Ujian Semester pada menu TTQ Tahsin Sabiq untuk guru: mencatat nilai tes tertulis Pengetahuan Ilmu Tajwid Metode Sabiq sekali per semester."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Penghapusan blok Asesmen Sumatif & Tes Tertulis dari PDF Raport Bulanan. Blok tersebut kini eksklusif hanya untuk Raport Semester dengan nilai riil dari hasil ujian."
+      },
+      {
+        "category": "improvement",
+        "categoryLabel": "Peningkatan",
+        "description": "Sistem pembaruan PWA & cache otomatis: Service Worker auto-update, auto-check berkala, header anti-stale cache di Nginx, dan tombol muat ulang darurat di halaman versi aplikasi."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.5",
+    "releaseDate": "30 September 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Jurnal Yaumiyah Mandiri, Perbaikan Ekspor Raport & Stabilitas PWA",
     "summary": "Fitur pengisian jurnal yaumiyah mandiri tanpa login, perbaikan tata letak & perataan margin ekspor raport PDF, stabilisasi siklus Service Worker PWA tanpa reload mendadak, serta perlindungan antrean offline tangguh.",
     "changes": [

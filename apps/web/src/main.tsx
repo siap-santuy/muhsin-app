@@ -54,10 +54,58 @@ import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { registerSW } from "virtual:pwa-register";
+import { APP_VERSION } from "@/lib/appVersion";
 import "@/index.css";
 
-// Register service worker for PWA (mode prompt: no sudden auto-reloads)
-registerSW({ immediate: true });
+// Auto-purge stale cache saat user membuka versi baru di HP/desktop
+const STORED_VERSION_KEY = "muhsin_app_active_version";
+if (typeof window !== "undefined") {
+  const previousVersion = localStorage.getItem(STORED_VERSION_KEY);
+  if (previousVersion && previousVersion !== APP_VERSION) {
+    localStorage.setItem(STORED_VERSION_KEY, APP_VERSION);
+    if ("caches" in window) {
+      caches.keys().then((names) => {
+        Promise.all(names.map((name) => caches.delete(name))).then(() => {
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then((regs) => {
+              Promise.all(regs.map((r) => r.unregister())).then(() => {
+                window.location.reload();
+              });
+            });
+          } else {
+            window.location.reload();
+          }
+        });
+      });
+    }
+  } else if (!previousVersion) {
+    localStorage.setItem(STORED_VERSION_KEY, APP_VERSION);
+  }
+}
+
+// Register service worker for PWA (mode autoUpdate: silent activate & periodic check)
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    updateSW(true);
+  },
+  onRegisteredSW(_swUrl, r) {
+    if (!r) return;
+    setInterval(() => {
+      if (typeof navigator !== "undefined" && navigator.onLine) {
+        r.update();
+      }
+    }, 15 * 60 * 1000);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && navigator.onLine) {
+          r.update();
+        }
+      });
+    }
+  },
+});
 
 // Push notification click dari SW saat aplikasi terbuka: navigasi hash
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {

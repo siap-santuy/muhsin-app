@@ -81,6 +81,10 @@ export interface MonthlyRaportData {
     color: string;
   }>;
   evaluasi: string | null;
+  munaqosah?: {
+    keterangan: string;
+    nilai: string;
+  };
   sumatif?: RaportSumatif;
 }
 
@@ -128,6 +132,10 @@ export interface SemesterRaportData {
     color: string;
   }>;
   evaluasi: string | null;
+  munaqosah?: {
+    keterangan: string;
+    nilai: string;
+  };
   sumatif?: RaportSumatif;
 }
 

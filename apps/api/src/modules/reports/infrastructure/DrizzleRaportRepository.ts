@@ -7,8 +7,10 @@ import {
   setoranEntries,
   dailyIbadah,
   evaluasiBulanan,
+  munaqosahRequests,
+  munaqosahAssignments,
 } from "../../../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import type { IRaportRepository } from "../domain/repositories/IRaportRepository";
 import type { MonthlyRaportData, SemesterRaportData } from "../domain/entities/Raport";
 
@@ -70,7 +72,7 @@ export class DrizzleRaportRepository implements IRaportRepository {
 
     const pembimbingName = teacherRows[0]?.teacherName ?? "Ustadz Pembimbing";
 
-    // 2. Aggregate setoran monthly scores
+    // 2. Aggregate setoran monthly scores (hanya setoran harian, kecualikan ujian semester)
     const setoranRows = await this.db
       .select()
       .from(setoranEntries)
@@ -81,6 +83,13 @@ export class DrizzleRaportRepository implements IRaportRepository {
           sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${month}`
         )
       );
+
+    const dailySetorans = setoranRows.filter(
+      (s) =>
+        !s.keterangan?.includes("[Ujian Semester]") &&
+        !(s.scores as any)?.isExam &&
+        !(s.referenceStart as any)?.isExam
+    );
 
     let tahfidzTotal = 0;
     let tahfidzCount = 0;
@@ -96,7 +105,7 @@ export class DrizzleRaportRepository implements IRaportRepository {
     let ghunnahSum = 0, ghunnahCnt = 0;
     let kelancaranSum = 0, kelancaranCnt = 0;
 
-    for (const s of setoranRows) {
+    for (const s of dailySetorans) {
       const scores = s.scores as Record<string, number>;
       const vals = Object.values(scores).filter((v) => typeof v === "number");
       if (vals.length > 0) {
@@ -176,6 +185,45 @@ export class DrizzleRaportRepository implements IRaportRepository {
 
     const yearStr = month.split("-")[0] ?? "2026";
 
+    // 4. Query status munaqosah terbaru
+    const munaqosahRows = await this.db
+      .select({
+        juzKe: munaqosahRequests.juzKe,
+        scores: munaqosahAssignments.scores,
+      })
+      .from(munaqosahRequests)
+      .leftJoin(
+        munaqosahAssignments,
+        eq(munaqosahAssignments.requestId, munaqosahRequests.id)
+      )
+      .where(
+        and(
+          eq(munaqosahRequests.studentId, studentId),
+          eq(munaqosahRequests.schoolId, schoolId),
+          eq(munaqosahRequests.status, "lulus")
+        )
+      )
+      .orderBy(desc(munaqosahRequests.createdAt))
+      .limit(1);
+
+    let munaqosahInfo = {
+      keterangan: "-",
+      nilai: "-",
+    };
+
+    if (munaqosahRows.length > 0) {
+      const m = munaqosahRows[0];
+      const scores = (m.scores as any) || {};
+      const avg =
+        scores.tajwid !== undefined && scores.kelancaran !== undefined
+          ? Math.round((Number(scores.tajwid) + Number(scores.kelancaran)) / 2)
+          : 90;
+      munaqosahInfo = {
+        keterangan: `Juz ${m.juzKe}`,
+        nilai: scoreToGrade(avg).grade,
+      };
+    }
+
     return {
       student: {
         id: studentInfo.id,
@@ -211,8 +259,8 @@ export class DrizzleRaportRepository implements IRaportRepository {
         kelancaran: kelancaranCnt > 0 ? Math.round((kelancaranSum / kelancaranCnt) * 10) / 10 : 0,
       },
       absensi: {
-        kehadiranRatio: `${setoranRows.length}/30`,
-        tidakSetoranCount: Math.max(0, 30 - setoranRows.length),
+        kehadiranRatio: `${dailySetorans.length}/30`,
+        tidakSetoranCount: Math.max(0, 30 - dailySetorans.length),
         sakitCount: 0,
         izinCount: 0,
         alpaCount: 0,
@@ -225,6 +273,7 @@ export class DrizzleRaportRepository implements IRaportRepository {
         { label: "Dhuha", ratio: `${dhuhaCount}/30`, grade: dhuhaCount >= 10 ? "B" : dhuhaCount > 0 ? "C" : "-", color: "text-amber-500" },
         { label: "Shaum", ratio: `${shaumCount}/8`, grade: shaumCount >= 4 ? "A" : shaumCount > 0 ? "B" : "-", color: "text-emerald-500" },
       ],
+      munaqosah: munaqosahInfo,
       evaluasi: evaluasiText,
     };
   }
@@ -290,6 +339,53 @@ export class DrizzleRaportRepository implements IRaportRepository {
 
     const lastMonthlyWithEval = [...monthlyResults].reverse().find((m) => m.evaluasi !== null);
 
+    // Ambil nilai ujian semester (tes tertulis) jika sudah pernah diinput oleh guru
+    const minMonth = months[0];
+    const maxMonth = months[months.length - 1];
+
+    const examRows = await this.db
+      .select()
+      .from(setoranEntries)
+      .where(
+        and(
+          eq(setoranEntries.studentId, studentId),
+          eq(setoranEntries.schoolId, schoolId),
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') >= ${minMonth}`,
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') <= ${maxMonth}`,
+          sql`(${setoranEntries.keterangan} LIKE '%[Ujian Semester]%' OR (${setoranEntries.referenceStart}->>'isExam')::boolean = true)`
+        )
+      )
+      .orderBy(desc(setoranEntries.date))
+      .limit(1);
+
+    let testTertulisGrade = "-";
+    let testTertulisScore = "-/100";
+    let testTertulisArabic = "-";
+    let testTertulisMateri = "Pengetahuan Ilmu Tajwid Metode Sabiq";
+
+    if (examRows.length > 0) {
+      const exam = examRows[0];
+      const examScores = (exam.scores as Record<string, any>) || {};
+      const rawVal =
+        typeof examScores.tertulis === "number"
+          ? examScores.tertulis
+          : typeof examScores.score === "number"
+          ? examScores.score
+          : Object.values(examScores).find((v) => typeof v === "number");
+
+      if (rawVal !== undefined && rawVal !== null) {
+        const valNum = Number(rawVal);
+        const gr = scoreToGrade(valNum);
+        testTertulisGrade = gr.grade;
+        testTertulisScore = `${valNum}/100`;
+        testTertulisArabic = gr.arabic;
+      }
+      const ref = (exam.referenceStart as any) || {};
+      if (ref.materi) {
+        testTertulisMateri = ref.materi;
+      }
+    }
+
     return {
       student: studentInfo,
       period: {
@@ -346,10 +442,10 @@ export class DrizzleRaportRepository implements IRaportRepository {
           kelancaran: cntTahsin > 0 ? `${Math.round((sumKelancaran / cntTahsin) * 10) / 10}` : "0",
         },
         testTertulis: {
-          grade: grade.grade,
-          score: `${nilaiAkhir}/100`,
-          arabicPredicate: grade.arabic,
-          materi: "-",
+          grade: testTertulisGrade,
+          score: testTertulisScore,
+          arabicPredicate: testTertulisArabic,
+          materi: testTertulisMateri,
         },
       },
       kategoriList: [
@@ -374,6 +470,9 @@ export class DrizzleRaportRepository implements IRaportRepository {
         { label: "Dhuha", ratio: `${sumDhuha}/180`, grade: sumDhuha >= 60 ? "B" : sumDhuha > 0 ? "C" : "-", color: "text-amber-500" },
         { label: "Shaum", ratio: `${sumShaum}/48`, grade: sumShaum >= 24 ? "A" : sumShaum > 0 ? "B" : "-", color: "text-emerald-500" },
       ],
+      munaqosah:
+        monthlyResults.find((m) => m.munaqosah?.keterangan !== "-")?.munaqosah ??
+        monthlyResults[0]?.munaqosah ?? { keterangan: "-", nilai: "-" },
       evaluasi: lastMonthlyWithEval?.evaluasi ?? null,
     };
   }

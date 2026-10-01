@@ -91,6 +91,10 @@ export interface MonthlyRaportData {
   detailTtq: RaportDetailTtq;
   absensi: RaportAbsensi;
   mutabaah: RaportMutabaahRow[];
+  munaqosah?: {
+    keterangan: string;
+    nilai: string;
+  } | null;
   evaluasi: string | null;
   sumatif?: RaportSumatif;
 }
@@ -105,6 +109,10 @@ export interface SemesterRaportData {
   detailTtq: RaportDetailTtq;
   absensi: RaportAbsensi;
   mutabaah: RaportMutabaahRow[];
+  munaqosah?: {
+    keterangan: string;
+    nilai: string;
+  } | null;
   evaluasi: string | null;
   sumatif?: RaportSumatif;
 }
@@ -170,6 +178,7 @@ export async function exportRaportPdf(
   const mutabaah = data.mutabaah ?? [];
   const evaluasi = data.evaluasi ?? '';
   const sumatif = (data as SemesterRaportData).sumatif;
+  const munaqosah = data.munaqosah ?? null;
   
   // Hitung nilai akhir jika belum ada di payload (misal monthly)
   let nilaiAkhir = (data as SemesterRaportData).nilaiAkhir;
@@ -188,7 +197,7 @@ export async function exportRaportPdf(
 
   const denom = (() => {
     const m = String(absensi.kehadiranRatio ?? '').match(/\/(\d+)/);
-    return m ? m[1] : '40';
+    return m ? m[1] : (reportType === 'monthly' ? '30' : '180');
   })();
 
   const semLabel = period.semester
@@ -197,35 +206,38 @@ export async function exportRaportPdf(
       : period.semester === '2'
       ? 'Dua (Genap)'
       : period.semester
-    : 'Dua (Genap)';
+    : '-';
 
   const tahunPelajaran = reportType === 'monthly'
-    ? (period.year ?? '2025/2026')
-    : (period.tahunAjaran ?? '2025/2026');
+    ? (period.year ?? '-')
+    : (period.tahunAjaran ?? '-');
 
-  const semesterNum = period.semester ?? '2';
+  const semesterNum = period.semester ?? '-';
 
   const defaultMutabaah = [
-    { label: 'Tilawah', grade: 'A' },
-    { label: 'Shalat Fardhu', grade: 'A' },
-    { label: 'Shalat Sunnah', grade: 'B' },
-    { label: 'Tahajud', grade: 'A' },
-    { label: 'Dhuha', grade: 'A' },
-    { label: 'Shaum', grade: 'A' },
+    { label: 'Tilawah', grade: '-' },
+    { label: 'Shalat Fardhu', grade: '-' },
+    { label: 'Shalat Sunnah', grade: '-' },
+    { label: 'Tahajud', grade: '-' },
+    { label: 'Dhuha', grade: '-' },
+    { label: 'Shaum', grade: '-' },
   ];
 
   const mutabaahRows = mutabaah.length > 0
     ? mutabaah.map(m => ({ label: m.label, grade: m.grade || '-' }))
     : defaultMutabaah;
 
-  const scoreFormatted = Number(nilaiAkhir).toLocaleString('id-ID', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const scoreFormatted = (nilaiAkhir !== undefined && nilaiAkhir !== null && !isNaN(nilaiAkhir) && Number(nilaiAkhir) > 0)
+    ? Number(nilaiAkhir).toLocaleString('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : '-';
 
-  const evalText = evaluasi || 'Alhamdulillah semakin hari ananda semakin semangat menghafalnya, semoga tetap istiqomah. Barakallah fiik.';
+  const evalText = evaluasi || 'Belum ada catatan evaluasi dari guru pembimbing.';
   const periodDisplay = reportType === 'monthly' ? formatMonthYear(period.month, period.year) : semLabel;
   const footerLabel = reportType === 'monthly' ? `Nilai TTQ Bulan ${periodDisplay}` : `Nilai TTQ Semester ${semesterNum}`;
+  const currentDateStr = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 
   // Build offscreen container for html2canvas
   const renderContainer = document.createElement('div');
@@ -368,12 +380,12 @@ export async function exportRaportPdf(
       <tr>
         <td style="width: 115pt; padding: 3pt 8pt;">Nama</td>
         <td style="width: 12pt; text-align: center;">:</td>
-        <td style="padding: 3pt 6pt; font-weight: bold;">${escapeHtml(student.name ?? 'Evra Elya Najma Aris')}</td>
+        <td style="padding: 3pt 6pt; font-weight: bold;">${escapeHtml(student.name ?? '-')}</td>
       </tr>
       <tr>
         <td style="padding: 3pt 8pt;">Kelas</td>
         <td style="text-align: center;">:</td>
-        <td style="padding: 3pt 6pt;">${escapeHtml(student.className ?? 'VII Ali bin Abi Thalib')}</td>
+        <td style="padding: 3pt 6pt;">${escapeHtml(student.className ?? '-')}</td>
       </tr>
       <tr>
         <td style="padding: 3pt 8pt;">${reportType === 'monthly' ? 'Bulan' : 'Semester'}</td>
@@ -383,7 +395,7 @@ export async function exportRaportPdf(
       <tr>
         <td style="padding: 3pt 8pt;">Pembimbing</td>
         <td style="text-align: center;">:</td>
-        <td style="padding: 3pt 6pt;">${escapeHtml(student.pembimbingName ?? 'Sahri Fauzan, S.Pd.')}</td>
+        <td style="padding: 3pt 6pt;">${escapeHtml(student.pembimbingName ?? '-')}</td>
       </tr>
     </table>
 
@@ -398,20 +410,21 @@ export async function exportRaportPdf(
         <td colspan="5"><div class="c-inner c-center c-bold">Tilawah Metode Sabiq</div></td>
       </tr>
       <tr>
-        <td colspan="5"><div class="arabic-title">${escapeHtml(tahfidz.arabicPredicate || 'ممتاز')}</div></td>
-        <td colspan="5"><div class="arabic-title">${escapeHtml(tahsin.arabicPredicate || 'ممتاز')}</div></td>
+        <td colspan="5"><div class="arabic-title">${escapeHtml(tahfidz.arabicPredicate || '-')}</div></td>
+        <td colspan="5"><div class="arabic-title">${escapeHtml(tahsin.arabicPredicate || '-')}</div></td>
       </tr>
       <tr style="font-size: 10pt;">
-        <td colspan="5"><div class="c-inner c-center">${escapeHtml(tahfidz.capaian || 'QS. Juz 29 - Al Mujadalah dan Al Hasyir')}</div></td>
-        <td colspan="5"><div class="c-inner c-center">${escapeHtml(tahsin.capaian || 'Jilid 4 : 221-240')}</div></td>
+        <td colspan="5"><div class="c-inner c-center">${escapeHtml(tahfidz.capaian || '-')}</div></td>
+        <td colspan="5"><div class="c-inner c-center">${escapeHtml(tahsin.capaian || '-')}</div></td>
       </tr>
       <tr>
-        <td colspan="2"><div class="c-inner c-between"><span>Tajwid</span><span>: ${escapeHtml(tahfidz.score ?? '95')}</span></div></td>
-        <td colspan="3"><div class="c-inner c-between"><span>Kelancaran</span><span>: ${escapeHtml(tahfidz.score ?? '95')}</span></div></td>
-        <td colspan="5"><div class="c-inner c-between"><span>Nilai</span><span>: ${escapeHtml(tahsin.score ?? '95')}</span></div></td>
+        <td colspan="2"><div class="c-inner c-between"><span>Tajwid</span><span>: ${escapeHtml(tahfidz.score ?? '-')}</span></div></td>
+        <td colspan="3"><div class="c-inner c-between"><span>Kelancaran</span><span>: ${escapeHtml(tahfidz.score ?? '-')}</span></div></td>
+        <td colspan="5"><div class="c-inner c-between"><span>Nilai</span><span>: ${escapeHtml(tahsin.score ?? '-')}</span></div></td>
       </tr>
     </table>
 
+    ${reportType === 'semester' ? `
     <!-- Sumatif Section -->
     <div class="section-bar">
       HASIL ASESMEN SUMATIF TTQ SEMESTER ${escapeHtml(semesterNum)}
@@ -426,24 +439,24 @@ export async function exportRaportPdf(
         <td colspan="5"><div class="c-inner c-center c-bold">Tes Tilawah Metode Sabiq</div></td>
       </tr>
       <tr>
-        <td colspan="5"><div class="arabic-title">${escapeHtml(sumatif?.testTahfidz?.arabicPredicate || 'ممتاز')}</div></td>
-        <td colspan="5"><div class="arabic-title">${escapeHtml(sumatif?.testTilawah?.arabicPredicate || 'ممتاز')}</div></td>
+        <td colspan="5"><div class="arabic-title">${escapeHtml(sumatif?.testTahfidz?.arabicPredicate || '-')}</div></td>
+        <td colspan="5"><div class="arabic-title">${escapeHtml(sumatif?.testTilawah?.arabicPredicate || '-')}</div></td>
       </tr>
       <tr style="font-size: 10pt;">
-        <td colspan="5"><div class="c-inner c-center">${escapeHtml(sumatif?.testTahfidz?.capaian || 'QS. Juz 29 - Al Mujadalah dan Al Hasyir')}</div></td>
-        <td colspan="5"><div class="c-inner c-center">${escapeHtml(sumatif?.testTilawah?.capaian || 'QS. Jilid 4 : 221-240')}</div></td>
+        <td colspan="5"><div class="c-inner c-center">${escapeHtml(sumatif?.testTahfidz?.capaian || '-')}</div></td>
+        <td colspan="5"><div class="c-inner c-center">${escapeHtml(sumatif?.testTilawah?.capaian || '-')}</div></td>
       </tr>
       <tr>
         <td colspan="3"><div class="c-inner"><span>Tajwid</span></div></td>
-        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTahfidz?.tajwid ?? '94')}</span></div></td>
+        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTahfidz?.tajwid ?? '-')}</span></div></td>
         <td colspan="3"><div class="c-inner"><span>Tajwid</span></div></td>
-        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTilawah?.tajwid ?? '93')}</span></div></td>
+        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTilawah?.tajwid ?? '-')}</span></div></td>
       </tr>
       <tr>
         <td colspan="3"><div class="c-inner"><span>Kelancaran</span></div></td>
-        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTahfidz?.kelancaran ?? '98')}</span></div></td>
+        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTahfidz?.kelancaran ?? '-')}</span></div></td>
         <td colspan="3"><div class="c-inner"><span>Kelancaran</span></div></td>
-        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTilawah?.kelancaran ?? '94')}</span></div></td>
+        <td colspan="2"><div class="c-inner c-center"><span>${escapeHtml(sumatif?.testTilawah?.kelancaran ?? '-')}</span></div></td>
       </tr>
     </table>
 
@@ -458,10 +471,11 @@ export async function exportRaportPdf(
       </colgroup>
       <tr>
         <td colspan="6"><div class="c-inner" style="min-height: 32pt;">Materi : ${escapeHtml(sumatif?.testTertulis?.materi || 'Pengetahuan Ilmu Tajwid Metode Sabiq')}</div></td>
-        <td colspan="2"><div class="c-inner c-center c-bold" style="font-size: 16pt; min-height: 32pt;">${escapeHtml(sumatif?.testTertulis?.score ?? '100')}</div></td>
-        <td colspan="2"><div class="c-inner c-center c-bold" style="font-size: 16pt; min-height: 32pt;">${escapeHtml(sumatif?.testTertulis?.grade ?? 'A')}</div></td>
+        <td colspan="2"><div class="c-inner c-center c-bold" style="font-size: 16pt; min-height: 32pt;">${escapeHtml(sumatif?.testTertulis?.score ?? '-')}</div></td>
+        <td colspan="2"><div class="c-inner c-center c-bold" style="font-size: 16pt; min-height: 32pt;">${escapeHtml(sumatif?.testTertulis?.grade ?? '-')}</div></td>
       </tr>
     </table>
+    ` : ''}
 
     <!-- Laporan Mutabaah Yaumiyyah -->
     <div class="section-bar">
@@ -480,9 +494,9 @@ export async function exportRaportPdf(
       `).join('')}
       <tr>
         <td colspan="4"><div class="c-inner">Keterangan Munaqosyah</div></td>
-        <td colspan="2"><div class="c-inner">: Juz 29</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(munaqosah?.keterangan || '-')}</div></td>
         <td colspan="2"><div class="c-inner">Nilai</div></td>
-        <td colspan="2"><div class="c-inner">: A</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(munaqosah?.nilai || '-')}</div></td>
       </tr>
     </table>
 
@@ -497,8 +511,26 @@ export async function exportRaportPdf(
       </colgroup>
       <tr>
         <td colspan="8"><div class="c-inner">Kehadiran</div></td>
-        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.kehadiranRatio ?? `40/${denom}`)}</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.kehadiranRatio ?? `0/${denom}`)}</div></td>
       </tr>
+      ${reportType === 'monthly' ? `
+      <tr>
+        <td colspan="8"><div class="c-inner">Tidak Setoran</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.tidakSetoranCount ?? 0)}/${escapeHtml(denom)}</div></td>
+      </tr>
+      <tr>
+        <td colspan="8"><div class="c-inner">Alpa</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.alpaCount ?? 0)}/${escapeHtml(denom)}</div></td>
+      </tr>
+      <tr>
+        <td colspan="8"><div class="c-inner">Izin</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.izinCount ?? 0)}/${escapeHtml(denom)}</div></td>
+      </tr>
+      <tr>
+        <td colspan="8"><div class="c-inner">Sakit</div></td>
+        <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.sakitCount ?? 0)}/${escapeHtml(denom)}</div></td>
+      </tr>
+      ` : ''}
     </table>
 
   </div>
@@ -508,6 +540,7 @@ export async function exportRaportPdf(
 <div class="pdf-page-card" id="pdf-p2">
   <div class="outer-border-box">
 
+    ${reportType === 'semester' ? `
     <!-- Sisa Absensi (Hal 2) -->
     <table class="grid-table">
       <colgroup>
@@ -531,6 +564,7 @@ export async function exportRaportPdf(
         <td colspan="2"><div class="c-inner">: ${escapeHtml(absensi.sakitCount ?? 0)}/${escapeHtml(denom)}</div></td>
       </tr>
     </table>
+    ` : ''}
 
     <!-- Range Nilai -->
     <div class="section-bar">
@@ -582,11 +616,11 @@ export async function exportRaportPdf(
 
         <!-- Tanda Tangan Kanan -->
         <div style="width: 48%; text-align: center; font-size: 10.5pt;">
-          <div>Bandung, &nbsp; Juni 2026</div>
+          <div>Bandung, &nbsp; ${currentDateStr}</div>
           <div style="margin-top: 2pt;">Guru Pembimbing TTQ</div>
           <div style="height: 60pt;"></div>
           <div style="font-weight: bold; font-size: 11pt;">
-            ${escapeHtml(student.pembimbingName ?? 'Sahri Fauzan, S.Pd.')}
+            ${escapeHtml(student.pembimbingName ?? '-')}
           </div>
         </div>
 
@@ -599,7 +633,7 @@ export async function exportRaportPdf(
 
   document.body.appendChild(renderContainer);
 
-  const safeName = (student.name ?? 'student').replace(/\s+/g, '_');
+  const safeName = (student.name ?? 'siswa').replace(/\s+/g, '_');
   const filename = `${_schoolName.replace(/\s+/g, '_')}_${reportType}_raport_${safeName}.pdf`;
 
   try {

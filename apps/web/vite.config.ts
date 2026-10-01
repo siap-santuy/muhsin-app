@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       devOptions: {
         enabled: true,
       },
@@ -44,6 +44,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         // Handler push notification digabung ke service worker Workbox
         importScripts: ["/push-handler.js"],
         // Cache static assets: JS, CSS, HTML, Fonts, Images

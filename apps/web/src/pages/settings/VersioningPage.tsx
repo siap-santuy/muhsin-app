@@ -8,10 +8,12 @@ import {
   ChevronUp,
   Calendar,
   Layers,
+  RefreshCw,
 } from "lucide-react";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import versionsData from "@/data/versions.json";
 import { APP_VERSION } from "@/lib/appVersion";
+import { forceUpdateApp } from "@/utils/pwaUpdate";
 import type { AppVersionItem } from "@/components/versioning/VersionSliderDrawer";
 
 export function VersioningPage() {
@@ -82,6 +84,24 @@ export function VersioningPage() {
               peningkatan, dan perbaikan bug.
             </p>
           </div>
+        </div>
+
+        {/* Force Refresh Action Card */}
+        <div className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-4 shadow-xs">
+          <div className="pr-3">
+            <h4 className="text-xs font-bold text-brand-navy">Perbarui Aplikasi</h4>
+            <p className="text-[11px] text-brand-text-muted">
+              Tekan jika pembaruan baru belum tampil di browser atau aplikasi HP Anda.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => forceUpdateApp()}
+            className="flex items-center gap-1.5 rounded-xl bg-brand-cyan px-3 py-2 text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90 active:scale-95 shrink-0"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Muat Ulang</span>
+          </button>
         </div>
 
         {/* Version List Accordion */}
