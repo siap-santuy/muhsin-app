@@ -57,8 +57,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_URL: https://api.muhsin.id
-        VITE_DEFAULT_SCHOOL_SLUG: alfitrah
+        VITE_API_URL: ${VITE_API_URL:-https://api.muhsin.id}
+        VITE_DEFAULT_SCHOOL_SLUG: ${VITE_DEFAULT_SCHOOL_SLUG:-alfitrah}
     container_name: muhsin_web
     restart: unless-stopped
     # Only bind to host localhost (reverse-proxied by Nginx/Caddy on VPS)
