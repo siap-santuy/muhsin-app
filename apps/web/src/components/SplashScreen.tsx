@@ -11,7 +11,7 @@ export function SplashScreen() {
         <img
           src="/brand/muhsin_learn.png"
           alt="Mascot Muhsin"
-          className="h-44 w-44 object-contain drop-shadow-sm"
+          className="h-44 w-44 object-contain"
         />
         <div className="space-y-1">
           <h1 className="text-4xl font-extrabold tracking-wider text-[#1CB8CE]">

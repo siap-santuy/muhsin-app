@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.0.6",
+    "version": "v1.0.7",
     "releaseDate": "1 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Perbaikan Icon PWA Solid & Tampilan Bersih Layar Pembuka",
+    "summary": "Regenerasi icon PWA solid putih (#FFFFFF) sesuai standar Android Adaptive Icon dan iOS Apple Touch Icon, menghilangkan artefak hitam dan kotak belang pada layar pembuka saat aplikasi dibuka setelah diinstall.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Regenerasi pwa-512x512.png, pwa-192x192.png, dan apple-touch-icon.png dengan latar belakang solid putih (#FFFFFF) dan safe-zone margin proporsional, mencegah Android dan iOS mengisi area transparan menjadi hitam."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Pembersihan sisa pixel kotor dan penghapusan efek drop-shadow pada gambar maskot di layar splash pembuka."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.6",
+    "releaseDate": "1 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Input Ujian Semester Sabiq, Raport PDF Bulanan Bersih & PWA Auto-Update",
     "summary": "Fitur input nilai Ujian Semester (Tes Tertulis Tajwid) di menu TTQ Sabiq guru, pembersihan blok sumatif pada PDF raport bulanan, serta pembaruan otomatis Service Worker PWA tanpa kendala cache nyangkut di HP.",
     "changes": [
