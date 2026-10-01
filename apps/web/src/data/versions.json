@@ -16,6 +16,11 @@
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
         "description": "Pembersihan sisa pixel kotor dan penghapusan efek drop-shadow pada gambar maskot di layar splash pembuka."
+      },
+      {
+        "category": "security",
+        "categoryLabel": "Keamanan",
+        "description": "Patch kerentanan dependensi: update vitest (v4), drizzle-orm (v0.45), hono (v4.13), vite (v6), migrasi parser seed ke exceljs, serta eliminasi seluruh celah keamanan (0 vulnerability)."
       }
     ]
   },

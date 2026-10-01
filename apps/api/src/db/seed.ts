@@ -13,7 +13,7 @@ import {
   assessmentSubcategories,
 } from "./schema";
 import { hash } from "@node-rs/argon2";
-import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import * as path from "node:path";
 import * as fs from "node:fs";
 
@@ -302,12 +302,40 @@ async function main() {
   }
 
   console.log(`[seed] reading data from ${resolvedPath}...`);
-  const fileBuffer = fs.readFileSync(resolvedPath);
-  const workbook = xlsx.read(fileBuffer, { type: "buffer" });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(resolvedPath);
+
+  function sheetToJson<T>(sheet: ExcelJS.Worksheet | undefined): T[] {
+    if (!sheet) return [];
+    const rows: T[] = [];
+    const headers: Record<number, string> = {};
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) {
+        row.eachCell((cell, colNumber) => {
+          headers[colNumber] = String(cell.value || "").trim();
+        });
+      } else {
+        const obj: any = {};
+        let hasData = false;
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber];
+          if (header) {
+            let val = cell.value;
+            if (val && typeof val === "object" && "text" in val) {
+              val = (val as any).text;
+            }
+            obj[header] = val;
+            hasData = true;
+          }
+        });
+        if (hasData) rows.push(obj);
+      }
+    });
+    return rows;
+  }
 
   // 5.1 Classes
-  const classSheet = workbook.Sheets["class"];
-  const classRows: ExcelClassRow[] = xlsx.utils.sheet_to_json(classSheet);
+  const classRows = sheetToJson<ExcelClassRow>(workbook.getWorksheet("class"));
   const classMap = new Map<string, string>(); // className -> classId
 
   for (const row of classRows) {
@@ -341,8 +369,7 @@ async function main() {
   }
 
   // 5.2 Teachers
-  const teacherSheet = workbook.Sheets["teacher"];
-  const teacherRows: ExcelTeacherRow[] = xlsx.utils.sheet_to_json(teacherSheet);
+  const teacherRows = sheetToJson<ExcelTeacherRow>(workbook.getWorksheet("teacher"));
   const teacherMap = new Map<string, string>(); // teacherName -> teacherUserId
   const defaultPasswordHash = await hash(DEFAULT_PASSWORD);
 
@@ -381,8 +408,7 @@ async function main() {
   }
 
   // 5.3 Student password & profile map (derived from birth_date as 8 digits ddmmyyyy)
-  const studentSheet = workbook.Sheets["student"];
-  const studentRows: ExcelStudentRow[] = xlsx.utils.sheet_to_json(studentSheet);
+  const studentRows = sheetToJson<ExcelStudentRow>(workbook.getWorksheet("student"));
   const studentPasswordMap = new Map<string, string>();
   const studentInfoMap = new Map<string, { gender?: string; birthPlace?: string; birthDate?: string }>();
 
@@ -400,8 +426,7 @@ async function main() {
   }
 
   // 5.4 Students, Parents, Class Enrollment & Teacher Mappings
-  const mappingSheet = workbook.Sheets["student-parent-class-teacher"];
-  const mappingRows: any[] = xlsx.utils.sheet_to_json(mappingSheet);
+  const mappingRows = sheetToJson<any>(workbook.getWorksheet("student-parent-class-teacher"));
 
   console.log(`[seed] processing ${mappingRows.length} mapping rows from Excel...`);
   const usedEmails = new Set<string>();
