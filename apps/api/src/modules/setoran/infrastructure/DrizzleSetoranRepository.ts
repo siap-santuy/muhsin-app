@@ -85,12 +85,65 @@ export class DrizzleSetoranRepository implements ISetoranRepository {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: setoranEntries.id,
+        schoolId: setoranEntries.schoolId,
+        subcategoryId: setoranEntries.subcategoryId,
+        studentId: setoranEntries.studentId,
+        teacherId: setoranEntries.teacherId,
+        date: setoranEntries.date,
+        referenceStart: setoranEntries.referenceStart,
+        referenceEnd: setoranEntries.referenceEnd,
+        scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
+        substitutedForTeacherId: setoranEntries.substitutedForTeacherId,
+        createdAt: setoranEntries.createdAt,
+        updatedAt: setoranEntries.updatedAt,
+        subcategoryCode: assessmentSubcategories.code,
+        subcategoryName: assessmentSubcategories.name,
+        categoryCode: assessmentCategories.code,
+        categoryName: assessmentCategories.name,
+      })
       .from(setoranEntries)
+      .leftJoin(
+        assessmentSubcategories,
+        eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+      )
+      .leftJoin(
+        assessmentCategories,
+        eq(assessmentCategories.id, assessmentSubcategories.categoryId)
+      )
       .where(and(...conditions))
       .orderBy(desc(setoranEntries.date));
 
-    return rows.map((r) => this.toDomain(r));
+    return rows.map((r) => {
+      let status: "setoran" | "sakit" | "izin" | "alpa" = "setoran";
+      const ket = (r.keterangan || "").toLowerCase();
+      if (ket.includes("[sakit]") || ket.includes("sakit")) status = "sakit";
+      else if (ket.includes("[izin]") || ket.includes("izin")) status = "izin";
+      else if (ket.includes("[alpa]") || ket.includes("alpha") || ket.includes("alpa")) status = "alpa";
+
+      return {
+        id: r.id,
+        schoolId: r.schoolId,
+        subcategoryId: r.subcategoryId,
+        studentId: r.studentId,
+        teacherId: r.teacherId,
+        date: r.date,
+        referenceStart: r.referenceStart as any,
+        referenceEnd: r.referenceEnd as any,
+        scores: r.scores as Record<string, number>,
+        keterangan: r.keterangan,
+        status,
+        subcategoryCode: r.subcategoryCode ?? undefined,
+        subcategoryName: r.subcategoryName ?? undefined,
+        categoryCode: r.categoryCode ?? undefined,
+        categoryName: r.categoryName ?? undefined,
+        substitutedForTeacherId: r.substitutedForTeacherId ?? null,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      };
+    });
   }
 
   async findByStudentAndMonth(

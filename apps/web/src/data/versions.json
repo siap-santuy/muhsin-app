@@ -1,9 +1,34 @@
 [
   {
-    "version": "v1.0.7",
-    "releaseDate": "1 Oktober 2026",
+    "version": "v1.0.8",
+    "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Sinkronisasi Akun Orang Tua & Perbaikan Detail TTQ",
+    "summary": "Penyempurnaan relasi akun orang tua ke data siswa, kalkulasi detail Ziyadah & Muroja'ah pada raport bulanan, serta indikator kehadiran pada kalender setoran.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan pemetaan ID anak pada akun orang tua untuk query raport, mutaba'ah yaumiyah, dan riwayat setoran."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Kalkulasi nilai Ziyadah dan Muroja'ah pada detail TTQ raport bulanan berdasarkan subkategori penilaian."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Indikator kehadiran dan status setoran pada kalender progres bulanan TTQ orang tua."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.7",
+    "releaseDate": "1 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Perbaikan Icon PWA Solid & Tampilan Bersih Layar Pembuka",
     "summary": "Regenerasi icon PWA solid putih (#FFFFFF) sesuai standar Android Adaptive Icon dan iOS Apple Touch Icon, menghilangkan artefak hitam dan kotak belang pada layar pembuka saat aplikasi dibuka setelah diinstall.",
     "changes": [

@@ -1,4 +1,4 @@
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, or, gte, lte } from "drizzle-orm";
 import { createDb, closeDb } from "./client";
 import {
   schools,
@@ -166,7 +166,11 @@ async function main() {
       and(
         eq(users.schoolId, school.id),
         eq(users.role, "student"),
-        eq(users.email, STUDENT_EMAIL)
+        or(
+          eq(users.email, STUDENT_EMAIL),
+          eq(users.name, "Abdul Rayhan Pradipta"),
+          eq(users.username, "abdulrayhan")
+        )
       )
     )
     .limit(1);
@@ -190,10 +194,15 @@ async function main() {
   } else {
     await db
       .update(users)
-      .set({ passwordHash: defaultPasswordHash })
+      .set({
+        email: STUDENT_EMAIL,
+        name: "Abdul Rayhan Pradipta",
+        username: "abdulrayhan",
+        passwordHash: defaultPasswordHash,
+      })
       .where(eq(users.id, student.id));
   }
-  console.log(`[sim] Siswa: ${student.name} (${student.email})`);
+  console.log(`[sim] Siswa: ${student.name} (${student.email}, id: ${student.id})`);
 
   // 5.3 ORANG TUA
   const PARENT_USERNAME = "ortu_daraindahpertiwi";
@@ -205,7 +214,11 @@ async function main() {
       and(
         eq(users.schoolId, school.id),
         eq(users.role, "parent"),
-        eq(users.username, PARENT_USERNAME)
+        or(
+          eq(users.username, PARENT_USERNAME),
+          eq(users.email, PARENT_EMAIL),
+          eq(users.name, "Dara Indah Pertiwi")
+        )
       )
     )
     .limit(1);
@@ -226,10 +239,15 @@ async function main() {
   } else {
     await db
       .update(users)
-      .set({ passwordHash: defaultPasswordHash })
+      .set({
+        username: PARENT_USERNAME,
+        email: PARENT_EMAIL,
+        name: "Dara Indah Pertiwi",
+        passwordHash: defaultPasswordHash,
+      })
       .where(eq(users.id, parent.id));
   }
-  console.log(`[sim] Ortu: ${parent.name} (username: ${parent.username})`);
+  console.log(`[sim] Ortu: ${parent.name} (username: ${parent.username}, id: ${parent.id})`);
 
   // 5.4 Pastikan Hubungan (Mappings) Terhubung
   // Student -> Class Enrollment
@@ -284,26 +302,21 @@ async function main() {
       .where(eq(studentTeacherMapping.id, existingMapping.id));
   }
 
-  // Parent -> Student Mapping
-  const [existingParentStudent] = await db
-    .select()
-    .from(parentStudentMapping)
+  // Parent -> Student Mapping (Bersihkan mapping ganda dan pastikan terkoneksi ke student target)
+  await db
+    .delete(parentStudentMapping)
     .where(
       and(
         eq(parentStudentMapping.schoolId, school.id),
-        eq(parentStudentMapping.parentId, parent.id),
-        eq(parentStudentMapping.studentId, student.id)
+        eq(parentStudentMapping.parentId, parent.id)
       )
-    )
-    .limit(1);
+    );
 
-  if (!existingParentStudent) {
-    await db.insert(parentStudentMapping).values({
-      schoolId: school.id,
-      parentId: parent.id,
-      studentId: student.id,
-    });
-  }
+  await db.insert(parentStudentMapping).values({
+    schoolId: school.id,
+    parentId: parent.id,
+    studentId: student.id,
+  });
 
   console.log(`[sim] Mapping Guru <-> Siswa <-> Orang Tua dipastikan terhubung AKTIF.`);
 
