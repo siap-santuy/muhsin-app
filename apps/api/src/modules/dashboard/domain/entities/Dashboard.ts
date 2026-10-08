@@ -54,6 +54,7 @@ export interface TeacherDashboardSummary {
 
 export interface ParentDashboardSummary {
   parentName: string;
+  childId?: string;
   childName: string;
   childClassName: string;
   childLevel: number;

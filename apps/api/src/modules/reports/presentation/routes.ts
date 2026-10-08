@@ -9,6 +9,7 @@ export interface RaportRoutesDeps {
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
   recordParentViewUseCase?: RecordParentViewUseCase;
+  resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>;
 }
 
 function trackParentView(
@@ -39,7 +40,9 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
     requireRole("student", "parent", "teacher", "koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const month = c.req.query("month") ?? new Date().toISOString().slice(0, 7);
 
       const raport = await deps.getMonthlyRaportUseCase.execute(
@@ -48,7 +51,7 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
         user.schoolId
       );
 
-      trackParentView(deps.recordParentViewUseCase, user, c.req.query("studentId"));
+      trackParentView(deps.recordParentViewUseCase, user, targetStudentId);
 
       return c.json({ data: raport, error: null, meta: null }, 200);
     }
@@ -60,7 +63,9 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
     requireRole("student", "parent", "teacher", "koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const semester = c.req.query("semester") ?? "Ganjil";
       const tahunAjaran = c.req.query("tahunAjaran") ?? "2026/2027";
 
@@ -71,7 +76,7 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
         user.schoolId
       );
 
-      trackParentView(deps.recordParentViewUseCase, user, c.req.query("studentId"));
+      trackParentView(deps.recordParentViewUseCase, user, targetStudentId);
 
       return c.json({ data: raport, error: null, meta: null }, 200);
     }

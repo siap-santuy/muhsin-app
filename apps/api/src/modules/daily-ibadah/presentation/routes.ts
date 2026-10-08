@@ -37,6 +37,7 @@ export interface DailyIbadahRoutesDeps {
   submitUseCase: SubmitDailyIbadahUseCase;
   saveDraftUseCase: SaveDraftDailyIbadahUseCase;
   getStatsUseCase: GetDailyIbadahStatsUseCase;
+  resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>;
 }
 
 export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
@@ -48,7 +49,9 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
     requireRole("student", "parent", "teacher", "koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const date = c.req.query("date") ?? new Date().toISOString().slice(0, 10);
 
       const ibadah = await deps.repo.findByStudentAndDate(
@@ -67,7 +70,9 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
     requireRole("student", "parent", "teacher", "koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const month = c.req.query("month") ?? new Date().toISOString().slice(0, 7);
 
       const history = await deps.repo.findByMonth(
@@ -86,7 +91,9 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
     requireRole("student", "parent", "teacher", "koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const targetStudentId = c.req.query("studentId") ?? user.userId;
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const month = c.req.query("month") ?? new Date().toISOString().slice(0, 7);
 
       const stats = await deps.getStatsUseCase.execute({

@@ -108,6 +108,7 @@ import { createPublicDailyIbadahRoutes } from "../modules/daily-ibadah/presentat
 import { DrizzleSchoolAdminRepository } from "../modules/schools/infrastructure/DrizzleSchoolAdminRepository";
 import { ManageStudentUseCase, ManageTeacherUseCase } from "../modules/schools/application/use-cases/ManageSchoolUserUseCase";
 import { errorHandler } from "../middleware/error-handler";
+import { resolveStudentIdForUser } from "../shared/domain/resolve-student";
 
 export interface ContainerDeps {
   db: Db;
@@ -241,6 +242,8 @@ export function createApp(deps: ContainerDeps): Hono {
 
   // Protected middleware for all /api/* routes
   const protectedAuth = authMiddleware(deps.tokenService);
+  const resolveStudent = (user: any, reqId?: string) =>
+    resolveStudentIdForUser(deps.db, user, reqId);
 
   const schoolAdminRoutes = createSchoolAdminRoutes({
     adminRepo: deps.schoolAdminRepo,
@@ -262,13 +265,17 @@ export function createApp(deps: ContainerDeps): Hono {
     submitUseCase: deps.submitDailyIbadahUseCase,
     saveDraftUseCase: deps.saveDraftDailyIbadahUseCase,
     getStatsUseCase: deps.getDailyIbadahStatsUseCase,
+    resolveStudentId: resolveStudent,
   });
   app.use("/daily-ibadah/*", protectedAuth, tenantScopeMiddleware);
   app.use("/daily-ibadah", protectedAuth, tenantScopeMiddleware);
   app.route("/daily-ibadah", dailyIbadahRoutes);
 
   // Gamification
-  const gamificationRoutes = createGamificationRoutes(deps.getGamificationSummaryUseCase);
+  const gamificationRoutes = createGamificationRoutes(
+    deps.getGamificationSummaryUseCase,
+    resolveStudent
+  );
   app.use("/gamification/*", protectedAuth, tenantScopeMiddleware);
   app.use("/gamification", protectedAuth, tenantScopeMiddleware);
   app.route("/gamification", gamificationRoutes);
@@ -280,6 +287,7 @@ export function createApp(deps: ContainerDeps): Hono {
     getSetoranHistoryUseCase: deps.getSetoranHistoryUseCase,
     getSetoranByIdUseCase: deps.getSetoranByIdUseCase,
     getAssessmentCategoriesUseCase: deps.getAssessmentCategoriesUseCase,
+    resolveStudentId: resolveStudent,
   });
   app.use("/setoran/*", protectedAuth, tenantScopeMiddleware);
   app.use("/setoran", protectedAuth, tenantScopeMiddleware);
@@ -310,6 +318,7 @@ export function createApp(deps: ContainerDeps): Hono {
     getMonthlyRaportUseCase: deps.getMonthlyRaportUseCase,
     getSemesterRaportUseCase: deps.getSemesterRaportUseCase,
     recordParentViewUseCase: deps.recordParentViewUseCase,
+    resolveStudentId: resolveStudent,
   });
   app.use("/raport/*", protectedAuth, tenantScopeMiddleware);
   app.use("/raport", protectedAuth, tenantScopeMiddleware);

@@ -605,6 +605,56 @@ async function main() {
           createdAt: new Date(createdAt.getTime() + 1000 * 60 * 30),
         });
       }
+
+      // 8.3 Setoran Muroja'ah (Senin, Rabu, Jumat)
+      if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
+        const murojaahFields = (murojaahSubcat.scoreFields as any[]) || [];
+        const mScores: Record<string, number> = {};
+        if (murojaahFields.length > 0) {
+          for (const f of murojaahFields) {
+            mScores[f.key] = 88 + ((day * 2 + f.key.length) % 11);
+          }
+        } else {
+          mScores["tajwid"] = 92;
+          mScores["kelancaran"] = 94;
+        }
+
+        const [mEntry] = await db
+          .insert(setoranEntries)
+          .values({
+            schoolId: school.id,
+            subcategoryId: murojaahSubcat.id,
+            studentId: student.id,
+            teacherId: teacher.id,
+            date: dateStr,
+            referenceStart: {
+              surah: "An-Naba'",
+              surahNumber: 78,
+              ayat: 1,
+            },
+            referenceEnd: {
+              surah: "An-Naba'",
+              surahNumber: 78,
+              ayat: 20,
+            },
+            scores: mScores,
+            keterangan: `[Hadir] Setoran Muroja'ah An-Naba' ayat 1-20 lancar dan mutqin`,
+            createdAt: new Date(createdAt.getTime() + 1000 * 60 * 45),
+            updatedAt: new Date(createdAt.getTime() + 1000 * 60 * 45),
+          })
+          .returning();
+
+        cumulativeExp += 20;
+        await db.insert(expTransactions).values({
+          schoolId: school.id,
+          studentId: student.id,
+          sourceType: "setoran",
+          sourceId: mEntry.id,
+          expAmount: 20,
+          description: `Setoran Muroja'ah tanggal ${dateStr}`,
+          createdAt: new Date(createdAt.getTime() + 1000 * 60 * 45),
+        });
+      }
     }
   }
 

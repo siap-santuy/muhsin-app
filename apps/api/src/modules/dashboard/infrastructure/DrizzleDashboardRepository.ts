@@ -12,7 +12,7 @@ import {
   assessmentSubcategories,
   dailyIbadah,
 } from "../../../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import type { IDashboardRepository } from "../domain/repositories/IDashboardRepository";
 import type {
   StudentDashboardSummary,
@@ -61,16 +61,53 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     const target = targetRows[0];
 
-    // Current month setoran counts
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const setoranRows = await this.db
-      .select()
+    // Current month setoran counts (fallback ke bulan aktivitas terakhir jika bulan ini kosong)
+    let activeMonth = new Date().toISOString().slice(0, 7);
+    const [latestStudentSetoran] = await this.db
+      .select({ date: setoranEntries.date })
       .from(setoranEntries)
       .where(
         and(
           eq(setoranEntries.studentId, studentId),
+          eq(setoranEntries.schoolId, schoolId)
+        )
+      )
+      .orderBy(desc(setoranEntries.date))
+      .limit(1);
+
+    if (latestStudentSetoran?.date) {
+      const latestMonth = String(latestStudentSetoran.date).slice(0, 7);
+      const [currCount] = await this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(setoranEntries)
+        .where(
+          and(
+            eq(setoranEntries.studentId, studentId),
+            eq(setoranEntries.schoolId, schoolId),
+            sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
+          )
+        );
+      if (Number(currCount?.count ?? 0) === 0) {
+        activeMonth = latestMonth;
+      }
+    }
+
+    const setoranRows = await this.db
+      .select({
+        id: setoranEntries.id,
+        subcatCode: assessmentSubcategories.code,
+        referenceStart: setoranEntries.referenceStart,
+      })
+      .from(setoranEntries)
+      .leftJoin(
+        assessmentSubcategories,
+        eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+      )
+      .where(
+        and(
+          eq(setoranEntries.studentId, studentId),
           eq(setoranEntries.schoolId, schoolId),
-          sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${currentMonth}`
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
         )
       );
 
@@ -79,7 +116,10 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     let tahsinCount = 0;
 
     for (const s of setoranRows) {
-      if (s.referenceStart && (s.referenceStart as any).surah) {
+      const subCode = (s.subcatCode || "").toUpperCase();
+      if (subCode.includes("MUROJAAH")) {
+        murojaahCount++;
+      } else if (subCode.includes("ZIYADAH") || (s.referenceStart && (s.referenceStart as any).surah)) {
         ziyadahCount++;
       } else {
         tahsinCount++;
@@ -93,7 +133,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         and(
           eq(dailyIbadah.studentId, studentId),
           eq(dailyIbadah.schoolId, schoolId),
-          sql`to_char(${dailyIbadah.date}, 'YYYY-MM') = ${currentMonth}`
+          sql`to_char(${dailyIbadah.date}, 'YYYY-MM') = ${activeMonth}`
         )
       );
 
@@ -474,20 +514,60 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         .limit(1);
       isTodayFilled = !!ibadahToday[0];
 
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const childSetoran = await this.db
-        .select()
+      let activeMonth = new Date().toISOString().slice(0, 7);
+      const [latestChildSetoran] = await this.db
+        .select({ date: setoranEntries.date })
         .from(setoranEntries)
         .where(
           and(
             eq(setoranEntries.studentId, childId),
+            eq(setoranEntries.schoolId, schoolId)
+          )
+        )
+        .orderBy(desc(setoranEntries.date))
+        .limit(1);
+
+      if (latestChildSetoran?.date) {
+        const latestMonth = String(latestChildSetoran.date).slice(0, 7);
+        const [currCount] = await this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(setoranEntries)
+          .where(
+            and(
+              eq(setoranEntries.studentId, childId),
+              eq(setoranEntries.schoolId, schoolId),
+              sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
+            )
+          );
+        if (Number(currCount?.count ?? 0) === 0) {
+          activeMonth = latestMonth;
+        }
+      }
+
+      const childSetoran = await this.db
+        .select({
+          id: setoranEntries.id,
+          subcatCode: assessmentSubcategories.code,
+          referenceStart: setoranEntries.referenceStart,
+        })
+        .from(setoranEntries)
+        .leftJoin(
+          assessmentSubcategories,
+          eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+        )
+        .where(
+          and(
+            eq(setoranEntries.studentId, childId),
             eq(setoranEntries.schoolId, schoolId),
-            sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${currentMonth}`
+            sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
           )
         );
 
       for (const s of childSetoran) {
-        if (s.referenceStart && (s.referenceStart as any).surah) {
+        const subCode = (s.subcatCode || "").toUpperCase();
+        if (subCode.includes("MUROJAAH")) {
+          childMurojaah++;
+        } else if (subCode.includes("ZIYADAH") || (s.referenceStart && (s.referenceStart as any).surah)) {
           childZiyadah++;
         } else {
           childTahsin++;
@@ -501,7 +581,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           and(
             eq(dailyIbadah.studentId, childId),
             eq(dailyIbadah.schoolId, schoolId),
-            sql`to_char(${dailyIbadah.date}, 'YYYY-MM') = ${currentMonth}`
+            sql`to_char(${dailyIbadah.date}, 'YYYY-MM') = ${activeMonth}`
           )
         );
       childYaumiyahDays = childIbadah.length;
@@ -509,6 +589,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     return {
       parentName: parentRows[0]?.name ?? "Orang Tua",
+      childId: childId ?? undefined,
       childName: child?.studentName ?? "Ananda",
       childClassName: child?.className ?? "Kelas VII",
       childLevel: gam?.level ?? 1,

@@ -9,6 +9,7 @@ import {
   evaluasiBulanan,
   munaqosahRequests,
   munaqosahAssignments,
+  assessmentSubcategories,
 } from "../../../db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import type { IRaportRepository } from "../domain/repositories/IRaportRepository";
@@ -74,8 +75,22 @@ export class DrizzleRaportRepository implements IRaportRepository {
 
     // 2. Aggregate setoran monthly scores (hanya setoran harian, kecualikan ujian semester)
     const setoranRows = await this.db
-      .select()
+      .select({
+        id: setoranEntries.id,
+        subcategoryId: setoranEntries.subcategoryId,
+        subcatCode: assessmentSubcategories.code,
+        subcatName: assessmentSubcategories.name,
+        date: setoranEntries.date,
+        referenceStart: setoranEntries.referenceStart,
+        referenceEnd: setoranEntries.referenceEnd,
+        scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
+      })
       .from(setoranEntries)
+      .leftJoin(
+        assessmentSubcategories,
+        eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+      )
       .where(
         and(
           eq(setoranEntries.studentId, studentId),
@@ -83,6 +98,17 @@ export class DrizzleRaportRepository implements IRaportRepository {
           sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${month}`
         )
       );
+
+    let sakitCount = 0;
+    let izinCount = 0;
+    let alpaCount = 0;
+
+    for (const s of setoranRows) {
+      const ket = (s.keterangan || "").toLowerCase();
+      if (ket.includes("[sakit]") || ket.includes("sakit")) sakitCount++;
+      else if (ket.includes("[izin]") || ket.includes("izin")) izinCount++;
+      else if (ket.includes("[alpa]") || ket.includes("alpha") || ket.includes("alpa")) alpaCount++;
+    }
 
     const dailySetorans = setoranRows.filter(
       (s) =>
@@ -110,14 +136,24 @@ export class DrizzleRaportRepository implements IRaportRepository {
       const vals = Object.values(scores).filter((v) => typeof v === "number");
       if (vals.length > 0) {
         const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        if (s.referenceStart && (s.referenceStart as any).surah) {
+        const subCode = (s.subcatCode || "").toUpperCase();
+        const isSurah = !!(s.referenceStart && (s.referenceStart as any).surah);
+
+        if (subCode.includes("ZIYADAH") || (!subCode && isSurah)) {
           tahfidzTotal += avg;
           tahfidzCount++;
+          ziyadahSum += avg;
+          ziyadahCnt++;
           const ref = s.referenceStart as any;
           const refEnd = s.referenceEnd as any;
-          lastZiyadahCapaian = `${ref.surah}:${ref.ayat ?? 1} - ${refEnd?.ayat ?? ref.ayat ?? 1}`;
-          if (scores.ziyadah) { ziyadahSum += scores.ziyadah; ziyadahCnt++; }
-          if (scores.murojaah) { murojaahSum += scores.murojaah; murojaahCnt++; }
+          if (ref?.surah) {
+            lastZiyadahCapaian = `${ref.surah}:${ref.ayat ?? 1} - ${refEnd?.ayat ?? ref.ayat ?? 1}`;
+          }
+        } else if (subCode.includes("MUROJAAH")) {
+          tahfidzTotal += avg;
+          tahfidzCount++;
+          murojaahSum += avg;
+          murojaahCnt++;
         } else {
           tahsinTotal += avg;
           tahsinCount++;
@@ -261,9 +297,9 @@ export class DrizzleRaportRepository implements IRaportRepository {
       absensi: {
         kehadiranRatio: `${dailySetorans.length}/30`,
         tidakSetoranCount: Math.max(0, 30 - dailySetorans.length),
-        sakitCount: 0,
-        izinCount: 0,
-        alpaCount: 0,
+        sakitCount,
+        izinCount,
+        alpaCount,
       },
       mutabaah: [
         { label: "Tilawah", ratio: `${tilawahCount}/30`, grade: tilawahCount >= 20 ? "A" : tilawahCount > 0 ? "B" : "-", color: "text-emerald-500" },

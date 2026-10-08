@@ -35,6 +35,7 @@ export interface SetoranRoutesDeps {
   getSetoranHistoryUseCase: GetSetoranHistoryUseCase;
   getSetoranByIdUseCase: GetSetoranByIdUseCase;
   getAssessmentCategoriesUseCase: GetAssessmentCategoriesUseCase;
+  resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>;
 }
 
 export function createSetoranRoutes(deps: SetoranRoutesDeps) {
@@ -59,7 +60,9 @@ export function createSetoranRoutes(deps: SetoranRoutesDeps) {
     requireRole("teacher", "koordinator_ttq", "student", "parent"),
     async (c) => {
       const user = c.get("user");
-      const studentId = c.req.query("studentId") ?? user.userId;
+      const studentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
       const subcategoryId = c.req.query("subcategoryId");
       const month = c.req.query("month");
 

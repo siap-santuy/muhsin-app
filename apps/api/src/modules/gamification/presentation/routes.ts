@@ -4,7 +4,8 @@ import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetGamificationSummaryUseCase } from "../application/use-cases/GetGamificationSummaryUseCase";
 
 export function createGamificationRoutes(
-  getSummaryUseCase: GetGamificationSummaryUseCase
+  getSummaryUseCase: GetGamificationSummaryUseCase,
+  resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>
 ) {
   const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -12,7 +13,9 @@ export function createGamificationRoutes(
   // Akses: student (self), parent (anak), teacher/koordinator
   app.get("/summary", requireRole("student", "parent", "teacher", "koordinator_ttq"), async (c) => {
     const user = c.get("user");
-    const targetStudentId = c.req.query("studentId") ?? user.userId;
+    const targetStudentId = resolveStudentId
+      ? await resolveStudentId(user, c.req.query("studentId"))
+      : (c.req.query("studentId") ?? user.userId);
 
     const summary = await getSummaryUseCase.execute(
       targetStudentId,
