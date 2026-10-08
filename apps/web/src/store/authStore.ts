@@ -29,9 +29,19 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: result.refreshToken,
           user: result.user,
         });
+        if (result.user.role === "parent") {
+          void api.getDashboardSummary()
+            .then((dash: any) => {
+              if (dash?.childId) {
+                localStorage.setItem("parent_active_child_id", dash.childId);
+              }
+            })
+            .catch(() => {});
+        }
       },
       logout: () => {
         localStorage.removeItem("access_token");
+        localStorage.removeItem("parent_active_child_id");
         set({ accessToken: null, refreshToken: null, user: null });
       },
     }),

@@ -65,6 +65,9 @@ export function ParentRaportPage({
       .then((summary) => {
         if (summary?.childName) setChildName(summary.childName);
         if (summary?.childClassName) setChildClass(summary.childClassName);
+        if (summary?.childId && typeof window !== "undefined") {
+          localStorage.setItem("parent_active_child_id", summary.childId);
+        }
       })
       .catch(() => {});
   }, []);

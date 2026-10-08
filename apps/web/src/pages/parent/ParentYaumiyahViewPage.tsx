@@ -95,12 +95,16 @@ export function ParentYaumiyahViewPage({ onBack, initialDate: propInitialDate }:
   useEffect(() => {
     async function loadHistory() {
       try {
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
         const months = Array.from(new Set(days.map((d) => d.fullDate.slice(0, 7))));
         const [dashData, ...historyResults] = await Promise.all([
           api.getDashboardSummary(),
-          ...months.map((m) => api.getDailyIbadahHistory({ month: m })),
+          ...months.map((m) => api.getDailyIbadahHistory({ studentId: storedChildId, month: m })),
         ]);
         setSummary(dashData);
+        if (dashData?.childId && typeof window !== "undefined") {
+          localStorage.setItem("parent_active_child_id", dashData.childId);
+        }
         const historyMap = new Map<string, "submitted" | "draft">();
         historyResults.flat().forEach((h: any) => {
           if (h?.date) {
@@ -124,7 +128,8 @@ export function ParentYaumiyahViewPage({ onBack, initialDate: propInitialDate }:
     async function load() {
       setLoading(true);
       try {
-        const data = await api.getDailyIbadah(selectedDate);
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
+        const data = await api.getDailyIbadah(selectedDate, storedChildId);
         setIbadah(data);
       } catch {
         setIbadah(null);

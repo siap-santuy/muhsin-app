@@ -29,7 +29,9 @@ export function ParentSemesterRaportPage({
   useEffect(() => {
     async function load() {
       try {
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
         const data = await api.getSemesterRaport({
+          studentId: storedChildId,
           semester,
           tahunAjaran: year,
         });

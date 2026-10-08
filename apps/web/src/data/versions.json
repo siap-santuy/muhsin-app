@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.0.8",
+    "version": "v1.0.9",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Sinkronisasi Penuh Akun Orang Tua & Perbaikan Nama Raport",
+    "summary": "Penyempurnaan client API orang tua untuk auto-inject ID anak, pembersihan nama siswa pada raport bulanan, serta perbaikan sinkronisasi yaumiyah dan setoran.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan nama siswa pada raport bulanan agar tidak menampilkan nama orang tua."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Sinkronisasi data yaumiyah dan setoran bulan September pada akun orang tua."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.8",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Sinkronisasi Akun Orang Tua & Perbaikan Detail TTQ",
     "summary": "Penyempurnaan relasi akun orang tua ke data siswa, kalkulasi detail Ziyadah & Muroja'ah pada raport bulanan, serta indikator kehadiran pada kalender setoran.",
     "changes": [

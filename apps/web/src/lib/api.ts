@@ -236,22 +236,25 @@ class ApiClient {
   }
 
   async getDailyIbadah(date: string, studentId?: string) {
-    const url = studentId
-      ? `/daily-ibadah?date=${date}&studentId=${studentId}`
+    const targetStudentId = studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    const url = targetStudentId
+      ? `/daily-ibadah?date=${date}&studentId=${targetStudentId}`
       : `/daily-ibadah?date=${date}`;
     return this.request("GET", url);
   }
 
   async getDailyIbadahHistory(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
-    if (params.studentId) query.set("studentId", params.studentId);
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
     if (params.month) query.set("month", params.month);
     return this.request("GET", `/daily-ibadah/history?${query.toString()}`);
   }
 
   async getDailyIbadahStats(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
-    if (params.studentId) query.set("studentId", params.studentId);
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
     if (params.month) query.set("month", params.month);
     return this.request("GET", `/daily-ibadah/stats?${query.toString()}`);
   }
@@ -400,7 +403,8 @@ class ApiClient {
     month?: string;
   } = {}) {
     const query = new URLSearchParams();
-    if (params.studentId) query.set("studentId", params.studentId);
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
     if (params.subcategoryId) query.set("subcategoryId", params.subcategoryId);
     if (params.month) query.set("month", params.month);
     return this.request("GET", `/setoran/history?${query.toString()}`);
@@ -412,14 +416,16 @@ class ApiClient {
 
   async getMonthlyRaport(params: { studentId?: string; month?: string } = {}) {
     const query = new URLSearchParams();
-    if (params.studentId) query.set("studentId", params.studentId);
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
     if (params.month) query.set("month", params.month);
     return this.request("GET", `/raport/monthly?${query.toString()}`);
   }
 
   async getSemesterRaport(params: { studentId?: string; semester?: string; tahunAjaran?: string } = {}) {
     const query = new URLSearchParams();
-    if (params.studentId) query.set("studentId", params.studentId);
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
     if (params.semester) query.set("semester", params.semester);
     if (params.tahunAjaran) query.set("tahunAjaran", params.tahunAjaran);
     return this.request("GET", `/raport/semester?${query.toString()}`);

@@ -45,7 +45,7 @@ describe("resolveStudentIdForUser", () => {
     expect(res).toBe("child-2");
   });
 
-  it("harus fallback ke anak pertama jika requestedStudentId bukan milik parent tersebut", async () => {
+  it("harus fallback ke anak pertama jika childIds ada tetapi requestedStudentId bukan milik parent tersebut", async () => {
     const mockDb = {
       select: vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
@@ -60,6 +60,29 @@ describe("resolveStudentIdForUser", () => {
       "stranger-id"
     );
     expect(res).toBe("child-1");
+  });
+
+  it("harus fallback ke student pertama jika mapping parent kosong", async () => {
+    let callCount = 0;
+    const mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockImplementation(() => {
+            callCount++;
+            if (callCount === 1) return Promise.resolve([]);
+            return {
+              limit: vi.fn().mockResolvedValue([{ id: "student-fallback" }]),
+            };
+          }),
+        }),
+      }),
+    } as any;
+
+    const res = await resolveStudentIdForUser(
+      mockDb,
+      { userId: "parent-1", schoolId: "sch-1", role: "parent" }
+    );
+    expect(res).toBe("student-fallback");
   });
 
   it("harus mengembalikan requestedStudentId jika role adalah teacher / koordinator", async () => {

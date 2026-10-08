@@ -35,12 +35,16 @@ export function ParentYaumiyahPage() {
   useEffect(() => {
     async function load() {
       try {
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
         const [dashData, statsData, histData] = await Promise.all([
           api.getDashboardSummary(),
-          api.getDailyIbadahStats({ month: selectedMonth }),
-          api.getDailyIbadahHistory({ month: selectedMonth }),
+          api.getDailyIbadahStats({ studentId: storedChildId, month: selectedMonth }),
+          api.getDailyIbadahHistory({ studentId: storedChildId, month: selectedMonth }),
         ]);
         setSummary(dashData);
+        if (dashData?.childId && typeof window !== "undefined") {
+          localStorage.setItem("parent_active_child_id", dashData.childId);
+        }
         setStats(statsData);
         setHistory(histData);
       } catch {

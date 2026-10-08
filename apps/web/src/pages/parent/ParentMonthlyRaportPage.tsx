@@ -49,7 +49,8 @@ export function ParentMonthlyRaportPage({
   useEffect(() => {
     async function load() {
       try {
-        const data = await api.getMonthlyRaport({ month: monthCode });
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
+        const data = await api.getMonthlyRaport({ studentId: storedChildId, month: monthCode });
         setRaport(data as MonthlyRaportData);
       } catch (err) {
         console.error("Failed to load monthly raport:", err);

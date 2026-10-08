@@ -75,11 +75,15 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
     async function load() {
       setLoading(true);
       try {
+        const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
         const [dashData, historyData] = await Promise.all([
           api.getDashboardSummary(),
-          api.getSetoranHistory({ month: selectedMonth }),
+          api.getSetoranHistory({ studentId: storedChildId, month: selectedMonth }),
         ]);
         setSummary(dashData);
+        if (dashData?.childId && typeof window !== "undefined") {
+          localStorage.setItem("parent_active_child_id", dashData.childId);
+        }
         setSetoranList(historyData || []);
       } catch {
         setSetoranList([]);

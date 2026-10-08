@@ -30,7 +30,12 @@ export function ParentDashboardPage() {
 
   useEffect(() => {
     api.getDashboardSummary()
-      .then(setSummary)
+      .then((data) => {
+        setSummary(data);
+        if (data?.childId && typeof window !== "undefined") {
+          localStorage.setItem("parent_active_child_id", data.childId);
+        }
+      })
       .catch(() => {
         // Fallback
       });
