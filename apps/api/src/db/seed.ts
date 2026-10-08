@@ -340,7 +340,7 @@ async function main() {
 
   for (const row of classRows) {
     if (!row.class) continue;
-    const className = row.class.trim();
+    const className = String(row.class).trim();
     const match = className.match(/^(VII|VIII|IX)\s/);
     const jenjangLevel = match ? match[1] : "SMP";
 
@@ -375,8 +375,8 @@ async function main() {
 
   for (const row of teacherRows) {
     if (!row.teacher) continue;
-    const teacherName = row.teacher.trim();
-    const kode = (row.kode || "guru").trim().toLowerCase();
+    const teacherName = String(row.teacher).trim();
+    const kode = String(row.kode || "guru").trim().toLowerCase();
     const email = `${kode}@alfitrah.sch.id`;
 
     let teacherUser = (
@@ -415,9 +415,10 @@ async function main() {
   for (const s of studentRows) {
     if (s.username) {
       const birthDatePwd = parseBirthDateToPassword(s.birth_date);
-      const chosenPassword = birthDatePwd || (s.password ? s.password.trim() : DEFAULT_PASSWORD);
-      studentPasswordMap.set(s.username.trim(), chosenPassword);
-      studentInfoMap.set(s.username.trim(), {
+      const chosenPassword = birthDatePwd || (s.password !== undefined && s.password !== null ? String(s.password).trim() : DEFAULT_PASSWORD);
+      const uName = String(s.username).trim();
+      studentPasswordMap.set(uName, chosenPassword);
+      studentInfoMap.set(uName, {
         gender: s.gender ? String(s.gender).trim() : undefined,
         birthPlace: s.birth_place ? String(s.birth_place).trim() : undefined,
         birthDate: s.birth_date ? String(s.birth_date).trim() : undefined,
