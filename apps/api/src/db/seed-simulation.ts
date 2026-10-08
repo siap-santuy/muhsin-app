@@ -1,4 +1,4 @@
-import { eq, and, or, gte, lte } from "drizzle-orm";
+import { eq, and, or, gte, lte, sql } from "drizzle-orm";
 import { createDb, closeDb } from "./client";
 import {
   schools,
@@ -7,6 +7,7 @@ import {
   academicPeriods,
   studentClassEnrollment,
   studentTeacherMapping,
+  teacherClasses,
   parentStudentMapping,
   assessmentSubcategories,
   dailyIbadah,
@@ -116,8 +117,9 @@ async function main() {
   // 5. Setup Trio: Guru, Siswa, Orang Tua
   const defaultPasswordHash = await hash(DEFAULT_PASSWORD);
 
-  // 5.1 GURU
-  const TEACHER_EMAIL = "arai@teacher.alfitrah.sch.id";
+  // 5.1 GURU PEMBIMBING (Agus Sayyidul Ayyam, S.Pd. / asa@alfitrah.sch.id)
+  const TEACHER_EMAIL = "asa@alfitrah.sch.id";
+  const TEACHER_NAME = "Agus Sayyidul Ayyam, S.Pd.";
   let [teacher] = await db
     .select()
     .from(users)
@@ -125,41 +127,47 @@ async function main() {
       and(
         eq(users.schoolId, school.id),
         eq(users.role, "teacher"),
-        eq(users.email, TEACHER_EMAIL)
+        or(
+          eq(users.email, TEACHER_EMAIL),
+          eq(users.username, "asa"),
+          sql`lower(${users.name}) like '%agus sayyidul ayyam%'`
+        )
       )
     )
     .limit(1);
 
   if (!teacher) {
-    // Cari guru halaqah pertama atau buat baru
-    const [firstTeacher] = await db
-      .select()
-      .from(users)
-      .where(and(eq(users.schoolId, school.id), eq(users.role, "teacher")))
-      .limit(1);
-
-    if (firstTeacher) {
-      teacher = firstTeacher;
-    } else {
-      [teacher] = await db
-        .insert(users)
-        .values({
-          schoolId: school.id,
-          role: "teacher",
-          name: "Arai Kurnia Ramadhan, S.Pd.",
-          username: "arai",
-          email: TEACHER_EMAIL,
-          passwordHash: defaultPasswordHash,
-          phone: "081234567891",
-        })
-        .returning();
-    }
+    [teacher] = await db
+      .insert(users)
+      .values({
+        schoolId: school.id,
+        role: "teacher",
+        name: TEACHER_NAME,
+        username: "asa",
+        email: TEACHER_EMAIL,
+        passwordHash: defaultPasswordHash,
+        phone: "081234567891",
+      })
+      .returning();
+  } else {
+    await db
+      .update(users)
+      .set({
+        name: TEACHER_NAME,
+        username: "asa",
+        email: TEACHER_EMAIL,
+        passwordHash: defaultPasswordHash,
+      })
+      .where(eq(users.id, teacher.id));
   }
-  console.log(`[sim] Guru: ${teacher.name} (${teacher.email})`);
+  console.log(`[sim] Guru: ${teacher.name} (${teacher.email}, id: ${teacher.id})`);
 
-  // 5.2 SISWA (ANAK)
+  // 5.2 SISWA (ANAK) (Abdul Rayhan Pradipta / nengdara.hdr@gmail.com)
   const STUDENT_EMAIL = "nengdara.hdr@gmail.com";
-  let [student] = await db
+  const STUDENT_NAME = "Abdul Rayhan Pradipta";
+
+  // Ambil SEMUA siswa yang cocok dengan email/nama/username Abdul Rayhan
+  const matchedStudents = await db
     .select()
     .from(users)
     .where(
@@ -168,12 +176,14 @@ async function main() {
         eq(users.role, "student"),
         or(
           eq(users.email, STUDENT_EMAIL),
-          eq(users.name, "Abdul Rayhan Pradipta"),
+          sql`lower(${users.name}) like '%abdul rayhan%'`,
+          eq(users.username, "abdulpradipta"),
           eq(users.username, "abdulrayhan")
         )
       )
-    )
-    .limit(1);
+    );
+
+  let student = matchedStudents[0];
 
   if (!student) {
     [student] = await db
@@ -181,7 +191,7 @@ async function main() {
       .values({
         schoolId: school.id,
         role: "student",
-        name: "Abdul Rayhan Pradipta",
+        name: STUDENT_NAME,
         username: "abdulrayhan",
         email: STUDENT_EMAIL,
         passwordHash: defaultPasswordHash,
@@ -192,22 +202,35 @@ async function main() {
       })
       .returning();
   } else {
+    // Update student utama agar email, username, dan password pasti 'muhsin123'
     await db
       .update(users)
       .set({
         email: STUDENT_EMAIL,
-        name: "Abdul Rayhan Pradipta",
+        name: STUDENT_NAME,
         username: "abdulrayhan",
         passwordHash: defaultPasswordHash,
       })
       .where(eq(users.id, student.id));
+
+    // Jika ada siswa duplikat lain dengan nama/email yang sama, bersihkan agar login tidak bentrok
+    for (let i = 1; i < matchedStudents.length; i++) {
+      const dup = matchedStudents[i];
+      console.log(`[sim] Menghapus duplikat siswa lama: ${dup.id} (${dup.name})`);
+      await db.delete(studentClassEnrollment).where(eq(studentClassEnrollment.studentId, dup.id));
+      await db.delete(studentTeacherMapping).where(eq(studentTeacherMapping.studentId, dup.id));
+      await db.delete(parentStudentMapping).where(eq(parentStudentMapping.studentId, dup.id));
+      await db.delete(users).where(eq(users.id, dup.id));
+    }
   }
   console.log(`[sim] Siswa: ${student.name} (${student.email}, id: ${student.id})`);
 
-  // 5.3 ORANG TUA
+  // 5.3 ORANG TUA (Dara Indah Pertiwi / ortu_daraindahpertiwi)
   const PARENT_USERNAME = "ortu_daraindahpertiwi";
   const PARENT_EMAIL = "ortu_daraindahpertiwi@parent.alfitrah.sch.id";
-  let [parent] = await db
+  const PARENT_NAME = "Dara Indah Pertiwi";
+
+  const matchedParents = await db
     .select()
     .from(users)
     .where(
@@ -217,11 +240,12 @@ async function main() {
         or(
           eq(users.username, PARENT_USERNAME),
           eq(users.email, PARENT_EMAIL),
-          eq(users.name, "Dara Indah Pertiwi")
+          sql`lower(${users.name}) like '%dara indah pertiwi%'`
         )
       )
-    )
-    .limit(1);
+    );
+
+  let parent = matchedParents[0];
 
   if (!parent) {
     [parent] = await db
@@ -229,7 +253,7 @@ async function main() {
       .values({
         schoolId: school.id,
         role: "parent",
-        name: "Dara Indah Pertiwi",
+        name: PARENT_NAME,
         username: PARENT_USERNAME,
         email: PARENT_EMAIL,
         passwordHash: defaultPasswordHash,
@@ -242,83 +266,79 @@ async function main() {
       .set({
         username: PARENT_USERNAME,
         email: PARENT_EMAIL,
-        name: "Dara Indah Pertiwi",
+        name: PARENT_NAME,
         passwordHash: defaultPasswordHash,
       })
       .where(eq(users.id, parent.id));
+
+    // Bersihkan parent duplikat jika ada
+    for (let i = 1; i < matchedParents.length; i++) {
+      const dup = matchedParents[i];
+      console.log(`[sim] Menghapus duplikat parent lama: ${dup.id} (${dup.name})`);
+      await db.delete(parentStudentMapping).where(eq(parentStudentMapping.parentId, dup.id));
+      await db.delete(users).where(eq(users.id, dup.id));
+    }
   }
   console.log(`[sim] Ortu: ${parent.name} (username: ${parent.username}, id: ${parent.id})`);
 
-  // 5.4 Pastikan Hubungan (Mappings) Terhubung
-  // Student -> Class Enrollment
-  const [existingEnrollment] = await db
+  // 5.4 Hubungkan Trio: Kelas, Guru, Siswa, Orang Tua
+  // 5.4.1 Student -> Class Enrollment
+  await db.delete(studentClassEnrollment).where(
+    and(eq(studentClassEnrollment.schoolId, school.id), eq(studentClassEnrollment.studentId, student.id))
+  );
+  await db.insert(studentClassEnrollment).values({
+    schoolId: school.id,
+    studentId: student.id,
+    classId: targetClass.id,
+    academicPeriodId: period.id,
+  });
+
+  // 5.4.2 Student -> Teacher Mapping
+  await db.delete(studentTeacherMapping).where(
+    and(eq(studentTeacherMapping.schoolId, school.id), eq(studentTeacherMapping.studentId, student.id))
+  );
+  await db.insert(studentTeacherMapping).values({
+    schoolId: school.id,
+    studentId: student.id,
+    teacherId: teacher.id,
+    classId: targetClass.id,
+  });
+
+  // 5.4.3 Teacher -> Class Assignment (agar guru melihat kelas di dashboard & filter raport)
+  const [existingTeacherClass] = await db
     .select()
-    .from(studentClassEnrollment)
+    .from(teacherClasses)
     .where(
       and(
-        eq(studentClassEnrollment.schoolId, school.id),
-        eq(studentClassEnrollment.studentId, student.id)
+        eq(teacherClasses.schoolId, school.id),
+        eq(teacherClasses.teacherId, teacher.id),
+        eq(teacherClasses.classId, targetClass.id)
       )
     )
     .limit(1);
 
-  if (!existingEnrollment) {
-    await db.insert(studentClassEnrollment).values({
+  if (!existingTeacherClass) {
+    await db.insert(teacherClasses).values({
       schoolId: school.id,
-      studentId: student.id,
-      classId: targetClass.id,
-      academicPeriodId: period.id,
-    });
-  } else if (existingEnrollment.classId !== targetClass.id) {
-    await db
-      .update(studentClassEnrollment)
-      .set({ classId: targetClass.id })
-      .where(eq(studentClassEnrollment.id, existingEnrollment.id));
-  }
-
-  // Student -> Teacher Mapping
-  const [existingMapping] = await db
-    .select()
-    .from(studentTeacherMapping)
-    .where(
-      and(
-        eq(studentTeacherMapping.schoolId, school.id),
-        eq(studentTeacherMapping.studentId, student.id)
-      )
-    )
-    .limit(1);
-
-  if (!existingMapping) {
-    await db.insert(studentTeacherMapping).values({
-      schoolId: school.id,
-      studentId: student.id,
       teacherId: teacher.id,
       classId: targetClass.id,
     });
-  } else if (existingMapping.teacherId !== teacher.id || existingMapping.classId !== targetClass.id) {
-    await db
-      .update(studentTeacherMapping)
-      .set({ teacherId: teacher.id, classId: targetClass.id })
-      .where(eq(studentTeacherMapping.id, existingMapping.id));
   }
 
-  // Parent -> Student Mapping (Bersihkan mapping ganda dan pastikan terkoneksi ke student target)
-  await db
-    .delete(parentStudentMapping)
-    .where(
-      and(
-        eq(parentStudentMapping.schoolId, school.id),
-        eq(parentStudentMapping.parentId, parent.id)
-      )
-    );
-
+  // 5.4.4 Parent -> Student Mapping (Pastikan orang tua HANYA terhubung ke siswa ini)
+  await db.delete(parentStudentMapping).where(
+    or(
+      and(eq(parentStudentMapping.schoolId, school.id), eq(parentStudentMapping.parentId, parent.id)),
+      and(eq(parentStudentMapping.schoolId, school.id), eq(parentStudentMapping.studentId, student.id))
+    )
+  );
   await db.insert(parentStudentMapping).values({
     schoolId: school.id,
     parentId: parent.id,
     studentId: student.id,
   });
 
-  console.log(`[sim] Mapping Guru <-> Siswa <-> Orang Tua dipastikan terhubung AKTIF.`);
+  console.log(`[sim] Mapping Guru (${teacher.name}) <-> Siswa (${student.name}) <-> Orang Tua (${parent.name}) terhubung PENUH.`);
 
   // 6. Pembersihan Data Simulasi Bulan September 2026 (Idempotent Reset)
   const START_DATE = "2026-09-01";
