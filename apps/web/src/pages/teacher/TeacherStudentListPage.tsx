@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   ArrowUpDown,
   Award,
+  Calendar,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -9,10 +10,12 @@ import {
   Eye,
   Loader2,
   Search,
+  X,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { DayStripPicker, type DayItem } from "@/components/student/DayStripPicker";
+import { MonthCalendar } from "@/components/student/MonthCalendar";
 import { api } from "@/lib/api";
 
 type TTQCategory = "ziyadah" | "murojaah" | "sabiq" | "talaqi";
@@ -91,6 +94,16 @@ function formatLocalDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function formatMonthYearHeader(dateStr: string): string {
+  if (!dateStr || !dateStr.includes("-")) return "";
+  const [y, m] = dateStr.split("-").map(Number);
+  const monthNames = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  return `${monthNames[m - 1]} ${y}`;
+}
+
 function getCenteredDays(centerDateStr: string): DayItem[] {
   const target = parseLocalDate(centerDateStr);
   const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -167,6 +180,7 @@ export function TeacherStudentListPage() {
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(() => persisted.search || "");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>(
     () => persisted.selectedClass || "all"
   );
@@ -327,8 +341,34 @@ export function TeacherStudentListPage() {
 
       <main className="flex-1 overflow-y-auto px-4 pt-1 pb-24">
         <div className="flex flex-col gap-4">
-          {/* 1. Date Strip Navigation */}
+          {/* 1. Date Strip Navigation & Calendar Quick Jump */}
           <section className="mt-1 rounded-2xl bg-white p-3 shadow-xs border border-brand-line">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-brand-line/50 px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-brand-navy">
+                  {formatMonthYearHeader(selectedDate)}
+                </span>
+                {selectedDate !== formatLocalDate(new Date()) && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDate(formatLocalDate(new Date()))}
+                    className="rounded-lg bg-brand-cyan/10 px-2 py-0.5 text-[10px] font-bold text-brand-cyan hover:bg-brand-cyan/20 transition-colors"
+                  >
+                    Hari Ini
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCalendarOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-brand-line bg-gray-50/80 px-2.5 py-1 text-xs font-semibold text-brand-navy hover:bg-brand-cyan/10 hover:border-brand-cyan/40 hover:text-brand-cyan transition-all"
+                title="Pilih tanggal via kalender"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Pilih Tanggal</span>
+              </button>
+            </div>
+
             <DayStripPicker
               days={days}
               selectedIndex={2}
@@ -337,6 +377,45 @@ export function TeacherStudentListPage() {
               onNext={handleNextDay}
             />
           </section>
+
+          {/* Modal Dialog Kalender Cepat */}
+          {isCalendarOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in"
+              onClick={() => setIsCalendarOpen(false)}
+            >
+              <div
+                className="w-full max-w-sm rounded-3xl bg-white p-4 shadow-xl border border-brand-line/80 animate-in zoom-in-95 duration-150"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-brand-line">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-brand-cyan" />
+                    <h3 className="text-sm font-bold text-brand-navy">Pilih Tanggal Setoran</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCalendarOpen(false)}
+                    aria-label="Tutup kalender"
+                    className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="pt-2">
+                  <MonthCalendar
+                    initialDate={parseLocalDate(selectedDate)}
+                    selectedDate={parseLocalDate(selectedDate)}
+                    showLegend={false}
+                    onSelectDate={(date) => {
+                      setSelectedDate(formatLocalDate(date));
+                      setIsCalendarOpen(false);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 2. Filter Dropdown Kelas */}
           <div className="relative">

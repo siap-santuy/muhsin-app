@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.1.0",
+    "version": "v1.1.1",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Legenda Kalender Yaumiyah Dinamis & Pemilih Kalender Cepat Guru",
+    "summary": "Penyesuaian legenda dan badge kalender yaumiyah (Hijau: Sudah Kirim, Kuning: Belum Kirim, Abu: Belum Isi) serta penambahan header navigasi kalender cepat untuk guru pembimbing.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Legenda kalender yaumiyah dinamis pada halaman siswa dan orang tua dengan status Sudah Kirim, Belum Kirim, dan Belum Isi."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Header bulan-tahun dan popup kalender cepat pada halaman penilaian santri guru pembimbing."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.0",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Perbaikan Kalkulasi Absensi Raport & Navigasi Kalender Yaumiyah",
     "summary": "Koreksi penghitungan kehadiran raport bulanan berbasis hari hadir unik (bukan jumlah entri setoran) serta perbaikan navigasi tanggal saat melihat riwayat dan kalender yaumiyah.",
     "changes": [

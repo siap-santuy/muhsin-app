@@ -123,6 +123,7 @@ export function StudentYaumiyahPage() {
       <main className="flex-1 overflow-y-auto px-4 pt-1 pb-4">
         <div className="flex flex-col gap-4">
           <MonthCalendar
+            mode="yaumiyah"
             getStatusForDate={getStatusForDate}
             onMonthChange={handleMonthChange}
             onSelectDate={(date) => {

@@ -4,11 +4,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export interface DayStatus {
   day: number;
   monthOffset?: number;
-  status?: "setoran" | "sakit" | "alpa" | "empty" | "submitted" | "draft";
+  status?: "setoran" | "sakit" | "alpa" | "empty" | "submitted" | "draft" | "izin";
   date?: Date;
 }
 
 interface MonthCalendarProps {
+  mode?: "yaumiyah" | "setoran";
   monthYear?: string;
   days?: DayStatus[];
   initialDate?: Date;
@@ -44,11 +45,13 @@ const DOT_COLORS: Record<string, string> = {
   setoran: "bg-emerald-500",
   draft: "bg-amber-500",
   sakit: "bg-amber-500",
+  izin: "bg-amber-500",
   alpa: "bg-red-500",
   empty: "bg-gray-300",
 };
 
 export function MonthCalendar({
+  mode = "setoran",
   monthYear: customMonthYear,
   days: customDays,
   initialDate,
@@ -291,12 +294,14 @@ export function MonthCalendar({
               >
                 {d.day}
               </span>
-              {d.status ? (
+              {d.status && d.status !== "empty" ? (
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
                     DOT_COLORS[d.status] ?? "bg-transparent"
                   }`}
                 />
+              ) : mode === "yaumiyah" && !d.isDisabled ? (
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-300" />
               ) : null}
             </button>
           );
@@ -305,22 +310,41 @@ export function MonthCalendar({
 
       {showLegend && (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3 border-t border-brand-line/50 pt-3 text-[11px] font-medium text-brand-text-muted">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Setoran</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            <span>Izin/Sakit</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-red-500" />
-            <span>Tidak Setor</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-gray-300" />
-            <span>Belum Setor</span>
-          </div>
+          {mode === "yaumiyah" ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Sudah Kirim</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Belum Kirim</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-gray-300" />
+                <span>Belum Isi</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Setoran</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Izin/Sakit</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                <span>Tidak Setor</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-gray-300" />
+                <span>Belum Setor</span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

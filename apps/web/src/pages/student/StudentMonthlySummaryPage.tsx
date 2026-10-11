@@ -25,13 +25,6 @@ const RIWAYAT_TITLE: Record<string, string> = {
 
 const PER_PAGE = 4;
 
-const LEGEND = [
-  { label: "Setoran", color: "bg-emerald-500" },
-  { label: "Sakit", color: "bg-amber-500" },
-  { label: "Izin", color: "bg-amber-400" },
-  { label: "Alpa", color: "bg-red-500" },
-];
-
 function formatLocalDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -146,6 +139,7 @@ export function StudentMonthlySummaryPage({ initialTab: propInitialTab }: Studen
     const entry = setoranList.find((s) => s.date === dateStr);
     if (entry) {
       if (entry.status === "sakit") return "sakit";
+      if (entry.status === "izin") return "izin";
       if (entry.status === "alpa") return "alpa";
       return "setoran";
     }
@@ -182,21 +176,10 @@ export function StudentMonthlySummaryPage({ initialTab: propInitialTab }: Studen
         {/* Calendar */}
         <div className="mt-3 px-4">
           <MonthCalendar
+            mode="setoran"
             getStatusForDate={getStatusForDate}
             onMonthChange={handleMonthChange}
           />
-        </div>
-
-        {/* Legend */}
-        <div className="mt-2 flex items-center justify-center gap-4 px-4">
-          {LEGEND.map((l) => (
-            <div key={l.label} className="flex items-center gap-1">
-              <span className={`h-2 w-2 rounded-full ${l.color}`} />
-              <span className="text-[10px] text-brand-text-muted">
-                {l.label}
-              </span>
-            </div>
-          ))}
         </div>
 
         {/* Riwayat */}

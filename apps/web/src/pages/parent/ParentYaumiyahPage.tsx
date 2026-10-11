@@ -132,6 +132,7 @@ export function ParentYaumiyahPage() {
           </div>
 
           <MonthCalendar
+            mode="yaumiyah"
             getStatusForDate={getStatusForDate}
             onMonthChange={handleMonthChange}
             onSelectDate={(date) => {
