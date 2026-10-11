@@ -30,6 +30,11 @@ function formatLocalDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 function formatIndonesianDate(dateStr: string): string {
   if (!dateStr || !dateStr.includes("-")) return dateStr;
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -225,6 +230,8 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
         <div className="mt-3 px-4">
           <MonthCalendar
             mode="setoran"
+            initialDate={parseLocalDate(selectedMonth + "-01")}
+            selectedDate={selectedDateFilter ? parseLocalDate(selectedDateFilter) : undefined}
             getStatusForDate={getStatusForDate}
             onMonthChange={handleMonthChange}
             onSelectDate={(date) => {

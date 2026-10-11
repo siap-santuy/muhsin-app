@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface DayStatus {
@@ -71,11 +71,20 @@ export function MonthCalendar({
   if (maxDate) maxDate.setHours(23, 59, 59, 999);
 
   const [currentViewDate, setCurrentViewDate] = useState<Date>(
-    initialDate ?? new Date()
+    initialDate ?? propSelectedDate ?? new Date()
   );
   const [internalSelectedDate, setInternalSelectedDate] = useState<Date>(
     propSelectedDate ?? today
   );
+
+  useEffect(() => {
+    if (propSelectedDate) {
+      setInternalSelectedDate(propSelectedDate);
+      setCurrentViewDate(new Date(propSelectedDate.getFullYear(), propSelectedDate.getMonth(), 1));
+    } else if (initialDate) {
+      setCurrentViewDate(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
+    }
+  }, [propSelectedDate, initialDate]);
 
   const activeSelectedDate = propSelectedDate ?? internalSelectedDate;
 

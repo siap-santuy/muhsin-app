@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.1.3",
+    "version": "v1.1.4",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Sinkronisasi Bulan Kalender & Realtime Progres Berjalan",
+    "summary": "Sinkronisasi otomatis tampilan kalender saat membuka tanggal setoran terakhir serta koreksi 4 kartu progres agar murni merefleksikan aktivitas bulan berjalan.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Kalender setoran otomatis bergeser ke bulan dan tanggal aktivitas terakhir saat widget setoran di beranda diklik."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "4 kartu progres bulan ini di beranda murni menampilkan capaian bulan aktif (tidak mengambil data bulan lampau jika bulan ini belum ada aktivitas)."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.3",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Akses Cepat Raport, Responsif Card TTQ, & Validasi Yaumiyah Draft",
     "summary": "Membuka raport langsung dengan klik bulan/semester, perbaikan overflow teks riwayat TTQ, fleksibilitas simpan draft sebagian sholat, dan validasi submit tilawah.",
     "changes": [

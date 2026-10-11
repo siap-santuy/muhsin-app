@@ -61,36 +61,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     const target = targetRows[0];
 
-    // Current month setoran counts (fallback ke bulan aktivitas terakhir jika bulan ini kosong)
-    let activeMonth = new Date().toISOString().slice(0, 7);
-    const [latestStudentSetoran] = await this.db
-      .select({ date: setoranEntries.date })
-      .from(setoranEntries)
-      .where(
-        and(
-          eq(setoranEntries.studentId, studentId),
-          eq(setoranEntries.schoolId, schoolId)
-        )
-      )
-      .orderBy(desc(setoranEntries.date))
-      .limit(1);
-
-    if (latestStudentSetoran?.date) {
-      const latestMonth = String(latestStudentSetoran.date).slice(0, 7);
-      const [currCount] = await this.db
-        .select({ count: sql<number>`count(*)` })
-        .from(setoranEntries)
-        .where(
-          and(
-            eq(setoranEntries.studentId, studentId),
-            eq(setoranEntries.schoolId, schoolId),
-            sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
-          )
-        );
-      if (Number(currCount?.count ?? 0) === 0) {
-        activeMonth = latestMonth;
-      }
-    }
+    // Current month setoran counts (murni bulan berjalan kalender)
+    const activeMonth = new Date().toISOString().slice(0, 7);
 
     const setoranRows = await this.db
       .select({
@@ -514,35 +486,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         .limit(1);
       isTodayFilled = !!ibadahToday[0];
 
-      let activeMonth = new Date().toISOString().slice(0, 7);
-      const [latestChildSetoran] = await this.db
-        .select({ date: setoranEntries.date })
-        .from(setoranEntries)
-        .where(
-          and(
-            eq(setoranEntries.studentId, childId),
-            eq(setoranEntries.schoolId, schoolId)
-          )
-        )
-        .orderBy(desc(setoranEntries.date))
-        .limit(1);
-
-      if (latestChildSetoran?.date) {
-        const latestMonth = String(latestChildSetoran.date).slice(0, 7);
-        const [currCount] = await this.db
-          .select({ count: sql<number>`count(*)` })
-          .from(setoranEntries)
-          .where(
-            and(
-              eq(setoranEntries.studentId, childId),
-              eq(setoranEntries.schoolId, schoolId),
-              sql`to_char(${setoranEntries.date}, 'YYYY-MM') = ${activeMonth}`
-            )
-          );
-        if (Number(currCount?.count ?? 0) === 0) {
-          activeMonth = latestMonth;
-        }
-      }
+      const activeMonth = new Date().toISOString().slice(0, 7);
 
       const childSetoran = await this.db
         .select({
