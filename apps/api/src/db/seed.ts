@@ -599,13 +599,14 @@ async function main() {
     }
   }
 
-  // 5.4.2 Seed Parents & Parent-Student Mappings (Grouped by Parent Name)
-  const parentsGrouped = new Map<string, {
-    name: string;
+  // 5.4.2 Seed Parents & Parent-Student Mappings (Satu orang tua per santri dengan username ortu_[username_anak])
+  const parentEntries: Array<{
+    studentUsername: string;
+    parentName: string;
+    parentUsername: string;
     email: string;
-    username: string;
-    studentUsernames: string[];
-  }>();
+    rawPassword: string;
+  }> = [];
 
   const usedParentUsernames = new Set<string>();
 
@@ -613,58 +614,77 @@ async function main() {
     if (!row.username || !row.student_name) continue;
     const studentUsername = String(row.username).trim().toLowerCase();
     const parentName = row.parent_name ? String(row.parent_name).trim() : `Orang Tua ${row.student_name}`;
-    const pKey = parentName.toLowerCase();
     const rawEmail = row.email_parent ? String(row.email_parent).trim().toLowerCase() : "";
 
-    if (!parentsGrouped.has(pKey)) {
-      let baseUsername = `ortu_${parentName.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16)}`;
-      if (!baseUsername || baseUsername === "ortu_") {
-        baseUsername = `ortu_${studentUsername}`;
-      }
-      let finalUsername = baseUsername;
-      let counter = 1;
-      while (usedParentUsernames.has(finalUsername)) {
-        finalUsername = `${baseUsername}${counter++}`;
-      }
-      usedParentUsernames.add(finalUsername);
-
-      const email = rawEmail && !usedEmails.has(rawEmail)
-        ? rawEmail
-        : `${finalUsername}@parent.alfitrah.sch.id`;
-      usedEmails.add(email);
-
-      parentsGrouped.set(pKey, {
-        name: parentName,
-        email,
-        username: finalUsername,
-        studentUsernames: [studentUsername],
-      });
-    } else {
-      const existing = parentsGrouped.get(pKey)!;
-      existing.studentUsernames.push(studentUsername);
-      if (rawEmail && !usedEmails.has(rawEmail) && existing.email.endsWith("@parent.alfitrah.sch.id")) {
-        existing.email = rawEmail;
-        usedEmails.add(rawEmail);
-      }
+    // Pola username ortu: ortu_[username_anak]
+    let baseUsername = `ortu_${studentUsername}`;
+    let finalUsername = baseUsername;
+    let counter = 1;
+    while (usedParentUsernames.has(finalUsername)) {
+      finalUsername = `${baseUsername}${counter++}`;
     }
+    usedParentUsernames.add(finalUsername);
+
+    const email = rawEmail && !usedEmails.has(rawEmail)
+      ? rawEmail
+      : `${finalUsername}@parent.alfitrah.sch.id`;
+    usedEmails.add(email);
+
+    // Password orang tua sama persis dengan password anak (tanggal lahir DDMMYYYY)
+    const childRawPassword = studentPasswordMap.get(studentUsername) || DEFAULT_PASSWORD;
+
+    parentEntries.push({
+      studentUsername,
+      parentName,
+      parentUsername: finalUsername,
+      email,
+      rawPassword: childRawPassword,
+    });
   }
 
-  console.log(`[seed] seeding ${parentsGrouped.size} distinct parents...`);
+  console.log(`[seed] seeding & updating ${parentEntries.length} parents (username: ortu_[username_anak], password: tgl lahir anak)...`);
 
-  for (const pData of parentsGrouped.values()) {
-    let parentUser = (
+  for (const pData of parentEntries) {
+    const studentEntity = studentMap.get(pData.studentUsername);
+    if (!studentEntity) continue;
+
+    const parentPasswordHash = await hash(pData.rawPassword);
+
+    // 1. Cari apakah akun ortu sudah ada berdasarkan username atau mapping anak
+    const existingMapping = (
       await db
-        .select()
-        .from(users)
+        .select({ parentId: parentStudentMapping.parentId })
+        .from(parentStudentMapping)
         .where(
           and(
-            eq(users.schoolId, school.id),
-            eq(users.username, pData.username),
-            eq(users.role, "parent")
+            eq(parentStudentMapping.schoolId, school.id),
+            eq(parentStudentMapping.studentId, studentEntity.id)
           )
         )
         .limit(1)
     )[0];
+
+    let parentUser = existingMapping
+      ? (
+          await db
+            .select()
+            .from(users)
+            .where(and(eq(users.id, existingMapping.parentId), eq(users.schoolId, school.id)))
+            .limit(1)
+        )[0]
+      : (
+          await db
+            .select()
+            .from(users)
+            .where(
+              and(
+                eq(users.schoolId, school.id),
+                eq(users.username, pData.parentUsername),
+                eq(users.role, "parent")
+              )
+            )
+            .limit(1)
+        )[0];
 
     if (!parentUser) {
       parentUser = (
@@ -673,43 +693,46 @@ async function main() {
           .values({
             schoolId: school.id,
             role: "parent",
-            name: pData.name,
-            username: pData.username,
+            name: pData.parentName,
+            username: pData.parentUsername,
             email: pData.email,
-            passwordHash: defaultPasswordHash,
+            passwordHash: parentPasswordHash,
             phone: null,
           })
           .returning()
       )[0];
       parentCount++;
+    } else {
+      // Update username dan password ortu agar pasti sesuai pola ortu_[username_anak] & tgl lahir anak
+      await db
+        .update(users)
+        .set({
+          username: pData.parentUsername,
+          name: pData.parentName,
+          passwordHash: parentPasswordHash,
+        })
+        .where(eq(users.id, parentUser.id));
     }
 
-    // Map parent to all their children
-    for (const sUser of pData.studentUsernames) {
-      const studentEntity = studentMap.get(sUser);
-      if (!studentEntity) continue;
+    // Pastikan relasi parent <-> student terikat
+    const [hasMapping] = await db
+      .select()
+      .from(parentStudentMapping)
+      .where(
+        and(
+          eq(parentStudentMapping.schoolId, school.id),
+          eq(parentStudentMapping.parentId, parentUser.id),
+          eq(parentStudentMapping.studentId, studentEntity.id)
+        )
+      )
+      .limit(1);
 
-      const existingParentMapping = (
-        await db
-          .select()
-          .from(parentStudentMapping)
-          .where(
-            and(
-              eq(parentStudentMapping.schoolId, school.id),
-              eq(parentStudentMapping.parentId, parentUser.id),
-              eq(parentStudentMapping.studentId, studentEntity.id)
-            )
-          )
-          .limit(1)
-      )[0];
-
-      if (!existingParentMapping) {
-        await db.insert(parentStudentMapping).values({
-          schoolId: school.id,
-          parentId: parentUser.id,
-          studentId: studentEntity.id,
-        });
-      }
+    if (!hasMapping) {
+      await db.insert(parentStudentMapping).values({
+        schoolId: school.id,
+        parentId: parentUser.id,
+        studentId: studentEntity.id,
+      });
     }
   }
 
@@ -723,8 +746,8 @@ async function main() {
   console.log(`\nDemo Credentials:`);
   console.log(`- Koordinator: ${KOORDINATOR_EMAIL} / ${DEFAULT_PASSWORD}`);
   console.log(`- Guru (Contoh): asa@teacher.alfitrah.sch.id / ${DEFAULT_PASSWORD}`);
-  console.log(`- Siswa (Contoh): nengdara.hdr@gmail.com / 15042014 (DDMMYYYY tgl lahir)`);
-  console.log(`- Ortu (Contoh): ortu_daraindahpertiwi / ${DEFAULT_PASSWORD}`);
+  console.log(`- Siswa (Contoh): nengdara.hdr@gmail.com (username: abdulpradipta) / 15042014 (DDMMYYYY tgl lahir)`);
+  console.log(`- Ortu (Contoh): ortu_abdulpradipta / 15042014 (sama persis dengan tgl lahir anak)`);
 }
 
 main()
