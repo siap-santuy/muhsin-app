@@ -8,9 +8,24 @@ import fs from "node:fs";
 
 const DEFAULT_PASSWORD = "muhsin123";
 
+function extractCellValue(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "object") {
+    if ("result" in (val as any)) {
+      const res = (val as any).result;
+      return res !== undefined && res !== null ? String(res).trim() : "";
+    }
+    if ("text" in (val as any)) return String((val as any).text).trim();
+    if ("richText" in (val as any) && Array.isArray((val as any).richText)) {
+      return (val as any).richText.map((t: any) => t.text || "").join("").trim();
+    }
+  }
+  return String(val).trim();
+}
+
 function parseBirthDateToPassword(birthDate: unknown): string | null {
   if (!birthDate) return null;
-  const str = String(birthDate).trim();
+  const str = extractCellValue(birthDate);
   const matchIso = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
   if (matchIso) {
     const yyyy = matchIso[1];
@@ -47,8 +62,12 @@ function sheetToJson<T>(sheet: ExcelJS.Worksheet | undefined): T[] {
         const header = headers[colNumber];
         if (header) {
           let val = cell.value;
-          if (val && typeof val === "object" && "text" in val) {
-            val = (val as any).text;
+          if (val && typeof val === "object") {
+            if ("result" in (val as any) && (val as any).result !== undefined && (val as any).result !== null) {
+              val = (val as any).result;
+            } else if ("text" in (val as any)) {
+              val = (val as any).text;
+            }
           }
           obj[header] = val;
           hasData = true;
@@ -82,17 +101,19 @@ async function main() {
   }
   console.log(`[sync] Sekolah: ${school.name} (id: ${school.id})`);
 
-  // 2. Baca Excel data-seed.xlsx
-  const xlsxPath = path.resolve(process.cwd(), "../../docs/data-seed.xlsx");
-  const localXlsxPath = path.resolve(process.cwd(), "docs/data-seed.xlsx");
-  const resolvedPath = fs.existsSync(xlsxPath)
-    ? xlsxPath
-    : fs.existsSync(localXlsxPath)
-      ? localXlsxPath
-      : path.resolve(__dirname, "../../../../docs/data-seed.xlsx");
+  // 2. Baca Excel data-seed.xlsx (Cek berbagai path lokal, monorepo, dan container /app/docs/...)
+  const possiblePaths = [
+    path.resolve(process.cwd(), "../../docs/data-seed.xlsx"),
+    path.resolve(process.cwd(), "docs/data-seed.xlsx"),
+    path.resolve("/app/docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../../../docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../../docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../docs/data-seed.xlsx"),
+  ];
+  const resolvedPath = possiblePaths.find((p) => fs.existsSync(p));
 
-  if (!fs.existsSync(resolvedPath)) {
-    throw new Error(`File data-seed.xlsx tidak ditemukan di ${resolvedPath}`);
+  if (!resolvedPath || !fs.existsSync(resolvedPath)) {
+    throw new Error(`File data-seed.xlsx tidak ditemukan di path mana pun: ${possiblePaths.join(", ")}`);
   }
 
   console.log(`[sync] Membaca data excel dari: ${resolvedPath}...`);

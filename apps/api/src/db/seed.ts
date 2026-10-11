@@ -288,16 +288,18 @@ async function main() {
   }
 
   // 5. Read data-seed.xlsx
-  const xlsxPath = path.resolve(process.cwd(), "../../docs/data-seed.xlsx");
-  const localXlsxPath = path.resolve(process.cwd(), "docs/data-seed.xlsx");
-  const resolvedPath = fs.existsSync(xlsxPath)
-    ? xlsxPath
-    : fs.existsSync(localXlsxPath)
-      ? localXlsxPath
-      : path.resolve(__dirname, "../../../../docs/data-seed.xlsx");
+  const possiblePaths = [
+    path.resolve(process.cwd(), "../../docs/data-seed.xlsx"),
+    path.resolve(process.cwd(), "docs/data-seed.xlsx"),
+    path.resolve("/app/docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../../../docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../../docs/data-seed.xlsx"),
+    path.resolve(__dirname, "../../docs/data-seed.xlsx"),
+  ];
+  const resolvedPath = possiblePaths.find((p) => fs.existsSync(p));
 
-  if (!fs.existsSync(resolvedPath)) {
-    console.warn(`[seed] data-seed.xlsx not found at ${resolvedPath}. Skipping excel seeding.`);
+  if (!resolvedPath || !fs.existsSync(resolvedPath)) {
+    console.warn(`[seed] data-seed.xlsx not found at any path: ${possiblePaths.join(", ")}. Skipping excel seeding.`);
     return;
   }
 
@@ -321,8 +323,12 @@ async function main() {
           const header = headers[colNumber];
           if (header) {
             let val = cell.value;
-            if (val && typeof val === "object" && "text" in val) {
-              val = (val as any).text;
+            if (val && typeof val === "object") {
+              if ("result" in (val as any) && (val as any).result !== undefined && (val as any).result !== null) {
+                val = (val as any).result;
+              } else if ("text" in (val as any)) {
+                val = (val as any).text;
+              }
             }
             obj[header] = val;
             hasData = true;

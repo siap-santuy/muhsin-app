@@ -46,6 +46,8 @@ services:
     # Only bind to host localhost (reverse-proxied by Nginx/Caddy on VPS)
     ports:
       - "127.0.0.1:3001:3001"
+    volumes:
+      - ./docs/data-seed.xlsx:/app/docs/data-seed.xlsx:ro
     depends_on:
       postgres:
         condition: service_healthy

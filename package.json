@@ -23,6 +23,8 @@
     "db:migrate": "bun --filter @muhsin/api db:migrate",
     "db:seed": "bun --filter @muhsin/api db:seed",
     "db:seed:sim": "bun --filter @muhsin/api db:seed:sim",
+    "db:sync:parents": "bun --filter @muhsin/api db:sync:parents",
+    "db:purge-views": "bun --filter @muhsin/api db:purge-views",
     "db:reset": "bun --filter @muhsin/api db:reset"
   },
   "overrides": {
