@@ -8,7 +8,6 @@ import {
   Mic,
   NotebookPen,
   Repeat,
-  Star,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -147,42 +146,35 @@ export function ParentDashboardPage() {
             />
           ) : null}
 
-          {/* Banner Streak & Level Ananda */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-brand-line">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
-                <Flame className="h-6 w-6" />
-              </div>
-              <div>
+          {/* Banner Prestasi Streak Ananda */}
+          <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-brand-line">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+              <Flame className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline justify-between">
                 <p className="text-base font-extrabold text-brand-navy leading-none">
                   {summary?.childStreak ?? 0} Hari
                 </p>
-                <p className="text-[11px] font-semibold text-brand-text-muted mt-0.5">
-                  Streak Istiqomah
-                </p>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Konsisten
+                </span>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-brand-line">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-                <Star className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-base font-extrabold text-brand-navy leading-none">
-                  Level {summary?.childLevel ?? 1}
-                </p>
-                <p className="text-[11px] font-semibold text-brand-text-muted mt-0.5">
-                  Prestasi Ananda
-                </p>
-              </div>
+              <p className="text-[11px] font-semibold text-brand-text-muted mt-1">
+                Rekor Istiqomah Ibadah &amp; Setoran Ananda
+              </p>
             </div>
           </div>
 
           {/* Widget Setoran Terakhir Ananda */}
           {summary?.lastSetoran ? (
             <div
-              onClick={() => (window.location.hash = "#/tahfidz-summary")}
-              className="cursor-pointer rounded-2xl border border-brand-cyan/30 bg-linear-to-r from-brand-cyan/5 via-white to-brand-cyan/10 p-3.5 shadow-xs transition-all hover:border-brand-cyan"
+              onClick={() => {
+                const targetTab = summary.lastSetoran.tab || "ziyadah";
+                const targetDate = summary.lastSetoran.date || "";
+                window.location.hash = `#/tahfidz-summary?tab=${targetTab}${targetDate ? `&date=${targetDate}` : ""}`;
+              }}
+              className="cursor-pointer rounded-2xl border border-brand-cyan/30 bg-linear-to-r from-brand-cyan/5 via-white to-brand-cyan/10 p-3.5 shadow-xs transition-all hover:border-brand-cyan hover:shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

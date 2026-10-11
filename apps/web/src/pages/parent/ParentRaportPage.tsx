@@ -1,10 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  GraduationCap,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { api } from "@/lib/api";
@@ -94,38 +89,26 @@ export function ParentRaportPage({
   const sem1 = getSemesterStatus(1);
   const sem2 = getSemesterStatus(2);
 
-  const activeMonthDef = ACADEMIC_MONTHS.find((m) => m.name === selectedMonth) ?? defaultMonth;
-  const activeMonthStatus = getMonthStatus(activeMonthDef.offset);
-  const activeSemesterStatus = getSemesterStatus(selectedSemester as 1 | 2);
-
   function handleSelectMonth(m: MonthDef) {
     const { isAvailable } = getMonthStatus(m.offset);
     if (!isAvailable) return;
     setSelectedMonth(m.name);
     setSelectedSemester(m.semester);
+    if (onNavigateToMonthly) {
+      onNavigateToMonthly(m.name, selectedYear);
+    } else {
+      const params = new URLSearchParams({ month: m.name, year: selectedYear });
+      window.location.hash = `#/monthly-raport?${params.toString()}`;
+    }
   }
 
   function handleSelectSemester(sem: 1 | 2) {
     const { isAvailable } = getSemesterStatus(sem);
     if (!isAvailable) return;
     setSelectedSemester(sem);
-  }
-
-  function handleMonthlyClick() {
-    if (!activeMonthStatus.isAvailable) return;
-    if (onNavigateToMonthly) {
-      onNavigateToMonthly(selectedMonth, selectedYear);
-    } else {
-      const params = new URLSearchParams({ month: selectedMonth, year: selectedYear });
-      window.location.hash = `#/monthly-raport?${params.toString()}`;
-    }
-  }
-
-  function handleSemesterClick() {
-    if (!activeSemesterStatus.isAvailable) return;
-    const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
+    const semName = sem === 1 ? "Ganjil" : "Genap";
     if (onNavigateToSemester) {
-      onNavigateToSemester(selectedSemester, selectedYear);
+      onNavigateToSemester(sem, selectedYear);
     } else {
       const params = new URLSearchParams({
         semester: semName,
@@ -309,70 +292,15 @@ export function ParentRaportPage({
             </div>
           </section>
 
-          {/* Action Card: Raport Bulanan */}
-          <button
-            type="button"
-            disabled={!activeMonthStatus.isAvailable}
-            onClick={handleMonthlyClick}
-            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
-              !activeMonthStatus.isAvailable
-                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                : "border-brand-cyan bg-brand-cyan/5 hover:bg-brand-cyan/10 ring-2 ring-brand-cyan/20"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
-                <TrendingUp className="h-6 w-6" />
-              </span>
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-brand-navy">
-                    Buka Raport Bulanan
-                  </h2>
-                  {activeMonthStatus.isAvailable && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                      Tersedia
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs font-medium text-brand-text-muted">
-                  {!activeMonthStatus.isAvailable
-                    ? `Bulan ${selectedMonth} sedang berjalan / terkunci`
-                    : `Lihat nilai & evaluasi bulan ${selectedMonth}`}
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-brand-navy" />
-          </button>
-
-          {/* Action Card: Raport Semester */}
-          <button
-            type="button"
-            disabled={!activeSemesterStatus.isAvailable}
-            onClick={handleSemesterClick}
-            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
-              !activeSemesterStatus.isAvailable
-                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                : "border-brand-cyan/40 bg-white hover:bg-brand-cyan/5"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-cyan/10 text-brand-cyan">
-                <GraduationCap className="h-6 w-6" />
-              </span>
-              <div className="text-left">
-                <h2 className="text-base font-bold text-brand-navy">
-                  Lihat Raport Semester
-                </h2>
-                <p className="text-xs font-medium text-brand-text-muted">
-                  {!activeSemesterStatus.isAvailable
-                    ? `Semester ${selectedSemester} sedang berjalan / terkunci`
-                    : `Dokumen hasil akhir (Semester ${selectedSemester})`}
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-brand-navy" />
-          </button>
+          {/* Card Panduan Langsung */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-2xs text-center">
+            <p className="text-xs font-bold text-brand-navy">
+              💡 Cara Membuka Raport Ananda
+            </p>
+            <p className="mt-1 text-[11px] text-brand-text-muted leading-relaxed">
+              Ketuk langsung pada salah satu kotak <span className="font-semibold text-brand-navy">Bulan</span> (dengan titik hijau) untuk membuka lembar Raport Bulanan, atau ketuk tombol <span className="font-semibold text-brand-navy">Semester</span> untuk membuka rekapitulasi semester ananda.
+            </p>
+          </div>
         </div>
       </main>
 

@@ -595,6 +595,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           referenceEnd: setoranEntries.referenceEnd,
           scores: setoranEntries.scores,
           keterangan: setoranEntries.keterangan,
+          subcatCode: assessmentSubcategories.code,
           subcatName: assessmentSubcategories.name,
         })
         .from(setoranEntries)
@@ -625,7 +626,15 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         const scoreVals = Object.values(scoresObj).filter((v) => typeof v === "number");
         const scoreAvg = scoreVals.length > 0 ? Math.round(scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length) : 0;
 
+        const codeLower = (latestEntry.subcatCode || "").toLowerCase();
+        const tab: "ziyadah" | "murojaah" | "tahsin" = codeLower.includes("murojaah")
+          ? "murojaah"
+          : codeLower.includes("tahsin") || codeLower.includes("sabiq") || codeLower.includes("talaqi")
+          ? "tahsin"
+          : "ziyadah";
+
         lastSetoranInfo = {
+          tab,
           categoryName: latestEntry.subcatName ?? "Setoran TTQ",
           reference,
           date: latestEntry.date,

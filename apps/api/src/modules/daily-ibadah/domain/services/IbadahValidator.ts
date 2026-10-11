@@ -33,10 +33,10 @@ export class IbadahValidator {
    * Menghitung total EXP yang didapat dari satu hari ibadah yang di-submit
    */
   static calculateDayExp(params: {
-    sholatFardhu?: SholatFardhuStatus | null;
+    sholatFardhu?: Partial<SholatFardhuStatus> | null;
     sholatRawatib?: string[] | null;
-    tahajud: boolean;
-    dhuha: boolean;
+    tahajud?: boolean;
+    dhuha?: boolean;
     puasaSunnah?: string | null;
     tilawah?: TilawahRef | null;
   }): number {
@@ -66,7 +66,7 @@ export class IbadahValidator {
   /**
    * Validasi apakah input ibadah lengkap untuk streak (semua sholat fardhu terisi)
    */
-  static isCompleteForStreak(sholatFardhu?: SholatFardhuStatus | null): boolean {
+  static isCompleteForStreak(sholatFardhu?: Partial<SholatFardhuStatus> | null): boolean {
     if (!sholatFardhu) return false;
     const required = ["subuh", "dzuhur", "ashar", "maghrib", "isya"] as const;
     return required.every((k) => sholatFardhu[k] !== undefined && sholatFardhu[k] !== null);

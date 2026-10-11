@@ -1,9 +1,34 @@
 [
   {
-    "version": "v1.1.2",
+    "version": "v1.1.3",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Akses Cepat Raport, Responsif Card TTQ, & Validasi Yaumiyah Draft",
+    "summary": "Membuka raport langsung dengan klik bulan/semester, perbaikan overflow teks riwayat TTQ, fleksibilitas simpan draft sebagian sholat, dan validasi submit tilawah.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Klik langsung kotak bulan atau semester pada halaman raport untuk membuka lembar evaluasi."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Penataan teks riwayat setoran TTQ agar membungkus rapi (wrap) dan tidak melebar ke luar layar mobile."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Siswa dapat menyimpan draft yaumiyah sebagian sholat, serta validasi kelengkapan 5 waktu dan tilawah saat kirim final."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.2",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Penyempurnaan Pengalaman Orang Tua (Parent Experience UX)",
     "summary": "Penambahan widget setoran terakhir & streak/level di beranda ortu, kartu sholat hari ini di yaumiyah, banner target hafalan, kalender interaktif, serta lokalisasi raport.",
     "changes": [

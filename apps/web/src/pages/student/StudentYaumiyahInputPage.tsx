@@ -278,6 +278,27 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
   }
 
   async function handleSubmit() {
+    // 1. Validasi 5 Sholat Fardhu Wajib Diisi Sebelum Submit
+    const missingSholat = SHOLAT_LIST.filter((s) => !sholatState[s]);
+    if (missingSholat.length > 0) {
+      setToast({
+        message: `Lengkapi semua sholat fardhu sebelum mengirim: ${missingSholat.join(", ")} belum diisi`,
+        variant: "warning",
+      });
+      return;
+    }
+
+    // 2. Validasi Tilawah: jika switch "Tidak Tilawah" OFF, wajib isi surah dan ayat
+    if (!notTilawah) {
+      if (!surahStart || !ayatStart) {
+        setToast({
+          message: "Pilih surah dan ayat tilawah, atau aktifkan 'Tidak Tilawah Hari Ini'",
+          variant: "warning",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const sholatFardhu: Record<string, string> = {};

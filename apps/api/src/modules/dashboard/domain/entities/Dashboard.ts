@@ -60,6 +60,7 @@ export interface ParentDashboardSummary {
   childLevel: number;
   childStreak: number;
   lastSetoran?: {
+    tab: "ziyadah" | "murojaah" | "tahsin";
     categoryName: string;
     reference: string;
     date: string;

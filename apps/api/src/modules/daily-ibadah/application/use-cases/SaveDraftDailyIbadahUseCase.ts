@@ -6,7 +6,7 @@ export interface SaveDraftDailyIbadahInput {
   studentId: string;
   date: string; // YYYY-MM-DD
   tilawah?: TilawahRef | null;
-  sholatFardhu?: SholatFardhuStatus | null;
+  sholatFardhu?: Partial<SholatFardhuStatus> | null;
   sholatRawatib?: string[] | null;
   tahajud?: boolean;
   dhuha?: boolean;

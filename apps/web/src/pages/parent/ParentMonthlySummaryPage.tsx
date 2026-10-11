@@ -52,15 +52,24 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
     return propInitialTab || fromUrl || "ziyadah";
   });
 
+  const queryDate = typeof window !== "undefined" ? new URLSearchParams(window.location.hash.split("?")[1] || "").get("date") : null;
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(queryDate);
+  const [selectedMonth, setSelectedMonth] = useState(() => (queryDate ? queryDate.slice(0, 7) : formatLocalDate(new Date()).slice(0, 7)));
+
   useEffect(() => {
-    if (propInitialTab && propInitialTab !== activeTab) {
-      setActiveTab(propInitialTab);
+    const fromUrl = new URLSearchParams(window.location.hash.split("?")[1] || "").get("tab");
+    const targetTab = propInitialTab || fromUrl;
+    if (targetTab && targetTab !== activeTab) {
+      setActiveTab(targetTab);
+    }
+    const targetDate = new URLSearchParams(window.location.hash.split("?")[1] || "").get("date");
+    if (targetDate) {
+      setSelectedDateFilter(targetDate);
+      setSelectedMonth(targetDate.slice(0, 7));
     }
   }, [propInitialTab]);
 
   const [page, setPage] = useState(1);
-  const [selectedMonth, setSelectedMonth] = useState(() => formatLocalDate(new Date()).slice(0, 7));
-  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
   const [setoranList, setSetoranList] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);

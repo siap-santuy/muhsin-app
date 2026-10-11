@@ -30,26 +30,30 @@ export function ActivityCard({
 }: ActivityCardProps) {
   return (
     <article
-      className={`rounded-2xl border border-brand-line border-l-4 ${BORDER_COLORS[statusType]} bg-white p-4 shadow-sm`}
+      className={`rounded-2xl border border-brand-line border-l-4 ${BORDER_COLORS[statusType]} bg-white p-4 shadow-sm overflow-hidden`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-brand-text-muted">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-brand-text-muted shrink-0">
           <Calendar className="h-3.5 w-3.5" />
           <span>{date}</span>
         </div>
-        <StatusBadge label={statusLabel} type={statusType} />
+        <div className="shrink-0">
+          <StatusBadge label={statusLabel} type={statusType} />
+        </div>
       </div>
-      <h3 className="mt-2 text-sm font-bold text-brand-navy">{title}</h3>
+      <h3 className="mt-2 text-sm font-bold text-brand-navy break-words leading-snug">
+        {title}
+      </h3>
       {metrics && metrics.length > 0 ? (
         <>
-          <div className="my-2 h-px bg-brand-line/60" />
-          <div className="flex justify-around text-center">
+          <div className="my-2.5 h-px bg-brand-line/60" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
             {metrics.map((m) => (
-              <div key={m.label}>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-navy">
+              <div key={m.label} className="bg-gray-50/80 rounded-xl py-1.5 px-2 border border-brand-line/40">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-navy truncate" title={m.label}>
                   {m.label}
                 </p>
-                <p className="mt-0.5 text-xl font-bold text-brand-navy">
+                <p className="mt-0.5 text-base font-extrabold text-brand-cyan-dark">
                   {m.value}
                 </p>
               </div>

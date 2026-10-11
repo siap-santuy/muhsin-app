@@ -15,6 +15,14 @@ const sholatFardhuSchema = z.object({
   isya: z.enum(["BA", "MA", "BT", "MT", "H", "T"]),
 });
 
+const partialSholatFardhuSchema = z.object({
+  subuh: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
+  dzuhur: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
+  ashar: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
+  maghrib: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
+  isya: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
+});
+
 const tilawahSchema = z.object({
   surahStart: z.number().int().min(1).max(114),
   ayatStart: z.number().int().min(1),
@@ -22,7 +30,17 @@ const tilawahSchema = z.object({
   ayatEnd: z.number().int().min(1),
 });
 
-const dailyIbadahBodySchema = z.object({
+const dailyIbadahDraftBodySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  sholatFardhu: partialSholatFardhuSchema.optional().nullable(),
+  sholatRawatib: z.array(z.string()).optional().nullable(),
+  tahajud: z.boolean().optional(),
+  dhuha: z.boolean().optional(),
+  puasaSunnah: z.string().optional().nullable(),
+  tilawah: tilawahSchema.optional().nullable(),
+});
+
+const dailyIbadahSubmitBodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   sholatFardhu: sholatFardhuSchema.optional().nullable(),
   sholatRawatib: z.array(z.string()).optional().nullable(),
@@ -110,7 +128,7 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
   app.post("/draft", requireRole("student"), async (c) => {
     const user = c.get("user");
     const body = await c.req.json();
-    const parsed = dailyIbadahBodySchema.safeParse(body);
+    const parsed = dailyIbadahDraftBodySchema.safeParse(body);
 
     if (!parsed.success) {
       return c.json(
@@ -138,7 +156,7 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
   app.post("/submit", requireRole("student"), async (c) => {
     const user = c.get("user");
     const body = await c.req.json();
-    const parsed = dailyIbadahBodySchema.safeParse(body);
+    const parsed = dailyIbadahSubmitBodySchema.safeParse(body);
 
     if (!parsed.success) {
       return c.json(
