@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.1.4",
+    "version": "v1.1.5",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Kalkulasi Progres Terpusat Backend & Hari Kalender Dinamis",
+    "summary": "Pusatkan formula kalkulasi persentase dan target bulanan ke backend dengan perhitungan hari kalender dinamis (28-31 hari), menghilangkan hardcode di UI.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Perhitungan persentase progres Ziyadah, Tahsin, Muroja'ah, dan Yaumiyah diatur terpusat dari backend."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Target hari yaumiyah dihitung dinamis sesuai jumlah hari sebenarnya pada bulan kalender berjalan."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.4",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Sinkronisasi Bulan Kalender & Realtime Progres Berjalan",
     "summary": "Sinkronisasi otomatis tampilan kalender saat membuka tanggal setoran terakhir serta koreksi 4 kartu progres agar murni merefleksikan aktivitas bulan berjalan.",
     "changes": [

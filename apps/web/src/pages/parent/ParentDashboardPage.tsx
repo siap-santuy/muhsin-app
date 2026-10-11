@@ -53,24 +53,29 @@ export function ParentDashboardPage() {
   const isFilled = summary?.isYaumiyahTodayFilled ?? true;
   const progres = summary?.progres ?? {};
 
-  const ziyadahCount = progres.ziyadahCount ?? 0;
-  const ziyadahPct = Math.min(100, Math.round((ziyadahCount / 20) * 100));
-
-  const tahsinCount = progres.tahsinCount ?? 0;
-  const tahsinPct = Math.min(100, Math.round((tahsinCount / 20) * 100));
-
-  const murojaahCount = progres.murojaahCount ?? 0;
-  const murojaahPct = Math.min(100, Math.round((murojaahCount / 20) * 100));
-
-  const yaumiyahDays = progres.yaumiyahDays ?? 0;
-  const yaumiyahPct = Math.min(100, Math.round((yaumiyahDays / 30) * 100));
+  const ziyadahItem = progres.ziyadah ?? {
+    percentage: Math.min(100, Math.round(((progres.ziyadahCount ?? 0) / 20) * 100)),
+    caption: "Target 20 halaman",
+  };
+  const tahsinItem = progres.tahsin ?? {
+    percentage: Math.min(100, Math.round(((progres.tahsinCount ?? 0) / 20) * 100)),
+    caption: "Target 20 pertemuan",
+  };
+  const murojaahItem = progres.murojaah ?? {
+    percentage: Math.min(100, Math.round(((progres.murojaahCount ?? 0) / 20) * 100)),
+    caption: `${progres.murojaahCount ?? 0} sesi hafalan terjaga`,
+  };
+  const yaumiyahItem = progres.yaumiyah ?? {
+    percentage: Math.min(100, Math.round(((progres.yaumiyahDays ?? 0) / 30) * 100)),
+    caption: `${progres.yaumiyahDays ?? 0} dari 30 hari`,
+  };
 
   const progressItems: ProgressItem[] = [
     {
       label: "Ziyadah",
-      value: `${ziyadahPct}%`,
-      caption: "Target 20 halaman",
-      percent: ziyadahPct,
+      value: `${ziyadahItem.percentage}%`,
+      caption: ziyadahItem.caption,
+      percent: ziyadahItem.percentage,
       icon: BookOpen,
       iconClass: "bg-brand-cyan/10 text-brand-cyan",
       barClass: "bg-brand-cyan",
@@ -79,9 +84,9 @@ export function ParentDashboardPage() {
     },
     {
       label: "Tahsin",
-      value: `${tahsinPct}%`,
-      caption: "Target 20 pertemuan",
-      percent: tahsinPct,
+      value: `${tahsinItem.percentage}%`,
+      caption: tahsinItem.caption,
+      percent: tahsinItem.percentage,
       icon: Mic,
       iconClass: "bg-brand-navy/10 text-brand-navy",
       barClass: "bg-brand-navy",
@@ -90,9 +95,9 @@ export function ParentDashboardPage() {
     },
     {
       label: "Murojaah",
-      value: `${murojaahPct}%`,
-      caption: `${murojaahCount} sesi hafalan terjaga`,
-      percent: murojaahPct,
+      value: `${murojaahItem.percentage}%`,
+      caption: murojaahItem.caption,
+      percent: murojaahItem.percentage,
       icon: Repeat,
       iconClass: "bg-emerald-500/10 text-emerald-500",
       barClass: "bg-emerald-500",
@@ -101,9 +106,9 @@ export function ParentDashboardPage() {
     },
     {
       label: "Yaumiyah",
-      value: `${yaumiyahPct}%`,
-      caption: `${yaumiyahDays} dari 30 hari`,
-      percent: yaumiyahPct,
+      value: `${yaumiyahItem.percentage}%`,
+      caption: yaumiyahItem.caption,
+      percent: yaumiyahItem.percentage,
       icon: HeartHandshake,
       iconClass: "bg-purple-500/10 text-purple-500",
       barClass: "bg-purple-500",

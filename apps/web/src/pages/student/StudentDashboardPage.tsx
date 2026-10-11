@@ -61,51 +61,58 @@ export function StudentDashboardPage() {
     progressAyat: "Target Aktif",
   };
 
-  const ziyadahCount = summary?.progresBulanIni?.ziyadahCount ?? 0;
-  const ziyadahPct = Math.min(100, Math.round((ziyadahCount / 20) * 100));
+  const progres = summary?.progresBulanIni ?? {};
 
-  const tahsinCount = summary?.progresBulanIni?.tahsinCount ?? 0;
-  const tahsinPct = Math.min(100, Math.round((tahsinCount / 20) * 100));
-
-  const murojaahCount = summary?.progresBulanIni?.murojaahCount ?? 0;
-  const murojaahPct = Math.min(100, Math.round((murojaahCount / 20) * 100));
-
-  const yaumiyahDays = summary?.progresBulanIni?.yaumiyahDays ?? 0;
-  const yaumiyahPct = Math.min(100, Math.round((yaumiyahDays / 30) * 100));
+  const ziyadahItem = progres.ziyadah ?? {
+    percentage: Math.min(100, Math.round(((progres.ziyadahCount ?? 0) / 20) * 100)),
+    caption: "Target 20 halaman",
+  };
+  const tahsinItem = progres.tahsin ?? {
+    percentage: Math.min(100, Math.round(((progres.tahsinCount ?? 0) / 20) * 100)),
+    caption: "Target 20 pertemuan",
+  };
+  const murojaahItem = progres.murojaah ?? {
+    percentage: Math.min(100, Math.round(((progres.murojaahCount ?? 0) / 20) * 100)),
+    caption: `${progres.murojaahCount ?? 0} sesi terjaga`,
+  };
+  const yaumiyahItem = progres.yaumiyah ?? {
+    percentage: Math.min(100, Math.round(((progres.yaumiyahDays ?? 0) / 30) * 100)),
+    caption: `${progres.yaumiyahDays ?? 0} dari 30 hari`,
+  };
 
   const progressItems: ProgressItem[] = [
     {
       label: "Ziyadah",
-      value: `${ziyadahPct}%`,
-      caption: "Target 20 halaman",
-      percent: ziyadahPct,
+      value: `${ziyadahItem.percentage}%`,
+      caption: ziyadahItem.caption,
+      percent: ziyadahItem.percentage,
       barClass: "bg-brand-cyan",
       trackClass: "bg-brand-cyan/15",
       onClick: () => (window.location.hash = "#/tahfidz-summary?tab=ziyadah"),
     },
     {
       label: "Tahsin",
-      value: `${tahsinPct}%`,
-      caption: "Target 20 pertemuan",
-      percent: tahsinPct,
+      value: `${tahsinItem.percentage}%`,
+      caption: tahsinItem.caption,
+      percent: tahsinItem.percentage,
       barClass: "bg-brand-navy",
       trackClass: "bg-brand-navy/15",
       onClick: () => (window.location.hash = "#/tahfidz-summary?tab=tahsin"),
     },
     {
       label: "Murojaah",
-      value: `${murojaahPct}%`,
-      caption: "Target terjaga",
-      percent: murojaahPct,
+      value: `${murojaahItem.percentage}%`,
+      caption: murojaahItem.caption,
+      percent: murojaahItem.percentage,
       barClass: "bg-[#7aa7f0]",
       trackClass: "bg-[#d3e4fe]",
       onClick: () => (window.location.hash = "#/tahfidz-summary?tab=murojaah"),
     },
     {
       label: "Yaumiyah",
-      value: `${yaumiyahPct}%`,
-      caption: `${yaumiyahDays} dari 30 hari`,
-      percent: yaumiyahPct,
+      value: `${yaumiyahItem.percentage}%`,
+      caption: yaumiyahItem.caption,
+      percent: yaumiyahItem.percentage,
       barClass: "bg-[#8b5cf6]",
       trackClass: "bg-[#8b5cf6]/15",
       onClick: () => (window.location.hash = "#/yaumiyah"),

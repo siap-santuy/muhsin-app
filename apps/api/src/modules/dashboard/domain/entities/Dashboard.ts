@@ -1,3 +1,10 @@
+export interface MonthlyProgressCategory {
+  count: number;
+  target: number;
+  percentage: number;
+  caption: string;
+}
+
 export interface StudentDashboardSummary {
   studentName: string;
   level: number;
@@ -16,6 +23,10 @@ export interface StudentDashboardSummary {
     murojaahCount: number;
     tahsinCount: number;
     yaumiyahDays: number;
+    ziyadah?: MonthlyProgressCategory;
+    murojaah?: MonthlyProgressCategory;
+    tahsin?: MonthlyProgressCategory;
+    yaumiyah?: MonthlyProgressCategory;
   };
 }
 
@@ -72,6 +83,10 @@ export interface ParentDashboardSummary {
     murojaahCount: number;
     tahsinCount: number;
     yaumiyahDays: number;
+    ziyadah?: MonthlyProgressCategory;
+    murojaah?: MonthlyProgressCategory;
+    tahsin?: MonthlyProgressCategory;
+    yaumiyah?: MonthlyProgressCategory;
   };
   isYaumiyahTodayFilled: boolean;
 }

@@ -109,6 +109,44 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         )
       );
 
+    // Hitung dinamis total hari kalender di bulan aktif (28, 29, 30, atau 31 hari)
+    const [yearNum, monthNum] = activeMonth.split("-").map(Number);
+    const daysInCurrentMonth = new Date(yearNum, monthNum, 0).getDate();
+    const yaumiyahDaysCount = ibadahRows.length;
+
+    const TARGET_ZIYADAH = 20;
+    const TARGET_TAHSIN = 20;
+    const TARGET_MUROJAAH = 20;
+    const TARGET_YAUMIYAH = daysInCurrentMonth;
+
+    const progresZiyadah = {
+      count: ziyadahCount,
+      target: TARGET_ZIYADAH,
+      percentage: Math.min(100, Math.round((ziyadahCount / TARGET_ZIYADAH) * 100)),
+      caption: `Target ${TARGET_ZIYADAH} halaman`,
+    };
+
+    const progresTahsin = {
+      count: tahsinCount,
+      target: TARGET_TAHSIN,
+      percentage: Math.min(100, Math.round((tahsinCount / TARGET_TAHSIN) * 100)),
+      caption: `Target ${TARGET_TAHSIN} pertemuan`,
+    };
+
+    const progresMurojaah = {
+      count: murojaahCount,
+      target: TARGET_MUROJAAH,
+      percentage: Math.min(100, Math.round((murojaahCount / TARGET_MUROJAAH) * 100)),
+      caption: `${murojaahCount} sesi hafalan terjaga`,
+    };
+
+    const progresYaumiyah = {
+      count: yaumiyahDaysCount,
+      target: TARGET_YAUMIYAH,
+      percentage: Math.min(100, Math.round((yaumiyahDaysCount / TARGET_YAUMIYAH) * 100)),
+      caption: `${yaumiyahDaysCount} dari ${TARGET_YAUMIYAH} hari`,
+    };
+
     return {
       studentName: studentRows[0]?.name ?? "Siswa",
       level: gam?.level ?? 1,
@@ -134,7 +172,11 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         ziyadahCount,
         murojaahCount,
         tahsinCount,
-        yaumiyahDays: ibadahRows.length,
+        yaumiyahDays: yaumiyahDaysCount,
+        ziyadah: progresZiyadah,
+        murojaah: progresMurojaah,
+        tahsin: progresTahsin,
+        yaumiyah: progresYaumiyah,
       },
     };
   }
@@ -587,6 +629,43 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         };
       }
 
+      // Hitung dinamis total hari kalender di bulan aktif (28, 29, 30, atau 31 hari)
+      const [yearNumParent, monthNumParent] = activeMonth.split("-").map(Number);
+      const daysInCurrentMonthParent = new Date(yearNumParent, monthNumParent, 0).getDate();
+
+      const TARGET_ZIYADAH = 20;
+      const TARGET_TAHSIN = 20;
+      const TARGET_MUROJAAH = 20;
+      const TARGET_YAUMIYAH = daysInCurrentMonthParent;
+
+      const progresZiyadah = {
+        count: childZiyadah,
+        target: TARGET_ZIYADAH,
+        percentage: Math.min(100, Math.round((childZiyadah / TARGET_ZIYADAH) * 100)),
+        caption: `Target ${TARGET_ZIYADAH} halaman`,
+      };
+
+      const progresTahsin = {
+        count: childTahsin,
+        target: TARGET_TAHSIN,
+        percentage: Math.min(100, Math.round((childTahsin / TARGET_TAHSIN) * 100)),
+        caption: `Target ${TARGET_TAHSIN} pertemuan`,
+      };
+
+      const progresMurojaah = {
+        count: childMurojaah,
+        target: TARGET_MUROJAAH,
+        percentage: Math.min(100, Math.round((childMurojaah / TARGET_MUROJAAH) * 100)),
+        caption: `${childMurojaah} sesi hafalan terjaga`,
+      };
+
+      const progresYaumiyah = {
+        count: childYaumiyahDays,
+        target: TARGET_YAUMIYAH,
+        percentage: Math.min(100, Math.round((childYaumiyahDays / TARGET_YAUMIYAH) * 100)),
+        caption: `${childYaumiyahDays} dari ${TARGET_YAUMIYAH} hari`,
+      };
+
       return {
         parentName: parentRows[0]?.name ?? "Orang Tua",
         childId: childId ?? undefined,
@@ -600,10 +679,17 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           murojaahCount: childMurojaah,
           tahsinCount: childTahsin,
           yaumiyahDays: childYaumiyahDays,
+          ziyadah: progresZiyadah,
+          murojaah: progresMurojaah,
+          tahsin: progresTahsin,
+          yaumiyah: progresYaumiyah,
         },
         isYaumiyahTodayFilled: isTodayFilled,
       };
     }
+
+    const [yearNumEmpty, monthNumEmpty] = new Date().toISOString().slice(0, 7).split("-").map(Number);
+    const daysInEmptyMonth = new Date(yearNumEmpty, monthNumEmpty, 0).getDate();
 
     return {
       parentName: parentRows[0]?.name ?? "Orang Tua",
@@ -618,6 +704,10 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         murojaahCount: childMurojaah,
         tahsinCount: childTahsin,
         yaumiyahDays: childYaumiyahDays,
+        ziyadah: { count: 0, target: 20, percentage: 0, caption: "Target 20 halaman" },
+        murojaah: { count: 0, target: 20, percentage: 0, caption: "0 sesi hafalan terjaga" },
+        tahsin: { count: 0, target: 20, percentage: 0, caption: "Target 20 pertemuan" },
+        yaumiyah: { count: 0, target: daysInEmptyMonth, percentage: 0, caption: `0 dari ${daysInEmptyMonth} hari` },
       },
       isYaumiyahTodayFilled: isTodayFilled,
     };
