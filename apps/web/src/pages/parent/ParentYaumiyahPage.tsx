@@ -28,6 +28,7 @@ export function ParentYaumiyahPage() {
   const [stats, setStats] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [todayIbadah, setTodayIbadah] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const todayStr = formatLocalDate(new Date());
   const [selectedMonth, setSelectedMonth] = useState(() => todayStr.slice(0, 7));
@@ -36,17 +37,19 @@ export function ParentYaumiyahPage() {
     async function load() {
       try {
         const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
-        const [dashData, statsData, histData] = await Promise.all([
+        const [dashData, statsData, histData, todayData] = await Promise.all([
           api.getDashboardSummary(),
           api.getDailyIbadahStats({ studentId: storedChildId, month: selectedMonth }),
           api.getDailyIbadahHistory({ studentId: storedChildId, month: selectedMonth }),
+          api.getDailyIbadah(todayStr, storedChildId).catch(() => null),
         ]);
         setSummary(dashData);
         if (dashData?.childId && typeof window !== "undefined") {
           localStorage.setItem("parent_active_child_id", dashData.childId);
         }
         setStats(statsData);
-        setHistory(histData);
+        setHistory(histData || []);
+        setTodayIbadah(todayData);
       } catch {
         // Fallback
       } finally {
@@ -95,7 +98,7 @@ export function ParentYaumiyahPage() {
     },
     {
       label: "Sunnah Rawatib",
-      countText: `${stats?.rawatibTotalCount ?? 0} rakaat/slot`,
+      countText: `${stats?.rawatibTotalCount ?? 0} waktu terlaksana`,
       icon: Sun,
       iconClass: "text-purple-500",
     },
@@ -129,6 +132,61 @@ export function ParentYaumiyahPage() {
             <p className="text-xs font-bold text-brand-navy">
               Memantau Ibadah: <span className="text-brand-cyan-dark">{childName}</span>
             </p>
+          </div>
+
+          {/* Kartu Status Sholat Hari Ini */}
+          <div className="rounded-2xl border border-brand-line bg-white p-3.5 shadow-xs">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-brand-line/50">
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs font-bold text-brand-navy">
+                  Sholat 5 Waktu Hari Ini
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleGoToView(todayStr)}
+                className="text-[11px] font-bold text-brand-cyan hover:underline"
+              >
+                Detail
+              </button>
+            </div>
+
+            <div className="grid grid-cols-5 gap-1.5 text-center">
+              {[
+                { label: "Subuh", code: todayIbadah?.sholatFardhu?.subuh },
+                { label: "Dzuhur", code: todayIbadah?.sholatFardhu?.dzuhur },
+                { label: "Ashar", code: todayIbadah?.sholatFardhu?.ashar },
+                { label: "Maghrib", code: todayIbadah?.sholatFardhu?.maghrib },
+                { label: "Isya", code: todayIbadah?.sholatFardhu?.isya },
+              ].map((s) => {
+                const isDone = s.code === "BA" || s.code === "MA" || s.code === "H";
+                const isLate = s.code === "BT" || s.code === "MT";
+                const isNot = s.code === "T";
+
+                return (
+                  <div
+                    key={s.label}
+                    className={`rounded-xl py-2 px-1 border transition-all ${
+                      isDone
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        : isLate
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : isNot
+                        ? "bg-red-50 border-red-200 text-red-600"
+                        : "bg-gray-50/80 border-gray-100 text-gray-400"
+                    }`}
+                  >
+                    <p className="text-[10px] font-bold">{s.label}</p>
+                    <p className="mt-0.5 text-xs font-extrabold leading-none">
+                      {s.code || "—"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <MonthCalendar

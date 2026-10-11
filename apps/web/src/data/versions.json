@@ -1,9 +1,44 @@
 [
   {
-    "version": "v1.1.1",
+    "version": "v1.1.2",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Penyempurnaan Pengalaman Orang Tua (Parent Experience UX)",
+    "summary": "Penambahan widget setoran terakhir & streak/level di beranda ortu, kartu sholat hari ini di yaumiyah, banner target hafalan, kalender interaktif, serta lokalisasi raport.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Widget setoran hafalan terakhir ananda beserta nilai dan predikat langsung di beranda orang tua."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Banner streak hari istiqomah dan level prestasi anak di beranda orang tua."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Kartu ringkas status sholat 5 waktu hari ini di halaman jurnal yaumiyah orang tua."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Banner target hafalan bulanan dan filter klik tanggal kalender pada halaman hafalan anak."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Lokalisasi penuh istilah status raport ke Bahasa Indonesia dan tombol ingatkan di detail mutaba'ah."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.1",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Legenda Kalender Yaumiyah Dinamis & Pemilih Kalender Cepat Guru",
     "summary": "Penyesuaian legenda dan badge kalender yaumiyah (Hijau: Sudah Kirim, Kuning: Belum Kirim, Abu: Belum Isi) serta penambahan header navigasi kalender cepat untuk guru pembimbing.",
     "changes": [

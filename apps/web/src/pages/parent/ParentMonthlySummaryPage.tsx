@@ -60,6 +60,7 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
 
   const [page, setPage] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState(() => formatLocalDate(new Date()).slice(0, 7));
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
   const [setoranList, setSetoranList] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -90,10 +91,12 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
   function handleMonthChange(year: number, month: number) {
     const formatted = `${year}-${String(month + 1).padStart(2, "0")}`;
     setSelectedMonth(formatted);
+    setSelectedDateFilter(null);
   }
 
   function handleTabChange(id: string) {
     setActiveTab(id);
+    setSelectedDateFilter(null);
     setPage(1);
   }
 
@@ -102,9 +105,13 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
   const filteredSetoran = setoranList.filter((s) => {
     const code = (s.subcategoryCode || s.categoryCode || "").toLowerCase();
     const name = (s.subcategoryName || s.categoryName || "").toLowerCase();
-    if (activeTab === "ziyadah") return code.includes("ziyadah") || name.includes("ziyadah");
-    if (activeTab === "murojaah") return code.includes("murojaah") || name.includes("murojaah");
-    if (activeTab === "tahsin") return code.includes("tahsin") || code.includes("talaqi") || code.includes("sabiq") || name.includes("tahsin");
+    let matchesTab = true;
+    if (activeTab === "ziyadah") matchesTab = code.includes("ziyadah") || name.includes("ziyadah");
+    else if (activeTab === "murojaah") matchesTab = code.includes("murojaah") || name.includes("murojaah");
+    else if (activeTab === "tahsin") matchesTab = code.includes("tahsin") || code.includes("talaqi") || code.includes("sabiq") || name.includes("tahsin");
+
+    if (!matchesTab) return false;
+    if (selectedDateFilter && s.date !== selectedDateFilter) return false;
     return true;
   });
 
@@ -184,20 +191,62 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
           />
         </div>
 
+        {/* Banner Target Bulanan */}
+        <div className="mt-3 px-4">
+          <div className="rounded-2xl border border-brand-cyan/30 bg-linear-to-r from-brand-cyan/10 via-white to-brand-cyan/5 p-3.5 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-cyan-dark">
+                Target {activeTab === "ziyadah" ? "Hafalan Baru" : activeTab === "murojaah" ? "Kelancaran Muroja'ah" : "Metode Tahsin"} Bulan Ini
+              </span>
+              <span className="rounded-full bg-brand-cyan/20 px-2 py-0.5 text-[10px] font-extrabold text-brand-navy">
+                {selectedMonth}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs font-bold text-brand-navy leading-snug">
+              {activeTab === "ziyadah"
+                ? "Juz 30 (Surah An-Naba' s/d Al-Muthaffifin) — Minimal 20 Halaman"
+                : activeTab === "murojaah"
+                ? "Menjaga & Mengulang Hafalan Juz 30 Mutqin — Rutin Tiap Pekan"
+                : "Metode Sabiq Jilid 4 & Talaqi Tartil — 20 Pertemuan Aktif"}
+            </p>
+          </div>
+        </div>
+
         {/* Calendar */}
         <div className="mt-3 px-4">
           <MonthCalendar
             mode="setoran"
             getStatusForDate={getStatusForDate}
             onMonthChange={handleMonthChange}
+            onSelectDate={(date) => {
+              const dateStr = formatLocalDate(date);
+              setSelectedDateFilter((prev) => (prev === dateStr ? null : dateStr));
+              setPage(1);
+            }}
           />
         </div>
 
         {/* Riwayat */}
         <div className="mt-4 flex items-end justify-between px-4">
-          <h2 className="text-base font-bold text-brand-navy">
-            {RIWAYAT_TITLE[activeTab]}
-          </h2>
+          <div>
+            <h2 className="text-base font-bold text-brand-navy">
+              {RIWAYAT_TITLE[activeTab]}
+            </h2>
+            {selectedDateFilter ? (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[11px] text-brand-cyan-dark font-bold">
+                  Filter: {formatIndonesianDate(selectedDateFilter)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDateFilter(null)}
+                  className="text-[10px] text-red-500 font-bold hover:underline"
+                >
+                  (Hapus Filter)
+                </button>
+              </div>
+            ) : null}
+          </div>
           <span className="text-xs font-semibold text-brand-text-muted">
             {activities.length} aktifitas
           </span>

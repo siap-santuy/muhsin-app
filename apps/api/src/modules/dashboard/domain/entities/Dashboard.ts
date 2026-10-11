@@ -59,6 +59,13 @@ export interface ParentDashboardSummary {
   childClassName: string;
   childLevel: number;
   childStreak: number;
+  lastSetoran?: {
+    categoryName: string;
+    reference: string;
+    date: string;
+    scoreAvg: number;
+    keterangan?: string;
+  } | null;
   progres: {
     ziyadahCount: number;
     murojaahCount: number;

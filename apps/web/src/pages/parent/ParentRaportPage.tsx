@@ -295,16 +295,16 @@ export function ParentRaportPage({
             {/* Status Legend Notes */}
             <div className="mt-4 flex items-center justify-center gap-4 border-t border-brand-line/50 pt-3 text-[11px] font-medium text-brand-text-muted">
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>On going</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Sudah Terbit</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span>Done</span>
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Sedang Berjalan</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-gray-300" />
-                <span>None</span>
+                <span>Belum Tersedia</span>
               </div>
             </div>
           </section>
@@ -317,7 +317,7 @@ export function ParentRaportPage({
             className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
               !activeMonthStatus.isAvailable
                 ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                : "border-brand-cyan bg-white hover:bg-brand-cyan/5"
+                : "border-brand-cyan bg-brand-cyan/5 hover:bg-brand-cyan/10 ring-2 ring-brand-cyan/20"
             }`}
           >
             <div className="flex items-center gap-3">
@@ -325,13 +325,20 @@ export function ParentRaportPage({
                 <TrendingUp className="h-6 w-6" />
               </span>
               <div className="text-left">
-                <h2 className="text-base font-bold text-brand-navy">
-                  Lihat Raport Bulanan
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-brand-navy">
+                    Buka Raport Bulanan
+                  </h2>
+                  {activeMonthStatus.isAvailable && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                      Tersedia
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs font-medium text-brand-text-muted">
                   {!activeMonthStatus.isAvailable
                     ? `Bulan ${selectedMonth} sedang berjalan / terkunci`
-                    : `Rekapitulasi pencapaian bulanan (${selectedMonth})`}
+                    : `Lihat nilai & evaluasi bulan ${selectedMonth}`}
                 </p>
               </div>
             </div>

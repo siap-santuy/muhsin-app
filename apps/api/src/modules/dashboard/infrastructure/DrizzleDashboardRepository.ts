@@ -585,6 +585,71 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           )
         );
       childYaumiyahDays = childIbadah.length;
+
+      // Ambil entri setoran terbaru ananda untuk ditampilkan di dashboard orang tua
+      let lastSetoranInfo: ParentDashboardSummary["lastSetoran"] = null;
+      const [latestEntry] = await this.db
+        .select({
+          date: setoranEntries.date,
+          referenceStart: setoranEntries.referenceStart,
+          referenceEnd: setoranEntries.referenceEnd,
+          scores: setoranEntries.scores,
+          keterangan: setoranEntries.keterangan,
+          subcatName: assessmentSubcategories.name,
+        })
+        .from(setoranEntries)
+        .leftJoin(
+          assessmentSubcategories,
+          eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+        )
+        .where(
+          and(
+            eq(setoranEntries.studentId, childId),
+            eq(setoranEntries.schoolId, schoolId)
+          )
+        )
+        .orderBy(desc(setoranEntries.date), desc(setoranEntries.createdAt))
+        .limit(1);
+
+      if (latestEntry) {
+        let reference = "Setoran";
+        const refStart = latestEntry.referenceStart as any;
+        const refEnd = latestEntry.referenceEnd as any;
+        if (refStart?.surah) {
+          reference = `${refStart.surah}: ${refStart.ayat ?? 1}${refEnd?.ayat && refEnd.ayat !== refStart.ayat ? `-${refEnd.ayat}` : ""}`;
+        } else if (refStart?.jilid || refStart?.halaman) {
+          reference = `Jilid ${refStart.jilid ?? "-"} Hal ${refStart.halaman ?? 1}`;
+        }
+
+        const scoresObj = (latestEntry.scores as Record<string, number>) || {};
+        const scoreVals = Object.values(scoresObj).filter((v) => typeof v === "number");
+        const scoreAvg = scoreVals.length > 0 ? Math.round(scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length) : 0;
+
+        lastSetoranInfo = {
+          categoryName: latestEntry.subcatName ?? "Setoran TTQ",
+          reference,
+          date: latestEntry.date,
+          scoreAvg,
+          keterangan: latestEntry.keterangan ?? undefined,
+        };
+      }
+
+      return {
+        parentName: parentRows[0]?.name ?? "Orang Tua",
+        childId: childId ?? undefined,
+        childName: child?.studentName ?? "Ananda",
+        childClassName: child?.className ?? "Kelas VII",
+        childLevel: gam?.level ?? 1,
+        childStreak: gam?.currentStreak ?? 0,
+        lastSetoran: lastSetoranInfo,
+        progres: {
+          ziyadahCount: childZiyadah,
+          murojaahCount: childMurojaah,
+          tahsinCount: childTahsin,
+          yaumiyahDays: childYaumiyahDays,
+        },
+        isYaumiyahTodayFilled: isTodayFilled,
+      };
     }
 
     return {
@@ -594,6 +659,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       childClassName: child?.className ?? "Kelas VII",
       childLevel: gam?.level ?? 1,
       childStreak: gam?.currentStreak ?? 0,
+      lastSetoran: null,
       progres: {
         ziyadahCount: childZiyadah,
         murojaahCount: childMurojaah,

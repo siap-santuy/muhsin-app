@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import {
   BookOpen,
   BookOpenCheck,
+  ChevronRight,
+  Flame,
   HeartHandshake,
   Mic,
   NotebookPen,
   Repeat,
+  Star,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -89,7 +92,7 @@ export function ParentDashboardPage() {
     {
       label: "Murojaah",
       value: `${murojaahPct}%`,
-      caption: "Target terjaga",
+      caption: `${murojaahCount} sesi hafalan terjaga`,
       percent: murojaahPct,
       icon: Repeat,
       iconClass: "bg-emerald-500/10 text-emerald-500",
@@ -142,6 +145,75 @@ export function ParentDashboardPage() {
                 }
               }}
             />
+          ) : null}
+
+          {/* Banner Streak & Level Ananda */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-brand-line">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+                <Flame className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-base font-extrabold text-brand-navy leading-none">
+                  {summary?.childStreak ?? 0} Hari
+                </p>
+                <p className="text-[11px] font-semibold text-brand-text-muted mt-0.5">
+                  Streak Istiqomah
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-brand-line">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                <Star className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-base font-extrabold text-brand-navy leading-none">
+                  Level {summary?.childLevel ?? 1}
+                </p>
+                <p className="text-[11px] font-semibold text-brand-text-muted mt-0.5">
+                  Prestasi Ananda
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Widget Setoran Terakhir Ananda */}
+          {summary?.lastSetoran ? (
+            <div
+              onClick={() => (window.location.hash = "#/tahfidz-summary")}
+              className="cursor-pointer rounded-2xl border border-brand-cyan/30 bg-linear-to-r from-brand-cyan/5 via-white to-brand-cyan/10 p-3.5 shadow-xs transition-all hover:border-brand-cyan"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-cyan text-white text-[10px] font-bold">
+                    ✓
+                  </span>
+                  <span className="text-xs font-bold text-brand-navy">
+                    Setoran Terakhir Ananda
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-brand-cyan">
+                  <span>Nilai: {summary.lastSetoran.scoreAvg}</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="mt-2.5 flex items-baseline justify-between border-t border-brand-cyan/15 pt-2">
+                <div>
+                  <p className="text-xs font-extrabold text-brand-navy">
+                    {summary.lastSetoran.categoryName} — {summary.lastSetoran.reference}
+                  </p>
+                  {summary.lastSetoran.keterangan ? (
+                    <p className="text-[10px] text-brand-text-muted line-clamp-1 mt-0.5">
+                      {summary.lastSetoran.keterangan}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="text-[10px] font-semibold text-brand-text-muted whitespace-nowrap ml-2">
+                  {summary.lastSetoran.date}
+                </span>
+              </div>
+            </div>
           ) : null}
 
           <DailyQuote text={QUOTE.text} source={QUOTE.source} />

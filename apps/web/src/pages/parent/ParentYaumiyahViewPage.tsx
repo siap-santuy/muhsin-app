@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   ArrowLeft,
+  BellRing,
   BookOpen,
   CalendarDays,
   CheckCircle2,
@@ -17,6 +18,7 @@ import {
 import { SholatInfoModal } from "@/components/yaumiyah/SholatInfoModal";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { toast } from "@/store/toastStore";
 import { SURAH_LIST } from "@muhsin/shared";
 
 const CODE_LABELS: Record<string, { desc: string; status: "success" | "warning" | "danger" | "off" }> = {
@@ -220,8 +222,27 @@ export function ParentYaumiyahViewPage({ onBack, initialDate: propInitialDate }:
               <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
             </div>
           ) : !ibadah ? (
-            <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
-              Belum ada catatan ibadah untuk tanggal {selectedDate}.
+            <div className="rounded-2xl border border-brand-line bg-white p-8 text-center shadow-xs">
+              <p className="text-xs text-brand-text-muted">
+                Belum ada catatan ibadah untuk tanggal {selectedDate}.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await api.remindStudent();
+                      toast.success("Pengingat terkirim ke ananda");
+                    } catch (err: any) {
+                      toast.warning(err.message || "Gagal mengirim pengingat");
+                    }
+                  }}
+                  className="rounded-xl bg-brand-cyan px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-cyan-dark transition-all"
+                >
+                  <BellRing className="mr-1.5 h-3.5 w-3.5" />
+                  Ingatkan Ananda Mengisi
+                </Button>
+              </div>
             </div>
           ) : (
             <>
