@@ -190,6 +190,10 @@ sudo certbot --nginx -d muhsin.id -d *.muhsin.id -d api.muhsin.id
   docker compose restart
   ```
 
+- **Panduan Monitoring & Investigasi Error**:
+  Untuk instruksi lengkap pemantauan server realtime, filter log error 500, inspeksi query database PostgreSQL, dan SOP penanganan insiden, baca dokumen:
+  👉 [Panduan Monitoring & Troubleshooting Production](./MONITORING_AND_TROUBLESHOOTING.md)
+
 - **Menjalankan Bersamaan dengan Staging**:
   Lingkungan Production dan Staging diisolasi 100% sehingga dapat hidup bersamaan di 1 VPS:
   ```bash
