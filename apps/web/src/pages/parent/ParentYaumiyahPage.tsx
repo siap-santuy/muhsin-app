@@ -71,8 +71,11 @@ export function ParentYaumiyahPage() {
   }
 
   function handleGoToView(date?: string) {
-    if (date) sessionStorage.setItem("viewIbadahDate", date);
-    window.location.hash = "#/yaumiyah-view";
+    if (date) {
+      window.location.hash = `#/yaumiyah-view?date=${date}`;
+    } else {
+      window.location.hash = "#/yaumiyah-view";
+    }
   }
 
   const childName = summary?.childName ?? "Ananda";

@@ -64,8 +64,8 @@ export function MonthCalendar({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const maxDate = propMaxDate ?? today;
-  maxDate.setHours(23, 59, 59, 999);
+  const maxDate = propMaxDate ? new Date(propMaxDate) : null;
+  if (maxDate) maxDate.setHours(23, 59, 59, 999);
 
   const [currentViewDate, setCurrentViewDate] = useState<Date>(
     initialDate ?? new Date()
@@ -137,12 +137,13 @@ export function MonthCalendar({
       const prevDay = daysInPrevMonth - i;
       const date = new Date(year, month - 1, prevDay);
       date.setHours(0, 0, 0, 0);
+      const dayStatus = getStatusForDate?.(date) ?? "empty";
       items.push({
         day: prevDay,
         isOtherMonth: true,
-        status: getStatusForDate?.(date) ?? "empty",
+        status: dayStatus,
         date,
-        isDisabled: date > maxDate,
+        isDisabled: maxDate ? date > maxDate && dayStatus === "empty" : false,
       });
     }
 
@@ -159,7 +160,7 @@ export function MonthCalendar({
         isOtherMonth: false,
         status: dayStatus,
         date,
-        isDisabled: date > maxDate,
+        isDisabled: maxDate ? date > maxDate && dayStatus === "empty" : false,
       });
     }
 
@@ -168,12 +169,13 @@ export function MonthCalendar({
     for (let i = 1; i <= remaining; i++) {
       const date = new Date(year, month + 1, i);
       date.setHours(0, 0, 0, 0);
+      const dayStatus = getStatusForDate?.(date) ?? "empty";
       items.push({
         day: i,
         isOtherMonth: true,
-        status: getStatusForDate?.(date) ?? "empty",
+        status: dayStatus,
         date,
-        isDisabled: date > maxDate,
+        isDisabled: maxDate ? date > maxDate && dayStatus === "empty" : false,
       });
     }
 

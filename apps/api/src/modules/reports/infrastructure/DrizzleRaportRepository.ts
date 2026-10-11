@@ -260,6 +260,32 @@ export class DrizzleRaportRepository implements IRaportRepository {
       };
     }
 
+    const attendedDates = new Set<string>();
+    for (const s of dailySetorans) {
+      const ket = (s.keterangan || "").toLowerCase();
+      const isAbsent =
+        ket.includes("[sakit]") || ket.includes("sakit") ||
+        ket.includes("[izin]") || ket.includes("izin") ||
+        ket.includes("[alpa]") || ket.includes("alpha") || ket.includes("alpa");
+      if (!isAbsent) {
+        attendedDates.add(s.date);
+      }
+    }
+
+    const [yearNum, monthNum] = month.split("-").map(Number);
+    const dateCursor = new Date(yearNum, monthNum - 1, 1);
+    let totalWorkingDays = 0;
+    while (dateCursor.getMonth() === monthNum - 1) {
+      const dayOfWeek = dateCursor.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        totalWorkingDays++;
+      }
+      dateCursor.setDate(dateCursor.getDate() + 1);
+    }
+    const safeTargetDays = Math.max(1, totalWorkingDays);
+    const hadirCount = attendedDates.size;
+    const tidakSetoranCount = Math.max(0, safeTargetDays - hadirCount - sakitCount - izinCount - alpaCount);
+
     return {
       student: {
         id: studentInfo.id,
@@ -295,8 +321,8 @@ export class DrizzleRaportRepository implements IRaportRepository {
         kelancaran: kelancaranCnt > 0 ? Math.round((kelancaranSum / kelancaranCnt) * 10) / 10 : 0,
       },
       absensi: {
-        kehadiranRatio: `${dailySetorans.length}/30`,
-        tidakSetoranCount: Math.max(0, 30 - dailySetorans.length),
+        kehadiranRatio: `${hadirCount}/${safeTargetDays}`,
+        tidakSetoranCount,
         sakitCount,
         izinCount,
         alpaCount,
@@ -340,6 +366,7 @@ export class DrizzleRaportRepository implements IRaportRepository {
     let sumTilawah = 0, sumFardhu = 0, sumRawatib = 0, sumTahajud = 0, sumDhuha = 0, sumShaum = 0;
     let sumZiyadah = 0, sumMurojaah = 0, sumMakhroj = 0, sumMad = 0, sumGhunnah = 0, sumKelancaran = 0;
     let setoranCountTotal = 0;
+    let totalSakit = 0, totalIzin = 0, totalAlpa = 0, targetSemesterTotal = 0;
 
     for (const res of monthlyResults) {
       const tfScore = Number(res.nilaiTtq.tahfidz.score.replace("/100", ""));
@@ -362,6 +389,10 @@ export class DrizzleRaportRepository implements IRaportRepository {
       if (res.detailTtq.kelancaran > 0) sumKelancaran += res.detailTtq.kelancaran;
 
       setoranCountTotal += Number(res.absensi.kehadiranRatio.split("/")[0]) || 0;
+      targetSemesterTotal += Number(res.absensi.kehadiranRatio.split("/")[1]) || 0;
+      totalSakit += res.absensi.sakitCount || 0;
+      totalIzin += res.absensi.izinCount || 0;
+      totalAlpa += res.absensi.alpaCount || 0;
     }
 
     const avgTahfidz = cntTahfidz > 0 ? Math.round(sumTahfidz / cntTahfidz) : 0;
@@ -454,11 +485,11 @@ export class DrizzleRaportRepository implements IRaportRepository {
         kelancaran: cntTahsin > 0 ? Math.round((sumKelancaran / cntTahsin) * 10) / 10 : 0,
       },
       absensi: {
-        kehadiranRatio: `${setoranCountTotal}/180`,
-        tidakSetoranCount: Math.max(0, 180 - setoranCountTotal),
-        sakitCount: 0,
-        izinCount: 0,
-        alpaCount: 0,
+        kehadiranRatio: `${setoranCountTotal}/${targetSemesterTotal || 120}`,
+        tidakSetoranCount: Math.max(0, (targetSemesterTotal || 120) - setoranCountTotal - totalSakit - totalIzin - totalAlpa),
+        sakitCount: totalSakit,
+        izinCount: totalIzin,
+        alpaCount: totalAlpa,
       },
       sumatif: {
         testTahfidz: {

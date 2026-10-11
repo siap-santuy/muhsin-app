@@ -187,6 +187,11 @@ export function createApp(deps: ContainerDeps): Hono {
         // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
         if (!origin) return "*";
 
+        // Allow any origin in non-production for port forwarding / local dev
+        if (process.env.NODE_ENV !== "production") {
+          return origin;
+        }
+
         const allowedExact = [
           "http://localhost:5173",
           "http://localhost:5174",

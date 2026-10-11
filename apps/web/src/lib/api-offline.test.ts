@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterAll, mock } from "bun:test";
 
 // Mock localStorage in bun test environment
 const storage: Record<string, string> = {};
@@ -28,9 +28,16 @@ import {
 } from "./offlineQueue";
 
 describe("ApiClient Offline Cache & Queue Mechanism", () => {
+  const origFetch = globalThis.fetch;
+
   beforeEach(() => {
     localStorage.clear();
     clearOfflineQueue();
+    globalThis.fetch = mock(() => Promise.reject(new TypeError("Failed to fetch")));
+  });
+
+  afterAll(() => {
+    globalThis.fetch = origFetch;
   });
 
   it("should return cached data when network fails on GET request", async () => {

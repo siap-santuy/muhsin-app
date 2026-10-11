@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.0.9",
+    "version": "v1.1.0",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Perbaikan Kalkulasi Absensi Raport & Navigasi Kalender Yaumiyah",
+    "summary": "Koreksi penghitungan kehadiran raport bulanan berbasis hari hadir unik (bukan jumlah entri setoran) serta perbaikan navigasi tanggal saat melihat riwayat dan kalender yaumiyah.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan rasio kehadiran raport bulanan agar menghitung hari unik hadir setoran, mencegah anomali kehadiran melebihi total hari."
+      },
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan navigasi tombol 'Lihat' pada riwayat aktivitas yaumiyah dan pemilihan tanggal di kalender agar membuka tanggal yang dipilih."
+      }
+    ]
+  },
+  {
+    "version": "v1.0.9",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Sinkronisasi Penuh Akun Orang Tua & Perbaikan Nama Raport",
     "summary": "Penyempurnaan client API orang tua untuk auto-inject ID anak, pembersihan nama siswa pada raport bulanan, serta perbaikan sinkronisasi yaumiyah dan setoran.",
     "changes": [

@@ -138,8 +138,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
 
   function handleSelectDay(idx: number) {
     const clickedDate = days[idx]?.fullDate;
-    const todayStr = formatLocalDate(new Date());
-    if (clickedDate && clickedDate !== selectedDate && clickedDate <= todayStr) {
+    if (clickedDate && clickedDate !== selectedDate) {
       setSelectedDate(clickedDate);
       window.location.hash = `#/yaumiyah-view?date=${clickedDate}`;
     }
@@ -157,8 +156,6 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
     const d = parseLocalDate(selectedDate);
     d.setDate(d.getDate() + 1);
     const newDate = formatLocalDate(d);
-    const todayStr = formatLocalDate(new Date());
-    if (newDate > todayStr) return;
     setSelectedDate(newDate);
     window.location.hash = `#/yaumiyah-view?date=${newDate}`;
   }

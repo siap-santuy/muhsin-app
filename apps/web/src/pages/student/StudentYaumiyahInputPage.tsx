@@ -205,7 +205,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
 
   function handleSelectDay(idx: number) {
     const clickedDate = days[idx]?.fullDate;
-    if (clickedDate && clickedDate !== selectedDate && clickedDate <= todayStr) {
+    if (clickedDate && clickedDate !== selectedDate) {
       setSelectedDate(clickedDate);
       window.location.hash = `#/yaumiyah-input?date=${clickedDate}`;
     }
@@ -223,7 +223,6 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
     const d = parseLocalDate(selectedDate);
     d.setDate(d.getDate() + 1);
     const newDate = formatLocalDate(d);
-    if (newDate > todayStr) return;
     setSelectedDate(newDate);
     window.location.hash = `#/yaumiyah-input?date=${newDate}`;
   }

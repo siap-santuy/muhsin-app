@@ -80,9 +80,11 @@ function getStoredRefreshToken(): string | null {
 }
 
 function handleAuthExpired() {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("muhsin-auth");
-  if (window.location.hash !== "#/" && window.location.hash !== "") {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("muhsin-auth");
+  }
+  if (typeof window !== "undefined" && window.location.hash !== "#/" && window.location.hash !== "") {
     window.location.hash = "#/";
     window.location.reload();
   }
