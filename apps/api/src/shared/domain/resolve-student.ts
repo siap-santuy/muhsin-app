@@ -1,6 +1,6 @@
 import { and, eq, or } from "drizzle-orm";
 import type { Db } from "../../db/client";
-import { parentStudentMapping, users } from "../../db/schema";
+import { parentStudentMapping } from "../../db/schema";
 import type { AuthUserContext } from "../../middleware/auth.middleware";
 
 export async function resolveStudentIdForUser(
@@ -41,19 +41,9 @@ export async function resolveStudentIdForUser(
       return childIds[0];
     }
 
-    // 4. Fallback aman: ambil student pertama di sekolah ini, jangan pernah kembalikan ID parent
-    const [firstStudent] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(
-        and(
-          eq(users.schoolId, user.schoolId),
-          eq(users.role, "student")
-        )
-      )
-      .limit(1);
-
-    return firstStudent?.id ?? user.userId;
+    // 4. Jika orang tua belum memiliki anak yang terhubung, return string kosong
+    //    agar query mengembalikan data kosong secara aman (mencegah data leak santri lain)
+    return "";
   }
 
   return requestedStudentId || user.userId;
