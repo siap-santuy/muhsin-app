@@ -613,7 +613,9 @@ async function main() {
   for (const row of mappingRows) {
     if (!row.username || !row.student_name) continue;
     const studentUsername = String(row.username).trim().toLowerCase();
-    const parentName = row.parent_name ? String(row.parent_name).trim() : `Orang Tua ${row.student_name}`;
+    const studentName = String(row.student_name).trim();
+    // Nama orang tua seragam: Ortu [Nama Anak]
+    const parentName = `Ortu ${studentName}`;
     const rawEmail = row.email_parent ? String(row.email_parent).trim().toLowerCase() : "";
 
     // Pola username ortu: ortu_[username_anak]

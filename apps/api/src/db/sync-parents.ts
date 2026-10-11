@@ -130,8 +130,8 @@ async function main() {
     if (!row.username || !row.student_name) continue;
     const studentUsername = String(row.username).trim().toLowerCase();
     const studentName = String(row.student_name).trim();
-    const rawParentName = row.parent_name ? String(row.parent_name).trim() : "";
-    const parentName = rawParentName || `Orang Tua ${studentName}`;
+    // Nama orang tua seragam: Ortu [Nama Anak]
+    const parentName = `Ortu ${studentName}`;
     const targetParentUsername = `ortu_${studentUsername}`;
     const rawEmail = row.email_parent ? String(row.email_parent).trim().toLowerCase() : "";
     const parentEmail = rawEmail || `${targetParentUsername}@parent.alfitrah.sch.id`;
@@ -194,7 +194,7 @@ async function main() {
                 eq(users.role, "parent"),
                 or(
                   eq(users.username, targetParentUsername),
-                  rawParentName ? sql`lower(${users.name}) = ${rawParentName.toLowerCase()}` : sql`1=0`
+                  sql`lower(${users.name}) = ${parentName.toLowerCase()}`
                 )
               )
             )
