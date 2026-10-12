@@ -47,22 +47,23 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     const gam = gamificationRows[0];
 
-    // Target hafalan
+    // Current month setoran counts (murni bulan berjalan kalender)
+    const activeMonth = new Date().toISOString().slice(0, 7);
+
+    // Target hafalan bulan aktif
     const targetRows = await this.db
       .select()
       .from(hafalanTargets)
       .where(
         and(
           eq(hafalanTargets.studentId, studentId),
-          eq(hafalanTargets.schoolId, schoolId)
+          eq(hafalanTargets.schoolId, schoolId),
+          eq(hafalanTargets.bulan, activeMonth)
         )
       )
       .limit(1);
 
     const target = targetRows[0];
-
-    // Current month setoran counts (murni bulan berjalan kalender)
-    const activeMonth = new Date().toISOString().slice(0, 7);
 
     const setoranRows = await this.db
       .select({

@@ -100,6 +100,12 @@ import { RemovePushSubscriptionUseCase } from "../modules/notifications/applicat
 import { SendPushToUserUseCase } from "../modules/notifications/application/use-cases/SendPushToUserUseCase";
 import { createNotificationRoutes } from "../modules/notifications/presentation/routes";
 
+// Targets module
+import { DrizzleHafalanTargetRepository } from "../modules/targets/infrastructure/DrizzleHafalanTargetRepository";
+import { GetHafalanTargetUseCase } from "../modules/targets/application/use-cases/GetHafalanTargetUseCase";
+import { SetHafalanTargetUseCase } from "../modules/targets/application/use-cases/SetHafalanTargetUseCase";
+import { createTargetRoutes } from "../modules/targets/presentation/routes";
+
 // Middlewares
 import { authMiddleware } from "../middleware/auth.middleware";
 import { tenantScopeMiddleware } from "../middleware/tenant-scope.middleware";
@@ -171,6 +177,9 @@ export interface ContainerDeps {
   removePushSubscriptionUseCase: RemovePushSubscriptionUseCase;
   sendPushToUserUseCase: SendPushToUserUseCase;
   notificationRepo: DrizzleCachedNotificationRepository;
+  // Targets
+  getTargetUseCase: GetHafalanTargetUseCase;
+  setTargetUseCase: SetHafalanTargetUseCase;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -379,6 +388,16 @@ export function createApp(deps: ContainerDeps): Hono {
   app.use("/notifications", protectedAuth, tenantScopeMiddleware);
   app.route("/notifications", notificationRoutes);
 
+  // Targets
+  const targetRoutes = createTargetRoutes({
+    getTargetUseCase: deps.getTargetUseCase,
+    setTargetUseCase: deps.setTargetUseCase,
+    resolveStudentId: resolveStudent,
+  });
+  app.use("/hafalan-targets/*", protectedAuth, tenantScopeMiddleware);
+  app.use("/hafalan-targets", protectedAuth, tenantScopeMiddleware);
+  app.route("/hafalan-targets", targetRoutes);
+
   return app;
 }
 
@@ -493,6 +512,11 @@ export function buildContainer() {
   const createCategoryUseCase = new CreateCategoryUseCase(kurikulumRepo);
   const createSubcategoryUseCase = new CreateSubcategoryUseCase(kurikulumRepo);
 
+  // UseCases — Targets
+  const targetRepo = new DrizzleHafalanTargetRepository(db);
+  const getTargetUseCase = new GetHafalanTargetUseCase(targetRepo);
+  const setTargetUseCase = new SetHafalanTargetUseCase(targetRepo);
+
   return {
     app: createApp({
       db,
@@ -545,8 +569,8 @@ export function buildContainer() {
       removePushSubscriptionUseCase,
       sendPushToUserUseCase,
       notificationRepo,
+      getTargetUseCase,
+      setTargetUseCase,
     }),
-    db,
-    redis,
   };
 }

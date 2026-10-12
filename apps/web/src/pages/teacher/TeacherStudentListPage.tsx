@@ -10,6 +10,7 @@ import {
   Eye,
   Loader2,
   Search,
+  Target,
   X,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -17,6 +18,8 @@ import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { DayStripPicker, type DayItem } from "@/components/student/DayStripPicker";
 import { MonthCalendar } from "@/components/student/MonthCalendar";
 import { api } from "@/lib/api";
+import { toast } from "@/store/toastStore";
+import { SURAH_LIST } from "@muhsin/shared";
 
 type TTQCategory = "ziyadah" | "murojaah" | "sabiq" | "talaqi";
 type StatusFilter = "all" | "unrated" | "rated";
@@ -181,6 +184,14 @@ export function TeacherStudentListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(() => persisted.search || "");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [targetStudentId, setTargetStudentId] = useState<string>("all");
+  const [targetSurahStart, setTargetSurahStart] = useState<string>("78");
+  const [targetAyatStart, setTargetAyatStart] = useState<string>("1");
+  const [targetSurahEnd, setTargetSurahEnd] = useState<string>("83");
+  const [targetAyatEnd, setTargetAyatEnd] = useState<string>("36");
+  const [targetCatatan, setTargetCatatan] = useState<string>("");
+  const [savingTarget, setSavingTarget] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>(
     () => persisted.selectedClass || "all"
   );
@@ -417,21 +428,210 @@ export function TeacherStudentListPage() {
             </div>
           )}
 
-          {/* 2. Filter Dropdown Kelas */}
-          <div className="relative">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full appearance-none rounded-2xl border border-brand-line bg-white py-3 pl-4 pr-10 text-xs font-semibold text-brand-navy outline-none shadow-xs transition-colors focus:border-brand-cyan"
+          {/* Modal Dialog Penetapan Target Hafalan (Support Bulk / Individual) */}
+          {isTargetModalOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in"
+              onClick={() => setIsTargetModalOpen(false)}
             >
-              <option value="all">Semua Kelas</option>
-              {classesList.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <div
+                className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl border border-brand-line animate-in zoom-in-95 duration-150"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-brand-line">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-brand-cyan" />
+                    <div>
+                      <h3 className="text-sm font-bold text-brand-navy">Target Hafalan Ziyadah</h3>
+                      <p className="text-[11px] text-brand-text-muted">Periode: {formatMonthYearHeader(selectedDate)}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsTargetModalOpen(false)}
+                    aria-label="Tutup target modal"
+                    className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const currentMonthCode = selectedDate.slice(0, 7);
+                    let studentIdsToSet: string[] = [];
+                    if (targetStudentId === "all") {
+                      // Ambil santri sesuai filter kelas yang sedang dipilih (atau semua)
+                      const targetPool = selectedClass === "all"
+                        ? students
+                        : students.filter((s) => s.className === selectedClass);
+                      studentIdsToSet = targetPool.map((s) => s.id);
+                    } else {
+                      studentIdsToSet = [targetStudentId];
+                    }
+
+                    if (studentIdsToSet.length === 0) {
+                      toast.warning("Tidak ada santri yang terpilih");
+                      return;
+                    }
+
+                    const sStartObj = SURAH_LIST.find((s) => s.no === Number(targetSurahStart));
+                    const sEndObj = SURAH_LIST.find((s) => s.no === Number(targetSurahEnd));
+
+                    setSavingTarget(true);
+                    try {
+                      await api.setHafalanTargets({
+                        bulan: currentMonthCode,
+                        studentIds: studentIdsToSet,
+                        targetSurahStart: sStartObj?.nameLatin || `Surah ${targetSurahStart}`,
+                        targetAyatStart: targetAyatStart || "1",
+                        targetSurahEnd: sEndObj?.nameLatin || `Surah ${targetSurahEnd}`,
+                        targetAyatEnd: targetAyatEnd || "1",
+                        catatan: targetCatatan || null,
+                      });
+                      toast.success(`Target berhasil ditetapkan untuk ${studentIdsToSet.length} santri`);
+                      setIsTargetModalOpen(false);
+                    } catch (err: any) {
+                      toast.warning(err.message || "Gagal menyimpan target");
+                    } finally {
+                      setSavingTarget(false);
+                    }
+                  }}
+                  className="mt-4 space-y-4"
+                >
+                  {/* Pilihan Target Santri: Bulk per Kelas atau Individual */}
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">Penerima Target</label>
+                    <select
+                      value={targetStudentId}
+                      onChange={(e) => setTargetStudentId(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                    >
+                      <option value="all">
+                        {selectedClass === "all"
+                          ? `Terapkan ke Seluruh Santri (${students.length} Santri)`
+                          : `Terapkan ke Seluruh Kelas ${selectedClass} (${students.filter((s) => s.className === selectedClass).length} Santri)`}
+                      </option>
+                      {students.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.className ? `(${s.className})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Target Mulai */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="text-xs font-bold text-brand-navy">Mulai Surah</label>
+                      <select
+                        value={targetSurahStart}
+                        onChange={(e) => setTargetSurahStart(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                      >
+                        {SURAH_LIST.map((s) => (
+                          <option key={`start-${s.no}`} value={s.no}>
+                            {s.no}. {s.nameLatin}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-brand-navy">Ayat Mulai</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={targetAyatStart}
+                        onChange={(e) => setTargetAyatStart(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Target Akhir */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="text-xs font-bold text-brand-navy">Target Selesai Surah</label>
+                      <select
+                        value={targetSurahEnd}
+                        onChange={(e) => setTargetSurahEnd(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                      >
+                        {SURAH_LIST.map((s) => (
+                          <option key={`end-${s.no}`} value={s.no}>
+                            {s.no}. {s.nameLatin}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-brand-navy">Ayat Akhir</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={targetAyatEnd}
+                        onChange={(e) => setTargetAyatEnd(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Catatan Arahan Ustadz */}
+                  <div>
+                    <label className="text-xs font-bold text-brand-navy">Catatan Arahan (Opsional)</label>
+                    <textarea
+                      rows={2}
+                      value={targetCatatan}
+                      onChange={(e) => setTargetCatatan(e.target.value)}
+                      placeholder="Misal: Fokus kelancaran makhroj dan tajwid..."
+                      className="mt-1 w-full rounded-xl border border-brand-line p-2.5 text-xs text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  {/* Action Submit */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={savingTarget}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-all disabled:opacity-50"
+                    >
+                      {savingTarget ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+                      <span>SIMPAN TARGET HAFALAN</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Filter Dropdown Kelas & Tombol Target */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full appearance-none rounded-2xl border border-brand-line bg-white py-3 pl-4 pr-10 text-xs font-semibold text-brand-navy outline-none shadow-xs transition-colors focus:border-brand-cyan"
+              >
+                <option value="all">Semua Kelas</option>
+                {classesList.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsTargetModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-2xl border border-brand-cyan/40 bg-brand-cyan/10 px-3.5 py-3 text-xs font-bold text-brand-cyan-dark hover:bg-brand-cyan/20 active:scale-95 transition-all shadow-xs shrink-0"
+              title="Tetapkan target hafalan bulanan santri"
+            >
+              <Target className="h-4 w-4 text-brand-cyan" />
+              <span>Target Bulan Ini</span>
+            </button>
           </div>
 
           {/* 3. Category Tabs (Ziyadah / Muroja'ah / Sabiq / Talaqi) */}

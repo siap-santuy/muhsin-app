@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.1.7",
+    "version": "v1.2.0",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Fitur Penetapan Target Hafalan Guru (Bulk & Individual) & Sinkronisasi Nyata",
+    "summary": "Guru dapat menetapkan target hafalan bulanan santri (bulk per kelas atau per santri), tersinkronisasi langsung ke dashboard santri dan banner orang tua.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Form penetapan target hafalan bulanan oleh guru pembimbing dengan dukungan bulk terapkan ke seluruh santri di kelas."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Integrasi target hafalan aktif dari guru ke kartu dashboard santri dan banner orang tua."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.7",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Badge Kalender Spesifik Kategori TTQ & Counter Tab",
     "summary": "Penyempurnaan kalender progres TTQ agar titik indikator tanggal murni merefleksikan kategori tab yang aktif serta penambahan counter jumlah aktivitas pada tab.",
     "changes": [

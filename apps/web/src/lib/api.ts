@@ -468,6 +468,26 @@ class ApiClient {
     return this.request("POST", `/dashboard/remind-parent`, { studentId });
   }
 
+  async getCurrentHafalanTarget(params: { studentId?: string; month?: string } = {}) {
+    const query = new URLSearchParams();
+    const targetStudentId = params.studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    if (targetStudentId) query.set("studentId", targetStudentId);
+    if (params.month) query.set("month", params.month);
+    return this.request("GET", `/hafalan-targets/current?${query.toString()}`);
+  }
+
+  async setHafalanTargets(data: {
+    bulan: string;
+    studentIds: string[];
+    targetSurahStart: string;
+    targetAyatStart?: string;
+    targetSurahEnd: string;
+    targetAyatEnd?: string;
+    catatan?: string | null;
+  }) {
+    return this.request("POST", `/hafalan-targets`, data);
+  }
+
   async remindStudent(studentId?: string): Promise<{ reminded: boolean }> {
     return this.request("POST", `/dashboard/remind-student`, studentId ? { studentId } : {});
   }

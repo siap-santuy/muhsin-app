@@ -71,6 +71,7 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
   const [page, setPage] = useState(1);
   const [setoranList, setSetoranList] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [targetHafalan, setTargetHafalan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,11 +79,13 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
       setLoading(true);
       try {
         const storedChildId = typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined;
-        const [dashData, historyData] = await Promise.all([
+        const [dashData, historyData, targetData] = await Promise.all([
           api.getDashboardSummary(),
           api.getSetoranHistory({ studentId: storedChildId, month: selectedMonth }),
+          api.getCurrentHafalanTarget({ studentId: storedChildId, month: selectedMonth }).catch(() => null),
         ]);
         setSummary(dashData);
+        setTargetHafalan(targetData);
         if (dashData?.childId && typeof window !== "undefined") {
           localStorage.setItem("parent_active_child_id", dashData.childId);
         }
@@ -251,7 +254,9 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
             </div>
             <p className="mt-1.5 text-xs font-bold text-brand-navy leading-snug">
               {activeTab === "ziyadah"
-                ? "Juz 30 (Surah An-Naba' s/d Al-Muthaffifin) — Minimal 20 Halaman"
+                ? targetHafalan?.targetSurahStart
+                  ? `${targetHafalan.targetSurahStart} : ${targetHafalan.targetAyatStart ?? 1} s/d ${targetHafalan.targetSurahEnd} : ${targetHafalan.targetAyatEnd ?? 1}${targetHafalan.catatan ? ` (${targetHafalan.catatan})` : ""}`
+                  : "Juz 30 (Surah An-Naba' s/d Al-Muthaffifin) — Minimal 20 Halaman"
                 : activeTab === "murojaah"
                 ? "Menjaga & Mengulang Hafalan Juz 30 Mutqin — Rutin Tiap Pekan"
                 : "Metode Sabiq Jilid 4 & Talaqi Tartil — 20 Pertemuan Aktif"}

@@ -70,6 +70,8 @@ const app = createApp({
   removePushSubscriptionUseCase: {} as never,
   sendPushToUserUseCase: {} as never,
   notificationRepo: {} as never,
+  getTargetUseCase: {} as never,
+  setTargetUseCase: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {
