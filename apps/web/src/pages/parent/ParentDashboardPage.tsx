@@ -5,9 +5,7 @@ import {
   ChevronRight,
   Flame,
   HeartHandshake,
-  Mic,
   NotebookPen,
-  Repeat,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -57,14 +55,6 @@ export function ParentDashboardPage() {
     percentage: Math.min(100, Math.round(((progres.ziyadahCount ?? 0) / 20) * 100)),
     caption: "Target 20 halaman",
   };
-  const tahsinItem = progres.tahsin ?? {
-    percentage: Math.min(100, Math.round(((progres.tahsinCount ?? 0) / 20) * 100)),
-    caption: "Target 20 pertemuan",
-  };
-  const murojaahItem = progres.murojaah ?? {
-    percentage: Math.min(100, Math.round(((progres.murojaahCount ?? 0) / 20) * 100)),
-    caption: `${progres.murojaahCount ?? 0} sesi hafalan terjaga`,
-  };
   const yaumiyahItem = progres.yaumiyah ?? {
     percentage: Math.min(100, Math.round(((progres.yaumiyahDays ?? 0) / 30) * 100)),
     caption: `${progres.yaumiyahDays ?? 0} dari 30 hari`,
@@ -81,28 +71,6 @@ export function ParentDashboardPage() {
       barClass: "bg-brand-cyan",
       trackClass: "bg-brand-cyan/15",
       onClick: () => (window.location.hash = "#/tahfidz-summary?tab=ziyadah"),
-    },
-    {
-      label: "Tahsin",
-      value: `${tahsinItem.percentage}%`,
-      caption: tahsinItem.caption,
-      percent: tahsinItem.percentage,
-      icon: Mic,
-      iconClass: "bg-brand-navy/10 text-brand-navy",
-      barClass: "bg-brand-navy",
-      trackClass: "bg-brand-navy/15",
-      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=tahsin"),
-    },
-    {
-      label: "Murojaah",
-      value: `${murojaahItem.percentage}%`,
-      caption: murojaahItem.caption,
-      percent: murojaahItem.percentage,
-      icon: Repeat,
-      iconClass: "bg-emerald-500/10 text-emerald-500",
-      barClass: "bg-emerald-500",
-      trackClass: "bg-emerald-500/15",
-      onClick: () => (window.location.hash = "#/tahfidz-summary?tab=murojaah"),
     },
     {
       label: "Yaumiyah",

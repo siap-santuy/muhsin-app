@@ -1,9 +1,24 @@
 [
   {
-    "version": "v1.1.5",
+    "version": "v1.1.6",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Fokus Kartu Progres Beranda: Ziyadah & Yaumiyah",
+    "summary": "Menyederhanakan kartu progres bulanan di beranda orang tua dan siswa dengan memfokuskan pada Ziyadah dan Yaumiyah agar lebih bersih dan terarah.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Menyembunyikan sementara kartu progres Muroja'ah dan Tahsin pada beranda anak dan orang tua, fokus pada capaian Ziyadah dan Yaumiyah."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.5",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Kalkulasi Progres Terpusat Backend & Hari Kalender Dinamis",
     "summary": "Pusatkan formula kalkulasi persentase dan target bulanan ke backend dengan perhitungan hari kalender dinamis (28-31 hari), menghilangkan hardcode di UI.",
     "changes": [
