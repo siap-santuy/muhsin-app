@@ -1,276 +1,61 @@
 [
   {
-    "version": "v1.2.2",
+    "version": "v1.2.0",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
-    "title": "Permintaan Izin Notifikasi Cerdas di Awal Aplikasi (Soft-Prompt)",
-    "summary": "Menampilkan banner rekomendasi izin notifikasi saat pengguna membuka aplikasi, memudahkan santri dan wali santri mengaktifkan pengingat harian tanpa harus mencari menu pengaturan.",
+    "title": "Rilis Resmi Produksi: Target Hafalan Guru, Pengalaman Orang Tua & Optimasi PWA",
+    "summary": "Pembaruan besar menyambut rilis resmi produksi: penetapan target hafalan bulanan santri (bulk per kelas & per santri), integrasi dashboard cerdas orang tua dan santri, soft-prompt izin notifikasi push, serta konsolidasi sistem ke Semantic Versioning 1.2.0.",
     "changes": [
       {
         "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Banner permintaan izin notifikasi push harian di awal saat pengguna login, dengan tombol 'Aktifkan Sekarang' dan 'Nanti Saja'."
+        "categoryLabel": "Fitur Baru",
+        "description": "Modul penetapan target hafalan bulanan oleh guru pembimbing dengan dukungan bulk terapkan ke seluruh santri di kelas dan sinkronisasi realtime ke dashboard santri dan orang tua."
       },
       {
         "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Opsi pengaturan manual di halaman profil tetap dipertahankan untuk mematikan atau mengaktifkan kembali sewaktu-waktu."
-      }
-    ]
-  },
-  {
-    "version": "v1.2.1",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Perbaikan Kalkulasi Nilai Makhroj di Raport Bulanan",
-    "summary": "Mendukung pembacaan key makhroj dan makhraj secara kompatibel agar nilai aspek makhroj pada detail Tahsin di raport bulanan dan semester terhitung akurat.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan kalkulasi nilai aspek Makhroj pada raport bulanan dan semester agar membaca varian ejaan key makhraj dan makhroj dari setoran guru."
-      }
-    ]
-  },
-  {
-    "version": "v1.2.0",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Fitur Penetapan Target Hafalan Guru (Bulk & Individual) & Sinkronisasi Nyata",
-    "summary": "Guru dapat menetapkan target hafalan bulanan santri (bulk per kelas atau per santri), tersinkronisasi langsung ke dashboard santri dan banner orang tua.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Form penetapan target hafalan bulanan oleh guru pembimbing dengan dukungan bulk terapkan ke seluruh santri di kelas."
+        "categoryLabel": "Fitur Baru",
+        "description": "Soft-prompt permintaan izin notifikasi push harian cerdas di awal aplikasi dibuka, memudahkan santri dan orang tua menerima pengingat tanpa harus mencari menu pengaturan."
       },
       {
         "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Integrasi target hafalan aktif dari guru ke kartu dashboard santri dan banner orang tua."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.7",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Badge Kalender Spesifik Kategori TTQ & Counter Tab",
-    "summary": "Penyempurnaan kalender progres TTQ agar titik indikator tanggal murni merefleksikan kategori tab yang aktif serta penambahan counter jumlah aktivitas pada tab.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Titik hijau kalender pada halaman Ziyadah, Muroja'ah, dan Tahsin kini terisolasi sesuai kategori tab yang sedang aktif."
+        "categoryLabel": "Fitur Baru",
+        "description": "Penyempurnaan Beranda Orang Tua: penambahan widget capaian setoran terakhir ananda, rekor istiqomah ibadah, dan kartu pemantauan sholat 5 waktu hari ini."
       },
       {
         "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Penambahan badge angka jumlah riwayat aktivitas pada masing-masing tab Ziyadah, Muroja'ah, dan Tahsin."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.6",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Fokus Kartu Progres Beranda: Ziyadah & Yaumiyah",
-    "summary": "Menyederhanakan kartu progres bulanan di beranda orang tua dan siswa dengan memfokuskan pada Ziyadah dan Yaumiyah agar lebih bersih dan terarah.",
-    "changes": [
+        "categoryLabel": "Fitur Baru",
+        "description": "Penyederhanaan dan fokus kartu progres bulanan di beranda santri dan orang tua pada capaian Ziyadah dan Yaumiyah."
+      },
       {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Menyembunyikan sementara kartu progres Muroja'ah dan Tahsin pada beranda anak dan orang tua, fokus pada capaian Ziyadah dan Yaumiyah."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.5",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Kalkulasi Progres Terpusat Backend & Hari Kalender Dinamis",
-    "summary": "Pusatkan formula kalkulasi persentase dan target bulanan ke backend dengan perhitungan hari kalender dinamis (28-31 hari), menghilangkan hardcode di UI.",
-    "changes": [
+        "category": "improvement",
+        "categoryLabel": "Peningkatan",
+        "description": "Navigasi raport 1-ketukan langsung buka pada kotak bulan bertitik hijau dan lokalisasi status raport ke Bahasa Indonesia (Sudah Terbit, Sedang Berjalan, Belum Tersedia)."
+      },
       {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Perhitungan persentase progres Ziyadah, Tahsin, Muroja'ah, dan Yaumiyah diatur terpusat dari backend."
+        "category": "improvement",
+        "categoryLabel": "Peningkatan",
+        "description": "Legenda kalender yaumiyah dinamis (Sudah Kirim, Belum Kirim, Belum Isi) dan badge kalender riwayat TTQ yang murni mencerminkan kategori tab aktif (Ziyadah/Muroja'ah/Tahsin)."
       },
       {
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
-        "description": "Target hari yaumiyah dihitung dinamis sesuai jumlah hari sebenarnya pada bulan kalender berjalan."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.4",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Sinkronisasi Bulan Kalender & Realtime Progres Berjalan",
-    "summary": "Sinkronisasi otomatis tampilan kalender saat membuka tanggal setoran terakhir serta koreksi 4 kartu progres agar murni merefleksikan aktivitas bulan berjalan.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Kalender setoran otomatis bergeser ke bulan dan tanggal aktivitas terakhir saat widget setoran di beranda diklik."
+        "description": "Koreksi rasio kehadiran raport bulanan berbasis hari hadir unik santri serta kalkulasi hari kalender aktif dinamis (28-31 hari) dari backend."
       },
       {
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
-        "description": "4 kartu progres bulan ini di beranda murni menampilkan capaian bulan aktif (tidak mengambil data bulan lampau jika bulan ini belum ada aktivitas)."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.3",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Akses Cepat Raport, Responsif Card TTQ, & Validasi Yaumiyah Draft",
-    "summary": "Membuka raport langsung dengan klik bulan/semester, perbaikan overflow teks riwayat TTQ, fleksibilitas simpan draft sebagian sholat, dan validasi submit tilawah.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Klik langsung kotak bulan atau semester pada halaman raport untuk membuka lembar evaluasi."
+        "description": "Kompatibilitas pembacaan nilai aspek Makhroj (makhraj & makhroj) pada detail Tahsin raport bulanan dan semester."
       },
       {
         "category": "fix",
         "categoryLabel": "Perbaikan Bug",
-        "description": "Penataan teks riwayat setoran TTQ agar membungkus rapi (wrap) dan tidak melebar ke luar layar mobile."
+        "description": "Fleksibilitas penyimpanan draft yaumiyah sebagian waktu sholat dan validasi kelengkapan 5 waktu fardhu serta tilawah saat kirim final."
       },
       {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Siswa dapat menyimpan draft yaumiyah sebagian sholat, serta validasi kelengkapan 5 waktu dan tilawah saat kirim final."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.2",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Penyempurnaan Pengalaman Orang Tua (Parent Experience UX)",
-    "summary": "Penambahan widget setoran terakhir & streak/level di beranda ortu, kartu sholat hari ini di yaumiyah, banner target hafalan, kalender interaktif, serta lokalisasi raport.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Widget setoran hafalan terakhir ananda beserta nilai dan predikat langsung di beranda orang tua."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Banner streak hari istiqomah dan level prestasi anak di beranda orang tua."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Kartu ringkas status sholat 5 waktu hari ini di halaman jurnal yaumiyah orang tua."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Banner target hafalan bulanan dan filter klik tanggal kalender pada halaman hafalan anak."
-      },
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Lokalisasi penuh istilah status raport ke Bahasa Indonesia dan tombol ingatkan di detail mutaba'ah."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.1",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Legenda Kalender Yaumiyah Dinamis & Pemilih Kalender Cepat Guru",
-    "summary": "Penyesuaian legenda dan badge kalender yaumiyah (Hijau: Sudah Kirim, Kuning: Belum Kirim, Abu: Belum Isi) serta penambahan header navigasi kalender cepat untuk guru pembimbing.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Legenda kalender yaumiyah dinamis pada halaman siswa dan orang tua dengan status Sudah Kirim, Belum Kirim, dan Belum Isi."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Header bulan-tahun dan popup kalender cepat pada halaman penilaian santri guru pembimbing."
-      }
-    ]
-  },
-  {
-    "version": "v1.1.0",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Perbaikan Kalkulasi Absensi Raport & Navigasi Kalender Yaumiyah",
-    "summary": "Koreksi penghitungan kehadiran raport bulanan berbasis hari hadir unik (bukan jumlah entri setoran) serta perbaikan navigasi tanggal saat melihat riwayat dan kalender yaumiyah.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan rasio kehadiran raport bulanan agar menghitung hari unik hadir setoran, mencegah anomali kehadiran melebihi total hari."
-      },
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan navigasi tombol 'Lihat' pada riwayat aktivitas yaumiyah dan pemilihan tanggal di kalender agar membuka tanggal yang dipilih."
-      }
-    ]
-  },
-  {
-    "version": "v1.0.9",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Sinkronisasi Penuh Akun Orang Tua & Perbaikan Nama Raport",
-    "summary": "Penyempurnaan client API orang tua untuk auto-inject ID anak, pembersihan nama siswa pada raport bulanan, serta perbaikan sinkronisasi yaumiyah dan setoran.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan nama siswa pada raport bulanan agar tidak menampilkan nama orang tua."
-      },
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Sinkronisasi data yaumiyah dan setoran bulan September pada akun orang tua."
-      }
-    ]
-  },
-  {
-    "version": "v1.0.8",
-    "releaseDate": "8 Oktober 2026",
-    "isLatest": false,
-    "badge": null,
-    "title": "Sinkronisasi Akun Orang Tua & Perbaikan Detail TTQ",
-    "summary": "Penyempurnaan relasi akun orang tua ke data siswa, kalkulasi detail Ziyadah & Muroja'ah pada raport bulanan, serta indikator kehadiran pada kalender setoran.",
-    "changes": [
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Perbaikan pemetaan ID anak pada akun orang tua untuk query raport, mutaba'ah yaumiyah, dan riwayat setoran."
-      },
-      {
-        "category": "fix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Kalkulasi nilai Ziyadah dan Muroja'ah pada detail TTQ raport bulanan berdasarkan subkategori penilaian."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur",
-        "description": "Indikator kehadiran dan status setoran pada kalender progres bulanan TTQ orang tua."
+        "category": "security",
+        "categoryLabel": "Keamanan",
+        "description": "Penegakan keamanan multi-tenant: pencegahan data leak akun orang tua yang belum terikat santri dan perlindungan isolasi data operasional."
       }
     ]
   },
