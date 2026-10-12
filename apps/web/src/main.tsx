@@ -50,6 +50,7 @@ import { HelpPage } from "@/pages/settings/HelpPage";
 import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { PublicYaumiyahPage } from "@/pages/public/PublicYaumiyahPage";
 import { MobileAppShell } from "@/components/layout/MobileAppShell";
+import { PushNotificationPrompt } from "@/components/pwa/PushNotificationPrompt";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
@@ -354,6 +355,7 @@ function App() {
   // Roles: STUDENT, PARENT, TEACHER (Locked to mobile frame max-w-[430px])
   return (
     <MobileAppShell>
+      <PushNotificationPrompt />
       {renderContent(user, path, searchParams)}
     </MobileAppShell>
   );

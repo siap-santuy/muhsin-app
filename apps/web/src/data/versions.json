@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.2.1",
+    "version": "v1.2.2",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Permintaan Izin Notifikasi Cerdas di Awal Aplikasi (Soft-Prompt)",
+    "summary": "Menampilkan banner rekomendasi izin notifikasi saat pengguna membuka aplikasi, memudahkan santri dan wali santri mengaktifkan pengingat harian tanpa harus mencari menu pengaturan.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Banner permintaan izin notifikasi push harian di awal saat pengguna login, dengan tombol 'Aktifkan Sekarang' dan 'Nanti Saja'."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Opsi pengaturan manual di halaman profil tetap dipertahankan untuk mematikan atau mengaktifkan kembali sewaktu-waktu."
+      }
+    ]
+  },
+  {
+    "version": "v1.2.1",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Perbaikan Kalkulasi Nilai Makhroj di Raport Bulanan",
     "summary": "Mendukung pembacaan key makhroj dan makhraj secara kompatibel agar nilai aspek makhroj pada detail Tahsin di raport bulanan dan semester terhitung akurat.",
     "changes": [
