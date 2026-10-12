@@ -279,11 +279,13 @@ export function TeacherTTQInputPage({
         } else if (initialCategory === "sabiq") {
           scores = {
             makhraj: Number(makhraj),
+            makhroj: Number(makhraj),
             mad: Number(mad),
             ghunnah: Number(ghunnah),
             qolqolah: Number(qolqolah),
+            kelancaran: Number(kelancaran || makhraj),
           };
-          scoreFieldKeys = ["makhraj", "mad", "ghunnah", "qolqolah"];
+          scoreFieldKeys = ["makhraj", "makhroj", "mad", "ghunnah", "qolqolah", "kelancaran"];
           if (jilidStart) {
             referenceStart = {
               jilid: Number(jilidStart),

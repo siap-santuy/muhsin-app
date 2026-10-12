@@ -159,10 +159,11 @@ export class DrizzleRaportRepository implements IRaportRepository {
           tahsinCount++;
           const ref = s.referenceStart as any;
           lastTahsinCapaian = ref?.jilid ? `${ref.jilid} Hal ${ref.halaman ?? 1}` : (ref?.materi ?? "Tahsin");
-          if (scores.makhroj) { makhrojSum += scores.makhroj; makhrojCnt++; }
-          if (scores.mad) { madSum += scores.mad; madCnt++; }
-          if (scores.ghunnah) { ghunnahSum += scores.ghunnah; ghunnahCnt++; }
-          if (scores.kelancaran) { kelancaranSum += scores.kelancaran; kelancaranCnt++; }
+          const makhrojScore = scores.makhroj ?? scores.makhraj;
+          if (typeof makhrojScore === "number") { makhrojSum += makhrojScore; makhrojCnt++; }
+          if (typeof scores.mad === "number") { madSum += scores.mad; madCnt++; }
+          if (typeof scores.ghunnah === "number") { ghunnahSum += scores.ghunnah; ghunnahCnt++; }
+          if (typeof scores.kelancaran === "number") { kelancaranSum += scores.kelancaran; kelancaranCnt++; }
         }
       }
     }
