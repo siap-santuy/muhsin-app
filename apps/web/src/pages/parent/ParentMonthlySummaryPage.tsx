@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   ActivityCard,
@@ -8,12 +8,6 @@ import { MonthCalendar } from "@/components/student/MonthCalendar";
 import { Pagination } from "@/components/ui/Pagination";
 import { TabBar } from "@/components/ui/TabBar";
 import { api } from "@/lib/api";
-
-const TABS = [
-  { id: "ziyadah", label: "Ziyadah" },
-  { id: "murojaah", label: "Murojaah" },
-  { id: "tahsin", label: "Tahsin" },
-];
 
 const RIWAYAT_TITLE: Record<string, string> = {
   ziyadah: "Riwayat Ziyadah",
@@ -163,15 +157,54 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
     safePage * PER_PAGE
   );
 
+  const tabCounts = useMemo(() => {
+    let ziyadah = 0;
+    let murojaah = 0;
+    let tahsin = 0;
+    for (const s of setoranList) {
+      const code = (s.subcategoryCode || s.categoryCode || "").toLowerCase();
+      const name = (s.subcategoryName || s.categoryName || "").toLowerCase();
+      if (code.includes("ziyadah") || name.includes("ziyadah")) ziyadah++;
+      else if (code.includes("murojaah") || name.includes("murojaah")) murojaah++;
+      else if (code.includes("tahsin") || code.includes("talaqi") || code.includes("sabiq") || name.includes("tahsin")) tahsin++;
+    }
+    return { ziyadah, murojaah, tahsin };
+  }, [setoranList]);
+
+  const tabsWithBadge = useMemo(() => [
+    { id: "ziyadah", label: "Ziyadah", badge: tabCounts.ziyadah },
+    { id: "murojaah", label: "Muroja'ah", badge: tabCounts.murojaah },
+    { id: "tahsin", label: "Tahsin", badge: tabCounts.tahsin },
+  ], [tabCounts]);
+
   function getStatusForDate(date: Date) {
     const dateStr = formatLocalDate(date);
-    const entry = setoranList.find((s) => s.date === dateStr);
+    // Cari entri yang sesuai dengan kategori tab aktif
+    const entry = setoranList.find((s) => {
+      if (s.date !== dateStr) return false;
+      const code = (s.subcategoryCode || s.categoryCode || "").toLowerCase();
+      const name = (s.subcategoryName || s.categoryName || "").toLowerCase();
+      if (activeTab === "ziyadah") return code.includes("ziyadah") || name.includes("ziyadah");
+      if (activeTab === "murojaah") return code.includes("murojaah") || name.includes("murojaah");
+      if (activeTab === "tahsin") return code.includes("tahsin") || code.includes("talaqi") || code.includes("sabiq") || name.includes("tahsin");
+      return true;
+    });
+
     if (entry) {
       if (entry.status === "sakit") return "sakit";
       if (entry.status === "izin") return "izin";
       if (entry.status === "alpa") return "alpa";
       return "setoran";
     }
+
+    // Jika di tanggal tsb ada izin/sakit/alpa di entri manapun, tetap tampilkan sebagai penjelas
+    const generalAbsence = setoranList.find(
+      (s) => s.date === dateStr && (s.status === "sakit" || s.status === "izin" || s.status === "alpa")
+    );
+    if (generalAbsence) {
+      return generalAbsence.status as any;
+    }
+
     return undefined;
   }
 
@@ -199,7 +232,7 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
         {/* Tab navigasi */}
         <div className="px-4">
           <TabBar
-            tabs={TABS}
+            tabs={tabsWithBadge}
             activeId={activeTab}
             onChange={handleTabChange}
           />

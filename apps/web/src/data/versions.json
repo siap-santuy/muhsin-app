@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.1.6",
+    "version": "v1.1.7",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Badge Kalender Spesifik Kategori TTQ & Counter Tab",
+    "summary": "Penyempurnaan kalender progres TTQ agar titik indikator tanggal murni merefleksikan kategori tab yang aktif serta penambahan counter jumlah aktivitas pada tab.",
+    "changes": [
+      {
+        "category": "fix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Titik hijau kalender pada halaman Ziyadah, Muroja'ah, dan Tahsin kini terisolasi sesuai kategori tab yang sedang aktif."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur",
+        "description": "Penambahan badge angka jumlah riwayat aktivitas pada masing-masing tab Ziyadah, Muroja'ah, dan Tahsin."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.6",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": null,
     "title": "Fokus Kartu Progres Beranda: Ziyadah & Yaumiyah",
     "summary": "Menyederhanakan kartu progres bulanan di beranda orang tua dan siswa dengan memfokuskan pada Ziyadah dan Yaumiyah agar lebih bersih dan terarah.",
     "changes": [
