@@ -43,7 +43,8 @@ function calculateProgressiveLevel(totalExp: number): LevelThresholdInfo {
   const expNeededInLevel = 100 * lvl;
   const nextThreshold = baseExp + expNeededInLevel;
   const expInLevel = Math.max(0, totalExp - baseExp);
-  const expPercent = Math.min(100, Math.round((expInLevel / expNeededInLevel) * 100));
+  // Opsi A: Progress bar akumulatif total terhadap target level berikutnya (misal 180 / 300 EXP = 60%)
+  const expPercent = Math.min(100, Math.round((totalExp / Math.max(1, nextThreshold)) * 100));
 
   return {
     level: lvl,
@@ -251,8 +252,8 @@ export function StudentDashboardPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-gray-50 p-4">
               <div className="flex items-center justify-between text-xs font-bold text-brand-navy">
-                <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-amber" /> EXP Progres Level {level}</span>
-                <span>{levelInfo.expInLevel} / {levelInfo.expNeededInLevel}</span>
+                <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-amber" /> Progres EXP</span>
+                <span>{currentExp} / {levelInfo.nextThreshold}</span>
               </div>
               <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-brand-amber/15">
                 <div
@@ -261,8 +262,8 @@ export function StudentDashboardPage() {
                 />
               </div>
               <div className="mt-2 flex items-center justify-between text-[11px] text-brand-text-muted">
-                <span>Total: {currentExp} EXP</span>
-                <span>{Math.max(0, levelInfo.expNeededInLevel - levelInfo.expInLevel)} EXP lagi menuju Level {level + 1}</span>
+                <span>Level {level}</span>
+                <span>{Math.max(0, levelInfo.nextThreshold - currentExp)} EXP lagi menuju Level {level + 1}</span>
               </div>
             </div>
           </div>
