@@ -53,7 +53,7 @@ export function ParentDashboardPage() {
 
   const ziyadahItem = progres.ziyadah ?? {
     percentage: Math.min(100, Math.round(((progres.ziyadahCount ?? 0) / 2) * 100)),
-    caption: "Target 2 halaman / bulan",
+    caption: "Target 2 halaman",
   };
   const yaumiyahItem = progres.yaumiyah ?? {
     percentage: Math.min(100, Math.round(((progres.yaumiyahDays ?? 0) / 30) * 100)),

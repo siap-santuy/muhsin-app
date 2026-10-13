@@ -125,7 +125,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       count: ziyadahCount,
       target: TARGET_ZIYADAH,
       percentage: Math.min(100, Math.round((ziyadahCount / TARGET_ZIYADAH) * 100)),
-      caption: `Target ${TARGET_ZIYADAH} halaman / bulan`,
+      caption: `Target ${TARGET_ZIYADAH} halaman`,
     };
 
     const progresTahsin = {
@@ -645,7 +645,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         count: childZiyadah,
         target: TARGET_ZIYADAH,
         percentage: Math.min(100, Math.round((childZiyadah / TARGET_ZIYADAH) * 100)),
-        caption: `Target ${TARGET_ZIYADAH} halaman / bulan`,
+        caption: `Target ${TARGET_ZIYADAH} halaman`,
       };
 
       const progresTahsin = {
@@ -707,7 +707,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           murojaahCount: childMurojaah,
           tahsinCount: childTahsin,
           yaumiyahDays: childYaumiyahDays,
-          ziyadah: { count: 0, target: 2, percentage: 0, caption: "Target 2 halaman / bulan" },
+          ziyadah: { count: 0, target: 2, percentage: 0, caption: "Target 2 halaman" },
           murojaah: { count: 0, target: 20, percentage: 0, caption: "0 sesi hafalan terjaga" },
           tahsin: { count: 0, target: 20, percentage: 0, caption: "Target 20 pertemuan" },
           yaumiyah: { count: 0, target: daysInEmptyMonth, percentage: 0, caption: `0 dari ${daysInEmptyMonth} hari` },
