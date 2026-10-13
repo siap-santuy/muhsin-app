@@ -100,48 +100,56 @@ export function PushNotificationPrompt() {
   if (!visible || isIOSWeb) return null;
 
   return (
-    <div className="mx-4 mt-2 mb-1 animate-in slide-in-from-top-2 duration-200">
-      <div className="rounded-2xl border border-brand-cyan/40 bg-linear-to-r from-brand-cyan/15 via-white to-brand-cyan/10 p-3.5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-cyan text-white shadow-xs">
-              <BellRing className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-brand-navy leading-snug">
-                Aktifkan Notifikasi Harian?
-              </h4>
-              <p className="mt-0.5 text-[11px] text-brand-text-muted leading-relaxed">
-                Dapatkan info setoran hafalan ananda dan pengingat mutaba&apos;ah ibadah tepat waktu.
-              </p>
-            </div>
-          </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      onClick={handleDismiss}
+    >
+      <div
+        className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-brand-line text-center animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Tombol Close Pojok Kanan Atas */}
+        <div className="flex justify-end -mt-2 -mr-2">
           <button
             type="button"
             onClick={handleDismiss}
-            aria-label="Tutup saran notifikasi"
-            className="rounded-lg p-1 text-gray-400 hover:bg-black/5 hover:text-gray-600 transition-colors"
+            aria-label="Tutup"
+            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-brand-navy transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-end gap-2 border-t border-brand-cyan/15 pt-2.5">
-          <button
-            type="button"
-            onClick={handleDismiss}
-            disabled={loading}
-            className="rounded-xl px-3 py-1.5 text-[11px] font-semibold text-brand-text-muted hover:bg-black/5 transition-colors"
-          >
-            Nanti Saja
-          </button>
+        {/* Ikon Lonceng di Tengah */}
+        <div className="mx-auto -mt-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-cyan/15 text-brand-cyan shadow-xs">
+          <BellRing className="h-8 w-8" />
+        </div>
+
+        {/* Teks Informasi */}
+        <h3 className="mt-4 text-base font-extrabold text-brand-navy">
+          Aktifkan Notifikasi Harian?
+        </h3>
+        <p className="mt-1.5 text-xs text-brand-text-muted leading-relaxed">
+          Dapatkan pengingat ibadah yaumiyah tepat waktu dan pemberitahuan langsung saat ananda menyetor hafalan di sekolah.
+        </p>
+
+        {/* Tombol Aksi */}
+        <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
             onClick={handleAccept}
             disabled={loading}
-            className="rounded-xl bg-brand-cyan px-3.5 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-brand-cyan-dark active:scale-95 transition-all disabled:opacity-50"
+            className="w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {loading ? "Mengaktifkan..." : "Aktifkan Sekarang"}
+          </button>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            disabled={loading}
+            className="w-full py-2 text-xs font-semibold text-brand-text-muted hover:text-brand-navy transition-colors"
+          >
+            Nanti Saja
           </button>
         </div>
       </div>
