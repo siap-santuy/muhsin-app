@@ -115,7 +115,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     const daysInCurrentMonth = new Date(yearNum, monthNum, 0).getDate();
     const yaumiyahDaysCount = ibadahRows.length;
 
-    const TARGET_ZIYADAH = 20;
+    // Target standar ritme tahfidz (4 baris/hari = 2 halaman/bulan = 10 halaman/semester)
+    const TARGET_ZIYADAH = 2;
     const TARGET_TAHSIN = 20;
     const TARGET_MUROJAAH = 20;
     const TARGET_YAUMIYAH = daysInCurrentMonth;
@@ -124,7 +125,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       count: ziyadahCount,
       target: TARGET_ZIYADAH,
       percentage: Math.min(100, Math.round((ziyadahCount / TARGET_ZIYADAH) * 100)),
-      caption: `Target ${TARGET_ZIYADAH} halaman`,
+      caption: `Target ${TARGET_ZIYADAH} halaman / bulan`,
     };
 
     const progresTahsin = {
@@ -634,7 +635,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       const [yearNumParent, monthNumParent] = activeMonth.split("-").map(Number);
       const daysInCurrentMonthParent = new Date(yearNumParent, monthNumParent, 0).getDate();
 
-      const TARGET_ZIYADAH = 20;
+      // Target standar ritme tahfidz (4 baris/hari = 2 halaman/bulan = 10 halaman/semester)
+      const TARGET_ZIYADAH = 2;
       const TARGET_TAHSIN = 20;
       const TARGET_MUROJAAH = 20;
       const TARGET_YAUMIYAH = daysInCurrentMonthParent;
@@ -643,7 +645,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         count: childZiyadah,
         target: TARGET_ZIYADAH,
         percentage: Math.min(100, Math.round((childZiyadah / TARGET_ZIYADAH) * 100)),
-        caption: `Target ${TARGET_ZIYADAH} halaman`,
+        caption: `Target ${TARGET_ZIYADAH} halaman / bulan`,
       };
 
       const progresTahsin = {
@@ -700,16 +702,16 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       childLevel: gam?.level ?? 1,
       childStreak: gam?.currentStreak ?? 0,
       lastSetoran: null,
-      progres: {
-        ziyadahCount: childZiyadah,
-        murojaahCount: childMurojaah,
-        tahsinCount: childTahsin,
-        yaumiyahDays: childYaumiyahDays,
-        ziyadah: { count: 0, target: 20, percentage: 0, caption: "Target 20 halaman" },
-        murojaah: { count: 0, target: 20, percentage: 0, caption: "0 sesi hafalan terjaga" },
-        tahsin: { count: 0, target: 20, percentage: 0, caption: "Target 20 pertemuan" },
-        yaumiyah: { count: 0, target: daysInEmptyMonth, percentage: 0, caption: `0 dari ${daysInEmptyMonth} hari` },
-      },
+        progres: {
+          ziyadahCount: childZiyadah,
+          murojaahCount: childMurojaah,
+          tahsinCount: childTahsin,
+          yaumiyahDays: childYaumiyahDays,
+          ziyadah: { count: 0, target: 2, percentage: 0, caption: "Target 2 halaman / bulan" },
+          murojaah: { count: 0, target: 20, percentage: 0, caption: "0 sesi hafalan terjaga" },
+          tahsin: { count: 0, target: 20, percentage: 0, caption: "Target 20 pertemuan" },
+          yaumiyah: { count: 0, target: daysInEmptyMonth, percentage: 0, caption: `0 dari ${daysInEmptyMonth} hari` },
+        },
       isYaumiyahTodayFilled: isTodayFilled,
     };
   }

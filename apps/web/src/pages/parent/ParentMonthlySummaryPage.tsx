@@ -256,7 +256,7 @@ export function ParentMonthlySummaryPage({ initialTab: propInitialTab }: ParentM
               {activeTab === "ziyadah"
                 ? targetHafalan?.targetSurahStart
                   ? `${targetHafalan.targetSurahStart} : ${targetHafalan.targetAyatStart ?? 1} s/d ${targetHafalan.targetSurahEnd} : ${targetHafalan.targetAyatEnd ?? 1}${targetHafalan.catatan ? ` (${targetHafalan.catatan})` : ""}`
-                  : "Juz 30 (Surah An-Naba' s/d Al-Muthaffifin) — Minimal 20 Halaman"
+                  : "Target Ritme: 4 Baris/Hari • 2 Halaman/Bulan (10 Halaman/Semester)"
                 : activeTab === "murojaah"
                 ? "Menjaga & Mengulang Hafalan Juz 30 Mutqin — Rutin Tiap Pekan"
                 : "Metode Sabiq Jilid 4 & Talaqi Tartil — 20 Pertemuan Aktif"}
