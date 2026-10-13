@@ -3,7 +3,6 @@ import {
   ChevronRight,
   HelpCircle,
   Info,
-  Layers,
   Lock,
   LogOut,
   ShieldCheck,
@@ -14,7 +13,6 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
 import { PWAInstallProfileItem } from "@/components/pwa/PWAInstallPrompt";
-import { PushToggleProfileItem } from "@/components/pwa/PushToggleProfileItem";
 import { APP_VERSION } from "@/lib/appVersion";
 import type { UserProfile } from "@muhsin/shared";
 
@@ -93,7 +91,6 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
             </h3>
             <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
               <PWAInstallProfileItem />
-              <PushToggleProfileItem />
               {[
                 { icon: UserCog, label: "Ubah Profile", route: "#/edit-profile" },
                 { icon: Lock, label: "Ubah Password", route: "#/change-password" },
@@ -129,7 +126,6 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
               {[
                 { icon: HelpCircle, label: "Bantuan & Panduan", route: "#/help" },
                 { icon: Info, label: "Tentang Muhsin", route: "#/about" },
-                { icon: Layers, label: "Riwayat Versi", route: "#/versioning" },
               ].map((item) => {
                 const Icon = item.icon;
                 return (

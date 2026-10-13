@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BellRing, X } from "lucide-react";
+import { BellOff, BellRing, Settings, X } from "lucide-react";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 import {
@@ -12,12 +12,10 @@ import {
   isStandalone,
 } from "@/lib/push";
 
-const DISMISSED_KEY = "muhsin_push_prompt_dismissed_until";
-const DISMISS_DURATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 hari sebelum muncul lagi jika ditolak halus
-
 export function PushNotificationPrompt() {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isDenied, setIsDenied] = useState(false);
   const [isIOSWeb, setIsIOSWeb] = useState(false);
 
   useEffect(() => {
@@ -28,25 +26,31 @@ export function PushNotificationPrompt() {
       // 2. Jika di iOS tapi belum di-add to home screen (bukan standalone PWA)
       if (isIOSDevice() && !isStandalone()) {
         setIsIOSWeb(true);
-        // iOS belum bisa request push sebelum di-add to home screen
         return;
       }
 
-      // 3. Jika izin sudah 'granted' atau 'denied', tidak perlu tampilkan banner
+      // 3. Jika permission sudah denied (diblokir secara lokal di browser/HP)
       const permission = getPushPermission();
-      if (permission === "granted" || permission === "denied") return;
-
-      // 4. Jika user pernah klik "Nanti Saja", cek apakah masa tunda masih berlaku
-      const dismissedUntil = localStorage.getItem(DISMISSED_KEY);
-      if (dismissedUntil && Number(dismissedUntil) > Date.now()) {
+      if (permission === "denied") {
+        setIsDenied(true);
+        setVisible(true);
         return;
       }
 
-      // 5. Cek apakah subscription sudah ada
-      const existing = await getExistingSubscription();
-      if (!existing) {
-        setVisible(true);
+      // 4. Jika permission sudah granted, cek apakah sudah terdaftar di pushManager
+      if (permission === "granted") {
+        const existing = await getExistingSubscription();
+        if (existing) {
+          // Sudah aktif dan tersimpan, tidak perlu munculkan apa-apa
+          setVisible(false);
+          return;
+        }
       }
+
+      // 5. Belum aktif (permission 'default' atau belum ada subscription aktif)
+      // Selalu tampilkan dialog di awal saat app dibuka
+      setIsDenied(false);
+      setVisible(true);
     }
 
     void checkPermission();
@@ -58,9 +62,11 @@ export function PushNotificationPrompt() {
       // Request permission dari browser (harus berasal dari gesture klik pengguna)
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setVisible(false);
         if (permission === "denied") {
+          setIsDenied(true);
           toast.warning("Izin notifikasi diblokir di pengaturan browser");
+        } else {
+          setVisible(false);
         }
         return;
       }
@@ -82,7 +88,6 @@ export function PushNotificationPrompt() {
       // Simpan subscription ke backend
       await api.savePushSubscription(payload);
       setVisible(false);
-      localStorage.removeItem(DISMISSED_KEY);
       toast.success("Notifikasi berhasil diaktifkan!");
     } catch (err: any) {
       toast.warning(err.message || "Gagal mengaktifkan notifikasi");
@@ -91,10 +96,36 @@ export function PushNotificationPrompt() {
     }
   }
 
+  async function handleRecheck() {
+    setLoading(true);
+    try {
+      const permission = getPushPermission();
+      if (permission === "granted") {
+        const { publicKey } = await api.getPushPublicKey();
+        if (publicKey) {
+          const sub = await subscribePush(publicKey);
+          const payload = subscriptionToPayload(sub);
+          if (payload.endpoint && payload.p256dh && payload.auth) {
+            await api.savePushSubscription(payload);
+            setVisible(false);
+            toast.success("Notifikasi berhasil diaktifkan!");
+            return;
+          }
+        }
+      } else if (permission === "denied") {
+        toast.warning("Izin masih diblokir di pengaturan browser/HP");
+      } else {
+        setIsDenied(false);
+      }
+    } catch (err: any) {
+      toast.warning(err.message || "Belum dapat mengaktifkan notifikasi");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleDismiss() {
     setVisible(false);
-    // Tunda kemunculan banner selama 3 hari
-    localStorage.setItem(DISMISSED_KEY, String(Date.now() + DISMISS_DURATION_MS));
   }
 
   if (!visible || isIOSWeb) return null;
@@ -120,38 +151,85 @@ export function PushNotificationPrompt() {
           </button>
         </div>
 
-        {/* Ikon Lonceng di Tengah */}
-        <div className="mx-auto -mt-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-cyan/15 text-brand-cyan shadow-xs">
-          <BellRing className="h-8 w-8" />
-        </div>
+        {/* Kondisi 1: Izin Diblokir (Denied) — Tampilkan Edukasi Cara Buka Kunci */}
+        {isDenied ? (
+          <>
+            <div className="mx-auto -mt-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 shadow-xs">
+              <BellOff className="h-8 w-8" />
+            </div>
 
-        {/* Teks Informasi */}
-        <h3 className="mt-4 text-base font-extrabold text-brand-navy">
-          Aktifkan Notifikasi Harian?
-        </h3>
-        <p className="mt-1.5 text-xs text-brand-text-muted leading-relaxed">
-          Dapatkan pengingat ibadah yaumiyah tepat waktu dan pemberitahuan langsung saat ananda menyetor hafalan di sekolah.
-        </p>
+            <h3 className="mt-4 text-base font-extrabold text-brand-navy">
+              Izin Notifikasi Sedang Diblokir
+            </h3>
+            <p className="mt-1.5 text-xs text-brand-text-muted leading-relaxed">
+              Browser atau perangkat Anda sebelumnya memblokir izin notifikasi. Agar pengingat sholat &amp; info setoran dapat masuk:
+            </p>
 
-        {/* Tombol Aksi */}
-        <div className="mt-6 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleAccept}
-            disabled={loading}
-            className="w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark active:scale-[0.98] transition-all disabled:opacity-50"
-          >
-            {loading ? "Mengaktifkan..." : "Aktifkan Sekarang"}
-          </button>
-          <button
-            type="button"
-            onClick={handleDismiss}
-            disabled={loading}
-            className="w-full py-2 text-xs font-semibold text-brand-text-muted hover:text-brand-navy transition-colors"
-          >
-            Nanti Saja
-          </button>
-        </div>
+            <div className="mt-3.5 rounded-2xl bg-gray-50 p-3 text-left border border-brand-line/60 space-y-1.5 text-[11px] text-brand-navy">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-brand-cyan shrink-0">1.</span>
+                <span><strong>HP Android:</strong> Tekan lama ikon aplikasi di layar HP &rarr; Info Aplikasi (i) &rarr; Notifikasi &rarr; <strong>Izinkan</strong>.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-brand-cyan shrink-0">2.</span>
+                <span><strong>Browser:</strong> Ketuk ikon gembok / izin di bilah alamat atas &rarr; Notifikasi &rarr; <strong>Izinkan</strong>.</span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleRecheck}
+                disabled={loading}
+                className="w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Settings className="h-4 w-4" />
+                <span>{loading ? "Memeriksa..." : "Saya Sudah Mengaktifkan"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                disabled={loading}
+                className="w-full py-2 text-xs font-semibold text-brand-text-muted hover:text-brand-navy transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </>
+        ) : (
+          /* Kondisi 2: Status Default — Minta Izin 1-Ketukan */
+          <>
+            <div className="mx-auto -mt-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-cyan/15 text-brand-cyan shadow-xs">
+              <BellRing className="h-8 w-8" />
+            </div>
+
+            <h3 className="mt-4 text-base font-extrabold text-brand-navy">
+              Aktifkan Notifikasi Harian?
+            </h3>
+            <p className="mt-1.5 text-xs text-brand-text-muted leading-relaxed">
+              Dapatkan pengingat ibadah yaumiyah tepat waktu dan pemberitahuan langsung saat ananda menyetor hafalan di sekolah.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleAccept}
+                disabled={loading}
+                className="w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {loading ? "Mengaktifkan..." : "Aktifkan Sekarang"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                disabled={loading}
+                className="w-full py-2 text-xs font-semibold text-brand-text-muted hover:text-brand-navy transition-colors"
+              >
+                Nanti Saja
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
