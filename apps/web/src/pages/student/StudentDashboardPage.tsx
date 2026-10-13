@@ -23,17 +23,60 @@ function formatLocalDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+interface LevelThresholdInfo {
+  level: number;
+  baseExp: number;
+  nextThreshold: number;
+  expInLevel: number;
+  expNeededInLevel: number;
+  expPercent: number;
+}
+
+function calculateProgressiveLevel(totalExp: number): LevelThresholdInfo {
+  let lvl = 1;
+  let threshold = 0;
+  while (threshold + 100 * lvl <= totalExp) {
+    threshold += 100 * lvl;
+    lvl += 1;
+  }
+  const baseExp = threshold;
+  const expNeededInLevel = 100 * lvl;
+  const nextThreshold = baseExp + expNeededInLevel;
+  const expInLevel = Math.max(0, totalExp - baseExp);
+  const expPercent = Math.min(100, Math.round((expInLevel / expNeededInLevel) * 100));
+
+  return {
+    level: lvl,
+    baseExp,
+    nextThreshold,
+    expInLevel,
+    expNeededInLevel,
+    expPercent,
+  };
+}
+
 export function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const firstName = user?.name ? user.name.split(" ")[0] : "Siswa";
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [showLevelUpModal, setShowLevelUpModal] = useState<number | null>(null);
   const todayStr = formatLocalDate(new Date());
   const [todayIbadahStatus, setTodayIbadahStatus] = useState<"submitted" | "draft" | "empty">("empty");
 
   useEffect(() => {
     api.getDashboardSummary()
-      .then(setSummary)
+      .then((data) => {
+        setSummary(data);
+        if (data?.level && typeof window !== "undefined" && user?.id) {
+          const key = `muhsin_last_seen_level_${user.id}`;
+          const lastSeen = localStorage.getItem(key);
+          if (lastSeen && Number(lastSeen) < data.level) {
+            setShowLevelUpModal(data.level);
+          }
+          localStorage.setItem(key, String(data.level));
+        }
+      })
       .catch(() => {
         // Fallback
       });
@@ -45,12 +88,12 @@ export function StudentDashboardPage() {
         else setTodayIbadahStatus("empty");
       })
       .catch(() => setTodayIbadahStatus("empty"));
-  }, [todayStr]);
+  }, [todayStr, user?.id]);
 
-  const level = summary?.level ?? 1;
   const currentExp = summary?.totalExp ?? 0;
-  const nextLevelExp = level * 100;
-  const expPercent = Math.min(100, Math.round((currentExp / Math.max(1, nextLevelExp)) * 100));
+  const levelInfo = calculateProgressiveLevel(currentExp);
+  const level = summary?.level ?? levelInfo.level;
+  const expPercent = levelInfo.expPercent;
   const currentStreak = summary?.currentStreak ?? 0;
   const longestStreak = summary?.longestStreak ?? 0;
   const target = summary?.targetHafalan ?? {
@@ -208,8 +251,8 @@ export function StudentDashboardPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-gray-50 p-4">
               <div className="flex items-center justify-between text-xs font-bold text-brand-navy">
-                <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-amber" /> EXP</span>
-                <span>{currentExp} / {nextLevelExp}</span>
+                <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-amber" /> EXP Progres Level {level}</span>
+                <span>{levelInfo.expInLevel} / {levelInfo.expNeededInLevel}</span>
               </div>
               <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-brand-amber/15">
                 <div
@@ -217,10 +260,44 @@ export function StudentDashboardPage() {
                   style={{ width: `${expPercent}%` }}
                 />
               </div>
-              <p className="mt-2 text-center text-[11px] text-brand-text-muted">
-                {Math.max(0, nextLevelExp - currentExp)} EXP lagi menuju Level {level + 1}
-              </p>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-brand-text-muted">
+                <span>Total: {currentExp} EXP</span>
+                <span>{Math.max(0, levelInfo.expNeededInLevel - levelInfo.expInLevel)} EXP lagi menuju Level {level + 1}</span>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Perayaan Level Up */}
+      {showLevelUpModal !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setShowLevelUpModal(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl border border-brand-line animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-amber/20 text-brand-amber animate-bounce">
+              <Star className="h-12 w-12 fill-brand-amber" />
+            </div>
+            <h3 className="mt-4 text-xl font-black text-brand-navy">
+              🎉 Barakallahu Fiik!
+            </h3>
+            <p className="mt-1 text-sm font-extrabold text-brand-cyan-dark">
+              Selamat, Kamu Naik ke Level {showLevelUpModal}!
+            </p>
+            <p className="mt-2 text-xs text-brand-text-muted leading-relaxed">
+              Terus istiqomah dalam mutaba&apos;ah ibadah dan setoran hafalan Al-Qur&apos;an untuk meraih level berikutnya!
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowLevelUpModal(null)}
+              className="mt-5 w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-all"
+            >
+              Alhamdulillah, Lanjutkan!
+            </button>
           </div>
         </div>
       )}

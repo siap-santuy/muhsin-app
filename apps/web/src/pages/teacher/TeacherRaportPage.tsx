@@ -1,10 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  GraduationCap,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
 import { api } from "@/lib/api";
@@ -183,38 +178,24 @@ export function TeacherRaportPage() {
   const sem1 = getSemesterStatus(1);
   const sem2 = getSemesterStatus(2);
 
-  const activeMonthDef = ACADEMIC_MONTHS.find((m) => m.name === selectedMonth) ?? defaultMonth;
-  const activeMonthStatus = getMonthStatus(activeMonthDef.offset);
-  const activeSemesterStatus = getSemesterStatus(selectedSemester as 1 | 2);
-
   function handleSelectMonth(m: MonthDef) {
     const { isAvailable } = getMonthStatus(m.offset);
     if (!isAvailable) return;
     setSelectedMonth(m.name);
     setSelectedSemester(m.semester);
-  }
-
-  function handleSelectSemester(sem: 1 | 2) {
-    const { isAvailable } = getSemesterStatus(sem);
-    if (!isAvailable) return;
-    setSelectedSemester(sem);
-  }
-
-  const selectedStudentName = students.find((s) => s.id === selectedStudentId)?.name ?? "Siswa Halaqah";
-
-  function handleMonthlyClick() {
-    if (!activeMonthStatus.isAvailable) return;
     const params = new URLSearchParams({
-      month: selectedMonth,
+      month: m.name,
       year: selectedYear,
       studentId: selectedStudentId,
     });
     window.location.hash = `#/monthly-raport?${params.toString()}`;
   }
 
-  function handleSemesterClick() {
-    if (!activeSemesterStatus.isAvailable) return;
-    const semName = selectedSemester === 1 ? "Ganjil" : "Genap";
+  function handleSelectSemester(sem: 1 | 2) {
+    const { isAvailable } = getSemesterStatus(sem);
+    if (!isAvailable) return;
+    setSelectedSemester(sem);
+    const semName = sem === 1 ? "Ganjil" : "Genap";
     const params = new URLSearchParams({
       semester: semName,
       year: selectedYear,
@@ -380,6 +361,7 @@ export function TeacherRaportPage() {
             {/* Semester 2 Divider Button */}
             <button
               type="button"
+              disabled={!sem2.isAvailable}
               onClick={() => handleSelectSemester(2)}
               className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 py-1.5 transition-all ${
                 selectedSemester === 2
@@ -396,62 +378,15 @@ export function TeacherRaportPage() {
             </button>
           </section>
 
-          {/* Action Cards */}
-          <button
-            type="button"
-            disabled={!activeMonthStatus.isAvailable}
-            onClick={handleMonthlyClick}
-            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
-              !activeMonthStatus.isAvailable
-                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                : "border-emerald-200 bg-white hover:bg-brand-cyan/5"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
-                <TrendingUp className="h-6 w-6" />
-              </span>
-              <div className="text-left">
-                <h2 className="text-base font-bold text-brand-navy">
-                  Lihat Raport Bulanan
-                </h2>
-                <p className="text-xs font-medium text-brand-text-muted">
-                  {!activeMonthStatus.isAvailable
-                    ? `Bulan ${selectedMonth} sedang berjalan / terkunci`
-                    : `Siswa: ${selectedStudentName} (${selectedMonth})`}
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-brand-navy" />
-          </button>
-
-          <button
-            type="button"
-            disabled={!activeSemesterStatus.isAvailable}
-            onClick={handleSemesterClick}
-            className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 shadow-sm transition-all ${
-              !activeSemesterStatus.isAvailable
-                ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                : "border-brand-cyan/40 bg-white hover:bg-brand-cyan/5"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-cyan/10 text-brand-cyan">
-                <GraduationCap className="h-6 w-6" />
-              </span>
-              <div className="text-left">
-                <h2 className="text-base font-bold text-brand-navy">
-                  Lihat Raport Semester
-                </h2>
-                <p className="text-xs font-medium text-brand-text-muted">
-                  {!activeSemesterStatus.isAvailable
-                    ? `Semester ${selectedSemester === 1 ? "Ganjil" : "Genap"} sedang berjalan / terkunci`
-                    : `Siswa: ${selectedStudentName} (Semester ${selectedSemester === 1 ? "Ganjil" : "Genap"})`}
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-brand-navy" />
-          </button>
+          {/* Card Panduan Langsung */}
+          <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-2xs text-center">
+            <p className="text-xs font-bold text-brand-navy">
+              💡 Cara Membuka Raport Santri
+            </p>
+            <p className="mt-1 text-[11px] text-brand-text-muted leading-relaxed">
+              Pilih kelas dan santri di atas, lalu ketuk langsung salah satu kotak <span className="font-semibold text-brand-navy">Bulan</span> (dengan titik hijau) untuk membuka lembar Raport Bulanan santri, atau ketuk tombol <span className="font-semibold text-brand-navy">Semester</span> untuk membuka raport semester.
+            </p>
+          </div>
         </div>
       </main>
 

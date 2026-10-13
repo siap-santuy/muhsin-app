@@ -1,11 +1,11 @@
 [
   {
-    "version": "v1.2.0",
+    "version": "v1.1.0",
     "releaseDate": "8 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
     "title": "Rilis Resmi Produksi: Target Hafalan Guru, Pengalaman Orang Tua & Optimasi PWA",
-    "summary": "Pembaruan besar menyambut rilis resmi produksi: penetapan target hafalan bulanan santri (bulk per kelas & per santri), integrasi dashboard cerdas orang tua dan santri, soft-prompt izin notifikasi push, serta konsolidasi sistem ke Semantic Versioning 1.2.0.",
+    "summary": "Pembaruan besar menyambut rilis resmi produksi: penetapan target hafalan bulanan santri (bulk per kelas & per santri), integrasi dashboard cerdas orang tua dan santri, soft-prompt izin notifikasi push, selebrasi level up, serta pembukaan raport langsung 1-ketukan.",
     "changes": [
       {
         "category": "feature",
@@ -28,9 +28,14 @@
         "description": "Penyederhanaan dan fokus kartu progres bulanan di beranda santri dan orang tua pada capaian Ziyadah dan Yaumiyah."
       },
       {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Animasi selebrasi Level Up santri saat naik level dan perataan kalkulasi progres bar EXP berjenjang."
+      },
+      {
         "category": "improvement",
         "categoryLabel": "Peningkatan",
-        "description": "Navigasi raport 1-ketukan langsung buka pada kotak bulan bertitik hijau dan lokalisasi status raport ke Bahasa Indonesia (Sudah Terbit, Sedang Berjalan, Belum Tersedia)."
+        "description": "Navigasi raport 1-ketukan langsung buka pada kotak bulan bertitik hijau seragam untuk Orang Tua, Siswa, dan Guru, serta lokalisasi status raport ke Bahasa Indonesia."
       },
       {
         "category": "improvement",
