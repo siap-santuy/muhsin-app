@@ -93,7 +93,7 @@ export function StudentYaumiyahPage() {
     },
     {
       label: "Sunnah Rawatib",
-      countText: `${stats?.rawatibTotalCount ?? 0} rakaat/slot`,
+      countText: `${stats?.rawatibTotalCount ?? 0}/180 waktu`,
       icon: Sun,
       iconClass: "text-purple-500",
     },

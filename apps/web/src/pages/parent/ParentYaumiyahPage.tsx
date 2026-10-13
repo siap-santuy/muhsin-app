@@ -98,7 +98,7 @@ export function ParentYaumiyahPage() {
     },
     {
       label: "Sunnah Rawatib",
-      countText: `${stats?.rawatibTotalCount ?? 0} waktu terlaksana`,
+      countText: `${stats?.rawatibTotalCount ?? 0}/180 waktu`,
       icon: Sun,
       iconClass: "text-purple-500",
     },
