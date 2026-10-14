@@ -84,4 +84,52 @@ describe("Targets Module UseCases", () => {
     expect(res).toHaveLength(2);
     expect(mockRepo.setTargets).toHaveBeenCalled();
   });
+
+  it("SetHafalanTargetUseCase harus menolak target jika surah akhir mundur", async () => {
+    const uc = new SetHafalanTargetUseCase(mockRepo);
+    await expect(
+      uc.execute({
+        schoolId: "sch-1",
+        teacherId: "t-1",
+        bulan: "2026-10",
+        studentIds: ["s-1"],
+        targetSurahStart: "An-Nazi'at",
+        targetAyatStart: "1",
+        targetSurahEnd: "An-Naba'",
+        targetAyatEnd: "40",
+      })
+    ).rejects.toThrow("Surah akhir tidak boleh lebih kecil dari surah awal");
+  });
+
+  it("SetHafalanTargetUseCase harus menolak target jika ayat akhir mundur dalam surah yang sama", async () => {
+    const uc = new SetHafalanTargetUseCase(mockRepo);
+    await expect(
+      uc.execute({
+        schoolId: "sch-1",
+        teacherId: "t-1",
+        bulan: "2026-10",
+        studentIds: ["s-1"],
+        targetSurahStart: "An-Naba'",
+        targetAyatStart: "20",
+        targetSurahEnd: "An-Naba'",
+        targetAyatEnd: "10",
+      })
+    ).rejects.toThrow("Ayat akhir tidak boleh lebih kecil dari ayat awal");
+  });
+
+  it("SetHafalanTargetUseCase harus menolak jika ayat melebihi total ayat", async () => {
+    const uc = new SetHafalanTargetUseCase(mockRepo);
+    await expect(
+      uc.execute({
+        schoolId: "sch-1",
+        teacherId: "t-1",
+        bulan: "2026-10",
+        studentIds: ["s-1"],
+        targetSurahStart: "Al-Fatihah",
+        targetAyatStart: "1",
+        targetSurahEnd: "Al-Fatihah",
+        targetAyatEnd: "10",
+      })
+    ).rejects.toThrow("Ayat akhir harus antara 1 dan 7 untuk surah Al-Fatihah");
+  });
 });

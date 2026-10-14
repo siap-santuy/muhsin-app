@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { tilawahSchema } from "@muhsin/shared";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { SubmitDailyIbadahUseCase } from "../application/use-cases/SubmitDailyIbadahUseCase";
@@ -21,13 +22,6 @@ const partialSholatFardhuSchema = z.object({
   ashar: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
   maghrib: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
   isya: z.enum(["BA", "MA", "BT", "MT", "H", "T"]).optional(),
-});
-
-const tilawahSchema = z.object({
-  surahStart: z.number().int().min(1).max(114),
-  ayatStart: z.number().int().min(1),
-  surahEnd: z.number().int().min(1).max(114),
-  ayatEnd: z.number().int().min(1),
 });
 
 const dailyIbadahDraftBodySchema = z.object({

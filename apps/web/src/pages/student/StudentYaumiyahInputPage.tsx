@@ -253,6 +253,38 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
 
       const hasTilawah = !notTilawah && surahStart && ayatStart;
 
+      if (hasTilawah) {
+        const sStart = Number(surahStart);
+        const sEnd = Number(surahEnd || surahStart);
+        const aStart = Number(ayatStart);
+        const aEnd = Number(ayatEnd || ayatStart);
+
+        if (sEnd < sStart || (sEnd === sStart && aEnd < aStart)) {
+          setToast({
+            message: "Surah atau ayat akhir tidak boleh kurang atau mundur dari awal",
+            variant: "warning",
+          });
+          return;
+        }
+
+        const sStartObj = SURAH_LIST.find((s) => s.no === sStart);
+        const sEndObj = SURAH_LIST.find((s) => s.no === sEnd);
+        if (sStartObj && (aStart < 1 || aStart > sStartObj.totalAyat)) {
+          setToast({
+            message: `Ayat awal harus antara 1 dan ${sStartObj.totalAyat} untuk ${sStartObj.nameLatin}`,
+            variant: "warning",
+          });
+          return;
+        }
+        if (sEndObj && (aEnd < 1 || aEnd > sEndObj.totalAyat)) {
+          setToast({
+            message: `Ayat akhir harus antara 1 dan ${sEndObj.totalAyat} untuk ${sEndObj.nameLatin}`,
+            variant: "warning",
+          });
+          return;
+        }
+      }
+
       await api.saveDailyIbadahDraft({
         date: selectedDate,
         sholatFardhu: Object.keys(sholatFardhu).length > 0 ? (sholatFardhu as any) : null,
@@ -293,6 +325,36 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
       if (!surahStart || !ayatStart) {
         setToast({
           message: "Pilih surah dan ayat tilawah, atau aktifkan 'Tidak Tilawah Hari Ini'",
+          variant: "warning",
+        });
+        return;
+      }
+
+      const sStart = Number(surahStart);
+      const sEnd = Number(surahEnd || surahStart);
+      const aStart = Number(ayatStart);
+      const aEnd = Number(ayatEnd || ayatStart);
+
+      if (sEnd < sStart || (sEnd === sStart && aEnd < aStart)) {
+        setToast({
+          message: "Surah atau ayat akhir tidak boleh kurang atau mundur dari awal",
+          variant: "warning",
+        });
+        return;
+      }
+
+      const sStartObj = SURAH_LIST.find((s) => s.no === sStart);
+      const sEndObj = SURAH_LIST.find((s) => s.no === sEnd);
+      if (sStartObj && (aStart < 1 || aStart > sStartObj.totalAyat)) {
+        setToast({
+          message: `Ayat awal harus antara 1 dan ${sStartObj.totalAyat} untuk ${sStartObj.nameLatin}`,
+          variant: "warning",
+        });
+        return;
+      }
+      if (sEndObj && (aEnd < 1 || aEnd > sEndObj.totalAyat)) {
+        setToast({
+          message: `Ayat akhir harus antara 1 dan ${sEndObj.totalAyat} untuk ${sEndObj.nameLatin}`,
           variant: "warning",
         });
         return;
@@ -379,7 +441,12 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
               <h2 className="text-base font-bold text-brand-navy">Tilawah Qur&apos;an</h2>
             </div>
 
-            {!notTilawah ? (
+            {!notTilawah ? (() => {
+              const sStartObj = SURAH_LIST.find((s) => s.no === Number(surahStart));
+              const sEndObj = SURAH_LIST.find((s) => s.no === Number(surahEnd || surahStart));
+              const isSameSurah = Number(surahEnd || surahStart) === Number(surahStart);
+
+              return (
               <div className="mt-3 flex flex-col gap-3">
                 {/* Awal Surah & Ayat */}
                 <div className="flex items-center gap-2">
@@ -393,7 +460,15 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                         onChange={(e) => {
                           const val = e.target.value;
                           setSurahStart(val);
-                          if (!surahEnd) setSurahEnd(val);
+                          const sNum = Number(val);
+                          const currentEndNum = Number(surahEnd);
+                          if (!surahEnd || (currentEndNum && currentEndNum < sNum)) {
+                            setSurahEnd(val);
+                          }
+                          const info = SURAH_LIST.find((s) => s.no === sNum);
+                          if (info && ayatStart && Number(ayatStart) > info.totalAyat) {
+                            setAyatStart(String(info.totalAyat));
+                          }
                         }}
                         className={`w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-2.5 pl-3 pr-8 text-xs font-semibold outline-none focus:border-brand-cyan ${
                           surahStart ? "text-brand-navy" : "text-gray-400"
@@ -416,15 +491,15 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                       </div>
                     </div>
                   </div>
-                  <div className="w-20 shrink-0">
+                  <div className="w-24 shrink-0">
                     <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
-                      Ayat
+                      Ayat {sStartObj ? `(1-${sStartObj.totalAyat})` : ""}
                     </label>
                     <input
                       type="number"
                       min="1"
-                      placeholder="Ayat"
-                      max={SURAH_LIST.find((s) => s.no === Number(surahStart))?.totalAyat ?? 999}
+                      placeholder={sStartObj ? `1-${sStartObj.totalAyat}` : "Ayat"}
+                      max={sStartObj?.totalAyat ?? 999}
                       value={ayatStart}
                       onChange={(e) => setAyatStart(e.target.value)}
                       className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 py-2.5 px-3 text-center text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan placeholder:text-gray-400"
@@ -441,7 +516,14 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                     <div className="relative mt-1">
                       <select
                         value={surahEnd}
-                        onChange={(e) => setSurahEnd(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSurahEnd(val);
+                          const info = SURAH_LIST.find((s) => s.no === Number(val));
+                          if (info && ayatEnd && Number(ayatEnd) > info.totalAyat) {
+                            setAyatEnd(String(info.totalAyat));
+                          }
+                        }}
                         className={`w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-2.5 pl-3 pr-8 text-xs font-semibold outline-none focus:border-brand-cyan ${
                           surahEnd ? "text-brand-navy" : "text-gray-400"
                         }`}
@@ -451,7 +533,12 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                         </option>
                         <option value="">-- Pilih Surah --</option>
                         {SURAH_LIST.map((s) => (
-                          <option key={s.no} value={String(s.no)} className="text-brand-navy">
+                          <option
+                            key={s.no}
+                            value={String(s.no)}
+                            disabled={Boolean(surahStart && s.no < Number(surahStart))}
+                            className={surahStart && s.no < Number(surahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                          >
                             {s.no}. {s.nameLatin}
                           </option>
                         ))}
@@ -463,15 +550,15 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                       </div>
                     </div>
                   </div>
-                  <div className="w-20 shrink-0">
+                  <div className="w-24 shrink-0">
                     <label className="text-[10px] font-bold tracking-wider text-brand-navy uppercase">
-                      Ayat
+                      Ayat {sEndObj ? `(1-${sEndObj.totalAyat})` : ""}
                     </label>
                     <input
                       type="number"
-                      min="1"
-                      placeholder="Ayat"
-                      max={SURAH_LIST.find((s) => s.no === Number(surahEnd))?.totalAyat ?? 999}
+                      min={isSameSurah ? (ayatStart || "1") : "1"}
+                      placeholder={sEndObj ? `1-${sEndObj.totalAyat}` : "Ayat"}
+                      max={sEndObj?.totalAyat ?? 999}
                       value={ayatEnd}
                       onChange={(e) => setAyatEnd(e.target.value)}
                       className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 py-2.5 px-3 text-center text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan placeholder:text-gray-400"
@@ -479,7 +566,8 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                   </div>
                 </div>
               </div>
-            ) : null}
+              );
+            })() : null}
 
             {/* Switch: Tidak tilawah hari ini */}
             <div className="mt-4 flex items-center justify-between border-t border-dashed border-brand-line/60 pt-3">

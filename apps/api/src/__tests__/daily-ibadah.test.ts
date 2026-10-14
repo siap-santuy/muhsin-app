@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { tilawahSchema } from "@muhsin/shared";
 import { IbadahValidator } from "../modules/daily-ibadah/domain/services/IbadahValidator";
 import { SubmitDailyIbadahUseCase } from "../modules/daily-ibadah/application/use-cases/SubmitDailyIbadahUseCase";
 import type { IDailyIbadahRepository } from "../modules/daily-ibadah/domain/repositories/IDailyIbadahRepository";
@@ -87,5 +88,87 @@ describe("SubmitDailyIbadahUseCase", () => {
     expect(result.currentStreak).toBe(1);
     expect(mockAddExpUseCase.execute).toHaveBeenCalledTimes(1);
     expect(mockUpdateStreakUseCase.execute).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("tilawahSchema Anti-Mundur & Boundary Validation", () => {
+  it("menerima setoran 1 ayat yang sama (valid)", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 78,
+      ayatStart: 1,
+      surahEnd: 78,
+      ayatEnd: 1,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("menerima rentang maju dalam surah yang sama (valid)", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 78,
+      ayatStart: 1,
+      surahEnd: 78,
+      ayatEnd: 10,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("menerima rentang lintas surah yang maju (valid)", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 78,
+      ayatStart: 1,
+      surahEnd: 79,
+      ayatEnd: 10,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("menolak ayat mundur dalam surah yang sama", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 78,
+      ayatStart: 10,
+      surahEnd: 78,
+      ayatEnd: 5,
+    });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toContain("Ayat akhir tidak boleh lebih kecil dari ayat awal");
+    }
+  });
+
+  it("menolak surah akhir yang mundur dari surah awal", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 79,
+      ayatStart: 1,
+      surahEnd: 78,
+      ayatEnd: 10,
+    });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toContain("Surah akhir tidak boleh lebih kecil dari surah awal");
+    }
+  });
+
+  it("menolak ayat melebihi total ayat surah tersebut", () => {
+    // Al-Fatihah hanya punya 7 ayat
+    const res = tilawahSchema.safeParse({
+      surahStart: 1,
+      ayatStart: 1,
+      surahEnd: 1,
+      ayatEnd: 8,
+    });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toContain("melebihi total ayat Surah Al-Fatihah (7)");
+    }
+  });
+
+  it("menolak ayat kurang dari 1", () => {
+    const res = tilawahSchema.safeParse({
+      surahStart: 1,
+      ayatStart: 0,
+      surahEnd: 1,
+      ayatEnd: 5,
+    });
+    expect(res.success).toBe(false);
   });
 });

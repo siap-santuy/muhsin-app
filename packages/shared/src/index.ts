@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SURAH_LIST } from "./surah";
 
 // --- Auth Schemas ---
 
@@ -74,12 +75,64 @@ export const sholatFardhuSchema = z.object({
 });
 export type SholatFardhu = z.infer<typeof sholatFardhuSchema>;
 
-export const tilawahSchema = z.object({
-  surahStart: z.number().int().min(1).max(114),
-  ayatStart: z.number().int().min(1),
-  surahEnd: z.number().int().min(1).max(114),
-  ayatEnd: z.number().int().min(1),
-});
+export const tilawahSchema = z
+  .object({
+    surahStart: z.number().int().min(1).max(114),
+    ayatStart: z.number().int().min(1),
+    surahEnd: z.number().int().min(1).max(114),
+    ayatEnd: z.number().int().min(1),
+  })
+  .superRefine((data, ctx) => {
+    const sStart = SURAH_LIST[data.surahStart - 1];
+    const sEnd = SURAH_LIST[data.surahEnd - 1];
+
+    if (!sStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Surah awal tidak valid",
+        path: ["surahStart"],
+      });
+      return;
+    }
+    if (!sEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Surah akhir tidak valid",
+        path: ["surahEnd"],
+      });
+      return;
+    }
+
+    if (data.ayatStart > sStart.totalAyat) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Ayat awal melebihi total ayat Surah ${sStart.nameLatin} (${sStart.totalAyat})`,
+        path: ["ayatStart"],
+      });
+    }
+
+    if (data.ayatEnd > sEnd.totalAyat) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Ayat akhir melebihi total ayat Surah ${sEnd.nameLatin} (${sEnd.totalAyat})`,
+        path: ["ayatEnd"],
+      });
+    }
+
+    if (data.surahEnd < data.surahStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Surah akhir tidak boleh lebih kecil dari surah awal",
+        path: ["surahEnd"],
+      });
+    } else if (data.surahEnd === data.surahStart && data.ayatEnd < data.ayatStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ayat akhir tidak boleh lebih kecil dari ayat awal",
+        path: ["ayatEnd"],
+      });
+    }
+  });
 export type Tilawah = z.infer<typeof tilawahSchema>;
 
 export const dailyIbadahInputSchema = z.object({

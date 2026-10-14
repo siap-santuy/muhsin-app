@@ -1,6 +1,7 @@
 import type { ISetoranRepository } from "../../domain/repositories/ISetoranRepository";
 import type { SetoranEntryEntity } from "../../domain/entities/SetoranEntry";
 import type { AddExpUseCase } from "../../../gamification/application/use-cases/AddExpUseCase";
+import { validateReferenceRange } from "@muhsin/shared";
 
 export interface CorrectSetoranInput {
   setoranId: string;
@@ -49,6 +50,14 @@ export class CorrectSetoranUseCase {
       const val = input.scores[key];
       if (typeof val !== "number" || val < 0 || val > 100) {
         throw new Error(`Nilai untuk '${key}' harus berupa angka antara 0 dan 100`);
+      }
+    }
+
+    // Validasi rentang referensi (surah/ayat atau jilid/halaman anti-mundur & batas ayat)
+    if (input.referenceStart) {
+      const refCheck = validateReferenceRange(input.referenceStart, input.referenceEnd);
+      if (!refCheck.valid) {
+        throw new Error(refCheck.error || "Rentang materi setoran tidak valid");
       }
     }
 

@@ -122,3 +122,101 @@ export const SURAH_LIST: SurahInfo[] = [
   { no: 113, nameLatin: "Al-Falaq", nameArab: "الفلق", totalAyat: 5, juz: 30 },
   { no: 114, nameLatin: "An-Nas", nameArab: "الناس", totalAyat: 6, juz: 30 },
 ];
+
+export function getSurahByNo(no: number): SurahInfo | undefined {
+  if (no < 1 || no > 114) return undefined;
+  return SURAH_LIST[no - 1];
+}
+
+export function findSurah(query: string | number): SurahInfo | undefined {
+  if (typeof query === "number") return getSurahByNo(query);
+  if (!query) return undefined;
+  const str = String(query).trim();
+  const num = parseInt(str, 10);
+  if (!isNaN(num) && String(num) === str) {
+    return getSurahByNo(num);
+  }
+  const clean = (s: string) => s.toLowerCase().replace(/['"`\-’\s]/g, "");
+  const target = clean(str);
+  return SURAH_LIST.find((s) => clean(s.nameLatin) === target);
+}
+
+export function validateSurahAyatRange(
+  surahStart: number,
+  ayatStart: number,
+  surahEnd: number,
+  ayatEnd: number
+): { valid: boolean; error?: string } {
+  const sStart = getSurahByNo(surahStart);
+  if (!sStart) return { valid: false, error: `Surah awal (${surahStart}) tidak valid` };
+
+  const sEnd = getSurahByNo(surahEnd);
+  if (!sEnd) return { valid: false, error: `Surah akhir (${surahEnd}) tidak valid` };
+
+  if (ayatStart < 1 || ayatStart > sStart.totalAyat) {
+    return {
+      valid: false,
+      error: `Ayat awal harus antara 1 dan ${sStart.totalAyat} untuk surah ${sStart.nameLatin}`,
+    };
+  }
+
+  if (ayatEnd < 1 || ayatEnd > sEnd.totalAyat) {
+    return {
+      valid: false,
+      error: `Ayat akhir harus antara 1 dan ${sEnd.totalAyat} untuk surah ${sEnd.nameLatin}`,
+    };
+  }
+
+  if (surahEnd < surahStart) {
+    return { valid: false, error: "Surah akhir tidak boleh lebih kecil dari surah awal" };
+  }
+
+  if (surahEnd === surahStart && ayatEnd < ayatStart) {
+    return { valid: false, error: "Ayat akhir tidak boleh lebih kecil dari ayat awal" };
+  }
+
+  return { valid: true };
+}
+
+export function validateReferenceRange(
+  referenceStart?: Record<string, any> | null,
+  referenceEnd?: Record<string, any> | null
+): { valid: boolean; error?: string } {
+  if (!referenceStart) return { valid: true };
+  const refEnd = referenceEnd || referenceStart;
+
+  // 1. Validasi Surah / Ayat
+  const sStartNum = Number(
+    referenceStart.surahNumber ||
+      (referenceStart.surah ? findSurah(referenceStart.surah)?.no : undefined)
+  );
+  const sEndNum = Number(
+    refEnd.surahNumber || (refEnd.surah ? findSurah(refEnd.surah)?.no : undefined)
+  );
+
+  if (sStartNum && sEndNum) {
+    const aStart = Number(referenceStart.ayat ?? 1);
+    const aEnd = Number(refEnd.ayat ?? aStart);
+    return validateSurahAyatRange(sStartNum, aStart, sEndNum, aEnd);
+  }
+
+  // 2. Validasi Jilid / Halaman
+  if (referenceStart.jilid !== undefined && referenceStart.jilid !== null) {
+    const jStart = Number(referenceStart.jilid);
+    const jEnd = Number(refEnd.jilid ?? jStart);
+    const hStart = Number(referenceStart.halaman ?? 1);
+    const hEnd = Number(refEnd.halaman ?? hStart);
+
+    if (hStart < 1 || hEnd < 1) {
+      return { valid: false, error: "Nomor halaman minimal 1" };
+    }
+    if (jEnd < jStart) {
+      return { valid: false, error: "Jilid akhir tidak boleh lebih kecil dari jilid awal" };
+    }
+    if (jEnd === jStart && hEnd < hStart) {
+      return { valid: false, error: "Halaman akhir tidak boleh lebih kecil dari halaman awal" };
+    }
+  }
+
+  return { valid: true };
+}

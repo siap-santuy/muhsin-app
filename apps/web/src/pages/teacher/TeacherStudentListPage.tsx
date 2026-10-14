@@ -486,8 +486,26 @@ export function TeacherStudentListPage() {
                       return;
                     }
 
-                    const sStartObj = SURAH_LIST.find((s) => s.no === Number(targetSurahStart));
-                    const sEndObj = SURAH_LIST.find((s) => s.no === Number(targetSurahEnd));
+                    const sStartNum = Number(targetSurahStart);
+                    const sEndNum = Number(targetSurahEnd || targetSurahStart);
+                    const aStartNum = parseInt(targetAyatStart || "1", 10) || 1;
+                    const aEndNum = parseInt(targetAyatEnd || "1", 10) || 1;
+
+                    if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
+                      toast.warning("Surah atau ayat target selesai tidak boleh kurang atau mundur dari target mulai");
+                      return;
+                    }
+
+                    const sStartObj = SURAH_LIST.find((s) => s.no === sStartNum);
+                    const sEndObj = SURAH_LIST.find((s) => s.no === sEndNum);
+                    if (sStartObj && (aStartNum < 1 || aStartNum > sStartObj.totalAyat)) {
+                      toast.warning(`Ayat mulai harus antara 1 dan ${sStartObj.totalAyat} untuk ${sStartObj.nameLatin}`);
+                      return;
+                    }
+                    if (sEndObj && (aEndNum < 1 || aEndNum > sEndObj.totalAyat)) {
+                      toast.warning(`Ayat selesai harus antara 1 dan ${sEndObj.totalAyat} untuk ${sEndObj.nameLatin}`);
+                      return;
+                    }
 
                     setSavingTarget(true);
                     try {
@@ -577,61 +595,103 @@ export function TeacherStudentListPage() {
                     )}
                   </div>
 
-                  {/* Target Mulai */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-2">
-                      <label className="text-xs font-bold text-brand-navy">Mulai Surah</label>
-                      <select
-                        value={targetSurahStart}
-                        onChange={(e) => setTargetSurahStart(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        {SURAH_LIST.map((s) => (
-                          <option key={`start-${s.no}`} value={s.no}>
-                            {s.no}. {s.nameLatin}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-brand-navy">Ayat Mulai</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={targetAyatStart}
-                        onChange={(e) => setTargetAyatStart(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      />
-                    </div>
-                  </div>
+                  {/* Target Mulai & Akhir */}
+                  {(() => {
+                    const sStartObj = SURAH_LIST.find((s) => s.no === Number(targetSurahStart));
+                    const sEndObj = SURAH_LIST.find((s) => s.no === Number(targetSurahEnd || targetSurahStart));
+                    const isSameSurah = Number(targetSurahEnd || targetSurahStart) === Number(targetSurahStart);
 
-                  {/* Target Akhir */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-2">
-                      <label className="text-xs font-bold text-brand-navy">Target Selesai Surah</label>
-                      <select
-                        value={targetSurahEnd}
-                        onChange={(e) => setTargetSurahEnd(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      >
-                        {SURAH_LIST.map((s) => (
-                          <option key={`end-${s.no}`} value={s.no}>
-                            {s.no}. {s.nameLatin}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-brand-navy">Ayat Akhir</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={targetAyatEnd}
-                        onChange={(e) => setTargetAyatEnd(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
-                      />
-                    </div>
-                  </div>
+                    return (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-2">
+                            <label className="text-xs font-bold text-brand-navy">Mulai Surah</label>
+                            <select
+                              value={targetSurahStart}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setTargetSurahStart(val);
+                                const sNum = Number(val);
+                                const currentEndNum = Number(targetSurahEnd);
+                                if (!targetSurahEnd || (currentEndNum && currentEndNum < sNum)) {
+                                  setTargetSurahEnd(val);
+                                }
+                                const info = SURAH_LIST.find((s) => s.no === sNum);
+                                if (info && targetAyatStart && Number(targetAyatStart) > info.totalAyat) {
+                                  setTargetAyatStart(String(info.totalAyat));
+                                }
+                              }}
+                              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                            >
+                              {SURAH_LIST.map((s) => (
+                                <option key={`start-${s.no}`} value={s.no}>
+                                  {s.no}. {s.nameLatin}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-brand-navy">
+                              Ayat Mulai {sStartObj ? `(1-${sStartObj.totalAyat})` : ""}
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={sStartObj?.totalAyat ?? 999}
+                              placeholder={sStartObj ? `1-${sStartObj.totalAyat}` : "1"}
+                              value={targetAyatStart}
+                              onChange={(e) => setTargetAyatStart(e.target.value)}
+                              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Target Akhir */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-2">
+                            <label className="text-xs font-bold text-brand-navy">Target Selesai Surah</label>
+                            <select
+                              value={targetSurahEnd}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setTargetSurahEnd(val);
+                                const info = SURAH_LIST.find((s) => s.no === Number(val));
+                                if (info && targetAyatEnd && Number(targetAyatEnd) > info.totalAyat) {
+                                  setTargetAyatEnd(String(info.totalAyat));
+                                }
+                              }}
+                              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                            >
+                              {SURAH_LIST.map((s) => (
+                                <option
+                                  key={`end-${s.no}`}
+                                  value={s.no}
+                                  disabled={Boolean(targetSurahStart && s.no < Number(targetSurahStart))}
+                                  className={targetSurahStart && s.no < Number(targetSurahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                                >
+                                  {s.no}. {s.nameLatin}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-brand-navy">
+                              Ayat Akhir {sEndObj ? `(1-${sEndObj.totalAyat})` : ""}
+                            </label>
+                            <input
+                              type="number"
+                              min={isSameSurah ? (targetAyatStart || "1") : "1"}
+                              max={sEndObj?.totalAyat ?? 999}
+                              placeholder={sEndObj ? `1-${sEndObj.totalAyat}` : "1"}
+                              value={targetAyatEnd}
+                              onChange={(e) => setTargetAyatEnd(e.target.value)}
+                              className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Catatan Arahan Ustadz */}
                   <div>

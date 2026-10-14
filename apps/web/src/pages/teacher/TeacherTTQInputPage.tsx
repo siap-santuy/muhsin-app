@@ -258,22 +258,41 @@ export function TeacherTTQInputPage({
           scores = { tajwid: Number(tajwid), kelancaran: Number(kelancaran) };
           scoreFieldKeys = ["tajwid", "kelancaran"];
           if (surahStart) {
-            const sStart =
-              SURAH_LIST.find((s) => s.no === Number(surahStart))?.nameLatin ||
-              `Surah ${surahStart}`;
-            const sEnd = surahEnd
-              ? SURAH_LIST.find((s) => s.no === Number(surahEnd))?.nameLatin ||
-                `Surah ${surahEnd}`
-              : sStart;
+            const sStartNum = Number(surahStart);
+            const sEndNum = Number(surahEnd || surahStart);
+            const aStartNum = ayatStart ? Number(ayatStart) : 1;
+            const aEndNum = ayatEnd ? Number(ayatEnd) : aStartNum;
+
+            if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
+              toast.warning("Surah atau ayat akhir tidak boleh kurang atau mundur dari awal");
+              setLoading(false);
+              return;
+            }
+
+            const sStartObj = SURAH_LIST.find((s) => s.no === sStartNum);
+            const sEndObj = SURAH_LIST.find((s) => s.no === sEndNum);
+            if (sStartObj && (aStartNum < 1 || aStartNum > sStartObj.totalAyat)) {
+              toast.warning(`Ayat awal harus antara 1 dan ${sStartObj.totalAyat} untuk ${sStartObj.nameLatin}`);
+              setLoading(false);
+              return;
+            }
+            if (sEndObj && (aEndNum < 1 || aEndNum > sEndObj.totalAyat)) {
+              toast.warning(`Ayat akhir harus antara 1 dan ${sEndObj.totalAyat} untuk ${sEndObj.nameLatin}`);
+              setLoading(false);
+              return;
+            }
+
+            const sStart = sStartObj?.nameLatin || `Surah ${surahStart}`;
+            const sEnd = surahEnd ? (sEndObj?.nameLatin || `Surah ${surahEnd}`) : sStart;
             referenceStart = {
               surah: sStart,
-              surahNumber: Number(surahStart),
-              ayat: ayatStart ? Number(ayatStart) : 1,
+              surahNumber: sStartNum,
+              ayat: aStartNum,
             };
             referenceEnd = {
               surah: sEnd,
-              surahNumber: surahEnd ? Number(surahEnd) : Number(surahStart),
-              ayat: ayatEnd ? Number(ayatEnd) : Number(ayatStart || 1),
+              surahNumber: sEndNum,
+              ayat: aEndNum,
             };
           }
         } else if (initialCategory === "sabiq") {
@@ -287,37 +306,70 @@ export function TeacherTTQInputPage({
           };
           scoreFieldKeys = ["makhraj", "makhroj", "mad", "ghunnah", "qolqolah", "kelancaran"];
           if (jilidStart) {
+            const jStartNum = Number(jilidStart);
+            const jEndNum = jilidEnd ? Number(jilidEnd) : jStartNum;
+            const hStartNum = halamanStart ? Number(halamanStart) : 1;
+            const hEndNum = halamanEnd ? Number(halamanEnd) : hStartNum;
+
+            if (hStartNum < 1 || hEndNum < 1) {
+              toast.warning("Nomor halaman minimal 1");
+              setLoading(false);
+              return;
+            }
+            if (jEndNum < jStartNum || (jEndNum === jStartNum && hEndNum < hStartNum)) {
+              toast.warning("Halaman atau jilid akhir tidak boleh kurang atau mundur dari awal");
+              setLoading(false);
+              return;
+            }
+
             referenceStart = {
-              jilid: Number(jilidStart),
-              halaman: halamanStart ? Number(halamanStart) : 1,
+              jilid: jStartNum,
+              halaman: hStartNum,
             };
             referenceEnd = {
-              jilid: jilidEnd ? Number(jilidEnd) : Number(jilidStart),
-              halaman: halamanEnd
-                ? Number(halamanEnd)
-                : Number(halamanStart || 1),
+              jilid: jEndNum,
+              halaman: hEndNum,
             };
           }
         } else if (initialCategory === "talaqi") {
           scores = { kelancaran: Number(kelancaran) };
           scoreFieldKeys = ["kelancaran"];
           if (surahStart) {
-            const sStart =
-              SURAH_LIST.find((s) => s.no === Number(surahStart))?.nameLatin ||
-              `Surah ${surahStart}`;
-            const sEnd = surahEnd
-              ? SURAH_LIST.find((s) => s.no === Number(surahEnd))?.nameLatin ||
-                `Surah ${surahEnd}`
-              : sStart;
+            const sStartNum = Number(surahStart);
+            const sEndNum = Number(surahEnd || surahStart);
+            const aStartNum = ayatStart ? Number(ayatStart) : 1;
+            const aEndNum = ayatEnd ? Number(ayatEnd) : aStartNum;
+
+            if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
+              toast.warning("Surah atau ayat akhir tidak boleh kurang atau mundur dari awal");
+              setLoading(false);
+              return;
+            }
+
+            const sStartObj = SURAH_LIST.find((s) => s.no === sStartNum);
+            const sEndObj = SURAH_LIST.find((s) => s.no === sEndNum);
+            if (sStartObj && (aStartNum < 1 || aStartNum > sStartObj.totalAyat)) {
+              toast.warning(`Ayat awal harus antara 1 dan ${sStartObj.totalAyat} untuk ${sStartObj.nameLatin}`);
+              setLoading(false);
+              return;
+            }
+            if (sEndObj && (aEndNum < 1 || aEndNum > sEndObj.totalAyat)) {
+              toast.warning(`Ayat akhir harus antara 1 dan ${sEndObj.totalAyat} untuk ${sEndObj.nameLatin}`);
+              setLoading(false);
+              return;
+            }
+
+            const sStart = sStartObj?.nameLatin || `Surah ${surahStart}`;
+            const sEnd = surahEnd ? (sEndObj?.nameLatin || `Surah ${surahEnd}`) : sStart;
             referenceStart = {
               surah: sStart,
-              surahNumber: Number(surahStart),
-              ayat: ayatStart ? Number(ayatStart) : 1,
+              surahNumber: sStartNum,
+              ayat: aStartNum,
             };
             referenceEnd = {
               surah: sEnd,
-              surahNumber: surahEnd ? Number(surahEnd) : Number(surahStart),
-              ayat: ayatEnd ? Number(ayatEnd) : Number(ayatStart || 1),
+              surahNumber: sEndNum,
+              ayat: aEndNum,
             };
           }
         }
@@ -501,7 +553,9 @@ export function TeacherTTQInputPage({
                       </h3>
                     </div>
 
-                    {initialCategory === "sabiq" ? (
+                    {initialCategory === "sabiq" ? (() => {
+                      const isSameJilid = Number(jilidEnd || jilidStart) === Number(jilidStart);
+                      return (
                       /* Form Sabiq (Jilid & Halaman) */
                       <div className="grid grid-cols-2 gap-3 items-center">
                         <div>
@@ -510,7 +564,15 @@ export function TeacherTTQInputPage({
                           </label>
                           <select
                             value={jilidStart}
-                            onChange={(e) => setJilidStart(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setJilidStart(val);
+                              const jNum = Number(val);
+                              const currentEndNum = Number(jilidEnd);
+                              if (!jilidEnd || (currentEndNum && currentEndNum < jNum)) {
+                                setJilidEnd(val);
+                              }
+                            }}
                             className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-3 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                           >
                             <option value="">Pilih Jilid...</option>
@@ -547,7 +609,12 @@ export function TeacherTTQInputPage({
                           >
                             <option value="">Pilih Jilid...</option>
                             {[1, 2, 3, 4, 5, 6].map((j) => (
-                              <option key={j} value={j}>
+                              <option
+                                key={j}
+                                value={j}
+                                disabled={Boolean(jilidStart && j < Number(jilidStart))}
+                                className={jilidStart && j < Number(jilidStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                              >
                                 Jilid {j}
                               </option>
                             ))}
@@ -560,7 +627,7 @@ export function TeacherTTQInputPage({
                           </label>
                           <input
                             type="number"
-                            min="1"
+                            min={isSameJilid ? (halamanStart || "1") : "1"}
                             placeholder="Contoh: 5"
                             value={halamanEnd}
                             onChange={(e) => setHalamanEnd(e.target.value)}
@@ -568,7 +635,13 @@ export function TeacherTTQInputPage({
                           />
                         </div>
                       </div>
-                    ) : (
+                      );
+                    })() : (() => {
+                      const sStartObj = SURAH_LIST.find((s) => s.no === Number(surahStart));
+                      const sEndObj = SURAH_LIST.find((s) => s.no === Number(surahEnd || surahStart));
+                      const isSameSurah = Number(surahEnd || surahStart) === Number(surahStart);
+
+                      return (
                       /* Form Surah & Ayat untuk Ziyadah, Murojaah, Talaqi */
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -577,7 +650,19 @@ export function TeacherTTQInputPage({
                           </label>
                           <select
                             value={surahStart}
-                            onChange={(e) => setSurahStart(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSurahStart(val);
+                              const sNum = Number(val);
+                              const currentEndNum = Number(surahEnd);
+                              if (!surahEnd || (currentEndNum && currentEndNum < sNum)) {
+                                setSurahEnd(val);
+                              }
+                              const info = SURAH_LIST.find((s) => s.no === sNum);
+                              if (info && ayatStart && Number(ayatStart) > info.totalAyat) {
+                                setAyatStart(String(info.totalAyat));
+                              }
+                            }}
                             className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                           >
                             <option value="">Pilih Surah...</option>
@@ -591,12 +676,13 @@ export function TeacherTTQInputPage({
 
                         <div>
                           <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                            AYAT
+                            AYAT {sStartObj ? `(1-${sStartObj.totalAyat})` : ""}
                           </label>
                           <input
                             type="number"
                             min="1"
-                            placeholder="Contoh: 1"
+                            max={sStartObj?.totalAyat ?? 999}
+                            placeholder={sStartObj ? `1-${sStartObj.totalAyat}` : "Contoh: 1"}
                             value={ayatStart}
                             onChange={(e) => setAyatStart(e.target.value)}
                             className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
@@ -609,12 +695,24 @@ export function TeacherTTQInputPage({
                           </label>
                           <select
                             value={surahEnd}
-                            onChange={(e) => setSurahEnd(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSurahEnd(val);
+                              const info = SURAH_LIST.find((s) => s.no === Number(val));
+                              if (info && ayatEnd && Number(ayatEnd) > info.totalAyat) {
+                                setAyatEnd(String(info.totalAyat));
+                              }
+                            }}
                             className="mt-1 w-full appearance-none rounded-xl border border-brand-line bg-white py-2.5 pl-2.5 pr-7 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                           >
                             <option value="">Pilih Surah...</option>
                             {SURAH_LIST.map((s) => (
-                              <option key={s.no} value={s.no}>
+                              <option
+                                key={s.no}
+                                value={s.no}
+                                disabled={Boolean(surahStart && s.no < Number(surahStart))}
+                                className={surahStart && s.no < Number(surahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                              >
                                 {s.no}. {s.nameLatin}
                               </option>
                             ))}
@@ -623,19 +721,21 @@ export function TeacherTTQInputPage({
 
                         <div>
                           <label className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-                            AYAT
+                            AYAT {sEndObj ? `(1-${sEndObj.totalAyat})` : ""}
                           </label>
                           <input
                             type="number"
-                            min="1"
-                            placeholder="Contoh: 5"
+                            min={isSameSurah ? (ayatStart || "1") : "1"}
+                            max={sEndObj?.totalAyat ?? 999}
+                            placeholder={sEndObj ? `1-${sEndObj.totalAyat}` : "Contoh: 5"}
                             value={ayatEnd}
                             onChange={(e) => setAyatEnd(e.target.value)}
                             className="mt-1 w-full rounded-xl border border-brand-line bg-white py-2 px-3 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                           />
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
 
                   {/* 4. Card Penilaian Range Sliders */}

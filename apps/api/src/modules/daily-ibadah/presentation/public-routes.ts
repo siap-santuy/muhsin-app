@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { eq, and, asc } from "drizzle-orm";
+import { tilawahSchema } from "@muhsin/shared";
 import type { Db } from "../../../db/client";
 import { schools, classes, users, studentClassEnrollment } from "../../../db/schema";
 import type { SubmitDailyIbadahUseCase } from "../application/use-cases/SubmitDailyIbadahUseCase";
@@ -12,13 +13,6 @@ const sholatFardhuSchema = z.object({
   ashar: z.enum(["BA", "MA", "BT", "MT", "H", "T"]),
   maghrib: z.enum(["BA", "MA", "BT", "MT", "H", "T"]),
   isya: z.enum(["BA", "MA", "BT", "MT", "H", "T"]),
-});
-
-const tilawahSchema = z.object({
-  surahStart: z.number().int().min(1).max(114),
-  ayatStart: z.number().int().min(1),
-  surahEnd: z.number().int().min(1).max(114),
-  ayatEnd: z.number().int().min(1),
 });
 
 const publicSubmitSchema = z.object({

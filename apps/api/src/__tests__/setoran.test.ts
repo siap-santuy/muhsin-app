@@ -111,6 +111,66 @@ describe("Setoran & Gamification Business Rules", () => {
 
       expect(mockAddExp.execute).not.toHaveBeenCalled();
     });
+
+    it("menolak referensi surah atau ayat yang mundur", async () => {
+      const mockRepo = createMockSetoranRepo();
+      const mockAddExp = { execute: vi.fn() } as any;
+      const useCase = new CreateSetoranUseCase(mockRepo, mockAddExp);
+
+      await expect(
+        useCase.execute({
+          schoolId: "school-1",
+          subcategoryId: "subcat-ziyadah",
+          studentId: "student-1",
+          teacherId: "teacher-1",
+          date: "2026-09-10",
+          referenceStart: { surah: "An-Naba'", surahNumber: 78, ayat: 10 },
+          referenceEnd: { surah: "An-Naba'", surahNumber: 78, ayat: 5 },
+          scores: { tajwid: 90, kelancaran: 85 },
+          scoreFieldKeys: ["tajwid", "kelancaran"],
+        })
+      ).rejects.toThrow("Ayat akhir tidak boleh lebih kecil dari ayat awal");
+    });
+
+    it("menolak ayat yang melebihi total ayat surah", async () => {
+      const mockRepo = createMockSetoranRepo();
+      const mockAddExp = { execute: vi.fn() } as any;
+      const useCase = new CreateSetoranUseCase(mockRepo, mockAddExp);
+
+      await expect(
+        useCase.execute({
+          schoolId: "school-1",
+          subcategoryId: "subcat-ziyadah",
+          studentId: "student-1",
+          teacherId: "teacher-1",
+          date: "2026-09-10",
+          referenceStart: { surah: "Al-Fatihah", surahNumber: 1, ayat: 1 },
+          referenceEnd: { surah: "Al-Fatihah", surahNumber: 1, ayat: 8 },
+          scores: { tajwid: 90, kelancaran: 85 },
+          scoreFieldKeys: ["tajwid", "kelancaran"],
+        })
+      ).rejects.toThrow("Ayat akhir harus antara 1 dan 7 untuk surah Al-Fatihah");
+    });
+
+    it("menolak jilid atau halaman yang mundur untuk sabiq", async () => {
+      const mockRepo = createMockSetoranRepo();
+      const mockAddExp = { execute: vi.fn() } as any;
+      const useCase = new CreateSetoranUseCase(mockRepo, mockAddExp);
+
+      await expect(
+        useCase.execute({
+          schoolId: "school-1",
+          subcategoryId: "subcat-sabiq",
+          studentId: "student-1",
+          teacherId: "teacher-1",
+          date: "2026-09-10",
+          referenceStart: { jilid: 2, halaman: 10 },
+          referenceEnd: { jilid: 2, halaman: 5 },
+          scores: { makhraj: 90 },
+          scoreFieldKeys: ["makhraj"],
+        })
+      ).rejects.toThrow("Halaman akhir tidak boleh lebih kecil dari halaman awal");
+    });
   });
 
   describe("CorrectSetoranUseCase (Ubah Kategori & EXP Reversal)", () => {
