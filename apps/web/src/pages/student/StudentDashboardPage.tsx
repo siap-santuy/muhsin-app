@@ -97,13 +97,7 @@ export function StudentDashboardPage() {
   const expPercent = levelInfo.expPercent;
   const currentStreak = summary?.currentStreak ?? 0;
   const longestStreak = summary?.longestStreak ?? 0;
-  const target = summary?.targetHafalan ?? {
-    surahStart: "Al-Baqarah",
-    ayatStart: 1,
-    surahEnd: "Al-Baqarah",
-    ayatEnd: 75,
-    progressAyat: "Target Aktif",
-  };
+  const target = summary?.targetHafalan ?? null;
 
   const progres = summary?.progresBulanIni ?? {};
 
@@ -168,11 +162,13 @@ export function StudentDashboardPage() {
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-bold text-brand-navy">Target Ziyadah Bulan Ini</p>
               <p className="text-xs text-brand-text-muted truncate">
-                {target.surahStart}:{target.ayatStart} — {target.surahEnd}:{target.ayatEnd}
+                {target
+                  ? `${target.surahStart}:${target.ayatStart} — ${target.surahEnd}:${target.ayatEnd}`
+                  : "Target Ritme: 2 Halaman / Bulan (10 Hal / Semester)"}
               </p>
             </div>
             <span className="shrink-0 rounded-lg bg-brand-cyan/15 px-2 py-1 text-[10px] font-bold text-brand-cyan-dark">
-              {target.progressAyat}
+              {target ? target.progressAyat : "Aktif"}
             </span>
           </div>
           <ProgressGrid title="Progres Bulan Ini" items={progressItems} />

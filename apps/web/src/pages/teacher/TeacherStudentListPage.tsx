@@ -186,6 +186,16 @@ export function TeacherStudentListPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
   const [targetStudentId, setTargetStudentId] = useState<string>("all");
+  const [studentPositionInfo, setStudentPositionInfo] = useState<{
+    lastSurah: string | null;
+    lastSurahNumber: number | null;
+    lastAyat: number | null;
+    lastSetoranDate: string | null;
+    suggestedStartSurah: string;
+    suggestedStartSurahNumber: number;
+    suggestedStartAyat: number;
+  } | null>(null);
+  const [loadingPosition, setLoadingPosition] = useState(false);
   const [targetSurahStart, setTargetSurahStart] = useState<string>("78");
   const [targetAyatStart, setTargetAyatStart] = useState<string>("1");
   const [targetSurahEnd, setTargetSurahEnd] = useState<string>("83");
@@ -505,7 +515,32 @@ export function TeacherStudentListPage() {
                     <label className="text-xs font-bold text-brand-navy">Penerima Target</label>
                     <select
                       value={targetStudentId}
-                      onChange={(e) => setTargetStudentId(e.target.value)}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setTargetStudentId(val);
+                        if (val !== "all") {
+                          setLoadingPosition(true);
+                          try {
+                            const pos = await api.getStudentLastPosition(val);
+                            setStudentPositionInfo(pos);
+                            if (pos?.suggestedStartSurahNumber) {
+                              setTargetSurahStart(String(pos.suggestedStartSurahNumber));
+                              setTargetAyatStart(String(pos.suggestedStartAyat || 1));
+                              // Default target akhir 2 surah ke depan
+                              const endNo = Math.min(114, pos.suggestedStartSurahNumber + 2);
+                              const endSurah = SURAH_LIST.find((s) => s.no === endNo);
+                              setTargetSurahEnd(String(endNo));
+                              setTargetAyatEnd(String(endSurah?.totalAyat || 30));
+                            }
+                          } catch {
+                            setStudentPositionInfo(null);
+                          } finally {
+                            setLoadingPosition(false);
+                          }
+                        } else {
+                          setStudentPositionInfo(null);
+                        }
+                      }}
                       className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                     >
                       <option value="all">
@@ -519,6 +554,27 @@ export function TeacherStudentListPage() {
                         </option>
                       ))}
                     </select>
+
+                    {/* Informasi Posisi Terakhir Santri */}
+                    {loadingPosition && (
+                      <p className="mt-1 text-[11px] text-brand-cyan font-semibold flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Memeriksa posisi hafalan terakhir ananda...
+                      </p>
+                    )}
+                    {studentPositionInfo && !loadingPosition && (
+                      <div className="mt-1.5 rounded-xl bg-cyan-50/70 border border-brand-cyan/20 px-3 py-2 text-[11px] text-brand-navy">
+                        <p>
+                          <strong>Posisi Terakhir:</strong>{" "}
+                          {studentPositionInfo.lastSurah
+                            ? `${studentPositionInfo.lastSurah} : ayat ${studentPositionInfo.lastAyat} (${studentPositionInfo.lastSetoranDate})`
+                            : "Belum ada setoran Ziyadah sebelumnya"}
+                        </p>
+                        <p className="text-brand-cyan-dark mt-0.5">
+                          &rarr; Rekomendasi mulai:{" "}
+                          <strong>{studentPositionInfo.suggestedStartSurah} : ayat {studentPositionInfo.suggestedStartAyat}</strong>
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Target Mulai */}

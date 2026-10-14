@@ -104,6 +104,7 @@ import { createNotificationRoutes } from "../modules/notifications/presentation/
 import { DrizzleHafalanTargetRepository } from "../modules/targets/infrastructure/DrizzleHafalanTargetRepository";
 import { GetHafalanTargetUseCase } from "../modules/targets/application/use-cases/GetHafalanTargetUseCase";
 import { SetHafalanTargetUseCase } from "../modules/targets/application/use-cases/SetHafalanTargetUseCase";
+import { GetStudentPositionUseCase } from "../modules/targets/application/use-cases/GetStudentPositionUseCase";
 import { createTargetRoutes } from "../modules/targets/presentation/routes";
 
 // Middlewares
@@ -180,6 +181,7 @@ export interface ContainerDeps {
   // Targets
   getTargetUseCase: GetHafalanTargetUseCase;
   setTargetUseCase: SetHafalanTargetUseCase;
+  getStudentPositionUseCase: GetStudentPositionUseCase;
 }
 
 export function createApp(deps: ContainerDeps): Hono {
@@ -392,6 +394,7 @@ export function createApp(deps: ContainerDeps): Hono {
   const targetRoutes = createTargetRoutes({
     getTargetUseCase: deps.getTargetUseCase,
     setTargetUseCase: deps.setTargetUseCase,
+    getStudentPositionUseCase: deps.getStudentPositionUseCase,
     resolveStudentId: resolveStudent,
   });
   app.use("/hafalan-targets/*", protectedAuth, tenantScopeMiddleware);
@@ -516,6 +519,7 @@ export function buildContainer() {
   const targetRepo = new DrizzleHafalanTargetRepository(db);
   const getTargetUseCase = new GetHafalanTargetUseCase(targetRepo);
   const setTargetUseCase = new SetHafalanTargetUseCase(targetRepo);
+  const getStudentPositionUseCase = new GetStudentPositionUseCase(targetRepo);
 
   return {
     app: createApp({
@@ -571,6 +575,7 @@ export function buildContainer() {
       notificationRepo,
       getTargetUseCase,
       setTargetUseCase,
+      getStudentPositionUseCase,
     }),
   };
 }

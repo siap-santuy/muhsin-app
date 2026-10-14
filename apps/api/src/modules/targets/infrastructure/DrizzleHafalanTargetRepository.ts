@@ -1,14 +1,98 @@
 import type { Db } from "../../../db/client";
-import { hafalanTargets, studentClassEnrollment } from "../../../db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import {
+  hafalanTargets,
+  studentClassEnrollment,
+  setoranEntries,
+  assessmentSubcategories,
+} from "../../../db/schema";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type {
   IHafalanTargetRepository,
   SetHafalanTargetInput,
+  StudentHafalanPosition,
 } from "../domain/repositories/IHafalanTargetRepository";
 import type { HafalanTargetEntity } from "../domain/entities/HafalanTarget";
+import { SURAH_LIST } from "@muhsin/shared";
 
 export class DrizzleHafalanTargetRepository implements IHafalanTargetRepository {
   constructor(private readonly db: Db) {}
+
+  async findStudentLastZiyadahPosition(
+    studentId: string,
+    schoolId: string
+  ): Promise<StudentHafalanPosition> {
+    const rows = await this.db
+      .select({
+        date: setoranEntries.date,
+        referenceStart: setoranEntries.referenceStart,
+        referenceEnd: setoranEntries.referenceEnd,
+        subcatCode: assessmentSubcategories.code,
+      })
+      .from(setoranEntries)
+      .leftJoin(
+        assessmentSubcategories,
+        eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+      )
+      .where(
+        and(
+          eq(setoranEntries.studentId, studentId),
+          eq(setoranEntries.schoolId, schoolId)
+        )
+      )
+      .orderBy(desc(setoranEntries.date), desc(setoranEntries.createdAt));
+
+    // Cari setoran Ziyadah terakhir
+    const lastZiyadah = rows.find((r) => {
+      const code = (r.subcatCode || "").toUpperCase();
+      const isSurah = !!(r.referenceStart && (r.referenceStart as any).surah);
+      return code.includes("ZIYADAH") || (!code && isSurah);
+    });
+
+    if (!lastZiyadah || !lastZiyadah.referenceStart) {
+      // Belum pernah setor Ziyadah, mulai dari An-Naba' ayat 1 (awal Juz 30)
+      return {
+        lastSurah: null,
+        lastSurahNumber: null,
+        lastAyat: null,
+        lastSetoranDate: null,
+        suggestedStartSurah: "An-Naba'",
+        suggestedStartSurahNumber: 78,
+        suggestedStartAyat: 1,
+      };
+    }
+
+    const refEnd = (lastZiyadah.referenceEnd as any) || (lastZiyadah.referenceStart as any);
+    const surahNumber = Number(refEnd.surahNumber || 78);
+    const ayat = Number(refEnd.ayat || 1);
+    const surahObj = SURAH_LIST.find((s) => s.no === surahNumber);
+
+    let nextSurahNo = surahNumber;
+    let nextAyat = ayat + 1;
+
+    // Jika ayat terakhir sudah selesai di surah tersebut, lanjut ke surah berikutnya
+    if (surahObj && nextAyat > surahObj.totalAyat) {
+      if (surahNumber < 114) {
+        nextSurahNo = surahNumber + 1;
+        nextAyat = 1;
+      } else {
+        // Sudah khatam 114
+        nextSurahNo = 114;
+        nextAyat = surahObj.totalAyat;
+      }
+    }
+
+    const nextSurahObj = SURAH_LIST.find((s) => s.no === nextSurahNo);
+
+    return {
+      lastSurah: refEnd.surah || surahObj?.nameLatin || null,
+      lastSurahNumber: surahNumber,
+      lastAyat: ayat,
+      lastSetoranDate: lastZiyadah.date,
+      suggestedStartSurah: nextSurahObj?.nameLatin || `Surah ${nextSurahNo}`,
+      suggestedStartSurahNumber: nextSurahNo,
+      suggestedStartAyat: nextAyat,
+    };
+  }
 
   async findByStudentAndMonth(
     studentId: string,
@@ -63,53 +147,45 @@ export class DrizzleHafalanTargetRepository implements IHafalanTargetRepository 
   }
 
   async setTargets(input: SetHafalanTargetInput): Promise<HafalanTargetEntity[]> {
-    const results: HafalanTargetEntity[] = [];
+    if (input.studentIds.length === 0) return [];
+
     const now = new Date();
+    const rowsToInsert = input.studentIds.map((studentId) => ({
+      schoolId: input.schoolId,
+      studentId,
+      teacherId: input.teacherId,
+      bulan: input.bulan,
+      targetSurahStart: input.targetSurahStart,
+      targetAyatStart: input.targetAyatStart,
+      targetSurahEnd: input.targetSurahEnd,
+      targetAyatEnd: input.targetAyatEnd,
+      catatan: input.catatan ?? null,
+      updatedAt: now,
+    }));
 
-    for (const studentId of input.studentIds) {
-      const existing = await this.findByStudentAndMonth(
-        studentId,
-        input.bulan,
-        input.schoolId
-      );
+    // Atomic batch upsert with ON CONFLICT (studentId, bulan, schoolId) DO UPDATE
+    const upserted = await this.db
+      .insert(hafalanTargets)
+      .values(rowsToInsert)
+      .onConflictDoUpdate({
+        target: [
+          hafalanTargets.studentId,
+          hafalanTargets.bulan,
+          hafalanTargets.schoolId,
+        ],
+        set: {
+          teacherId: input.teacherId,
+          targetSurahStart: input.targetSurahStart,
+          targetAyatStart: input.targetAyatStart,
+          targetSurahEnd: input.targetSurahEnd,
+          targetAyatEnd: input.targetAyatEnd,
+          catatan: input.catatan ?? null,
+          updatedAt: now,
+        },
+      })
+      .returning();
 
-      if (existing) {
-        const [updated] = await this.db
-          .update(hafalanTargets)
-          .set({
-            teacherId: input.teacherId,
-            targetSurahStart: input.targetSurahStart,
-            targetAyatStart: input.targetAyatStart,
-            targetSurahEnd: input.targetSurahEnd,
-            targetAyatEnd: input.targetAyatEnd,
-            catatan: input.catatan ?? null,
-            updatedAt: now,
-          })
-          .where(eq(hafalanTargets.id, existing.id))
-          .returning();
-
-        results.push(this.toDomain(updated));
-      } else {
-        const [inserted] = await this.db
-          .insert(hafalanTargets)
-          .values({
-            schoolId: input.schoolId,
-            studentId,
-            teacherId: input.teacherId,
-            bulan: input.bulan,
-            targetSurahStart: input.targetSurahStart,
-            targetAyatStart: input.targetAyatStart,
-            targetSurahEnd: input.targetSurahEnd,
-            targetAyatEnd: input.targetAyatEnd,
-            catatan: input.catatan ?? null,
-          })
-          .returning();
-
-        results.push(this.toDomain(inserted));
-      }
-    }
-
-    return results;
+    return upserted.map((r) => this.toDomain(r));
   }
 
   private toDomain(row: typeof hafalanTargets.$inferSelect): HafalanTargetEntity {

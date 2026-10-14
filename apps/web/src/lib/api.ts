@@ -476,6 +476,18 @@ class ApiClient {
     return this.request("GET", `/hafalan-targets/current?${query.toString()}`);
   }
 
+  async getStudentLastPosition(studentId: string): Promise<{
+    lastSurah: string | null;
+    lastSurahNumber: number | null;
+    lastAyat: number | null;
+    lastSetoranDate: string | null;
+    suggestedStartSurah: string;
+    suggestedStartSurahNumber: number;
+    suggestedStartAyat: number;
+  }> {
+    return this.request("GET", `/hafalan-targets/student-position?studentId=${studentId}`);
+  }
+
   async setHafalanTargets(data: {
     bulan: string;
     studentIds: string[];

@@ -1,12 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { GetHafalanTargetUseCase } from "../modules/targets/application/use-cases/GetHafalanTargetUseCase";
 import { SetHafalanTargetUseCase } from "../modules/targets/application/use-cases/SetHafalanTargetUseCase";
+import { GetStudentPositionUseCase } from "../modules/targets/application/use-cases/GetStudentPositionUseCase";
 import type { IHafalanTargetRepository } from "../modules/targets/domain/repositories/IHafalanTargetRepository";
 
 describe("Targets Module UseCases", () => {
   const mockRepo: IHafalanTargetRepository = {
     findByStudentAndMonth: vi.fn(),
     findByClassAndMonth: vi.fn(),
+    findStudentLastZiyadahPosition: vi.fn(),
     setTargets: vi.fn(),
   };
 
@@ -25,6 +27,24 @@ describe("Targets Module UseCases", () => {
     const res = await uc.execute({ studentId: "s-1", bulan: "2026-10", schoolId: "sch-1" });
     expect(res?.targetSurahStart).toBe("An-Naba'");
     expect(mockRepo.findByStudentAndMonth).toHaveBeenCalledWith("s-1", "2026-10", "sch-1");
+  });
+
+  it("GetStudentPositionUseCase harus memanggil repo.findStudentLastZiyadahPosition", async () => {
+    const uc = new GetStudentPositionUseCase(mockRepo);
+    (mockRepo.findStudentLastZiyadahPosition as any).mockResolvedValue({
+      lastSurah: "An-Naba'",
+      lastSurahNumber: 78,
+      lastAyat: 40,
+      lastSetoranDate: "2026-09-30",
+      suggestedStartSurah: "An-Nazi'at",
+      suggestedStartSurahNumber: 79,
+      suggestedStartAyat: 1,
+    });
+
+    const res = await uc.execute({ studentId: "s-1", schoolId: "sch-1" });
+    expect(res.suggestedStartSurah).toBe("An-Nazi'at");
+    expect(res.suggestedStartAyat).toBe(1);
+    expect(mockRepo.findStudentLastZiyadahPosition).toHaveBeenCalledWith("s-1", "sch-1");
   });
 
   it("SetHafalanTargetUseCase harus memvalidasi studentIds tidak kosong", async () => {

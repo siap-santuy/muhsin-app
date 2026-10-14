@@ -1,0 +1,1 @@
+ALTER TABLE "hafalan_targets" ADD CONSTRAINT "hafalan_targets_student_month_school" UNIQUE("student_id","bulan","school_id");

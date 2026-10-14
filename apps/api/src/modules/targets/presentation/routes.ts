@@ -4,6 +4,7 @@ import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetHafalanTargetUseCase } from "../application/use-cases/GetHafalanTargetUseCase";
 import type { SetHafalanTargetUseCase } from "../application/use-cases/SetHafalanTargetUseCase";
+import type { GetStudentPositionUseCase } from "../application/use-cases/GetStudentPositionUseCase";
 
 const setTargetBodySchema = z.object({
   bulan: z.string().regex(/^\d{4}-\d{2}$/),
@@ -18,6 +19,7 @@ const setTargetBodySchema = z.object({
 export interface TargetRoutesDeps {
   getTargetUseCase: GetHafalanTargetUseCase;
   setTargetUseCase: SetHafalanTargetUseCase;
+  getStudentPositionUseCase?: GetStudentPositionUseCase;
   resolveStudentId?: (
     user: { userId: string; role: string; schoolId: string },
     requestedStudentId?: string
@@ -26,6 +28,29 @@ export interface TargetRoutesDeps {
 
 export function createTargetRoutes(deps: TargetRoutesDeps) {
   const app = new Hono<{ Variables: AuthVariables }>();
+
+  // GET /hafalan-targets/student-position?studentId= — posisi terakhir & rekomendasi start santri
+  app.get(
+    "/student-position",
+    requireRole("teacher", "koordinator_ttq", "student", "parent"),
+    async (c) => {
+      const user = c.get("user");
+      const targetStudentId = deps.resolveStudentId
+        ? await deps.resolveStudentId(user, c.req.query("studentId"))
+        : (c.req.query("studentId") ?? user.userId);
+
+      if (!deps.getStudentPositionUseCase) {
+        return c.json({ data: null, error: { code: "NOT_CONFIGURED", message: "Service tidak tersedia" }, meta: null }, 500);
+      }
+
+      const position = await deps.getStudentPositionUseCase.execute({
+        studentId: targetStudentId,
+        schoolId: user.schoolId,
+      });
+
+      return c.json({ data: position, error: null, meta: null }, 200);
+    }
+  );
 
   // GET /hafalan-targets/current?studentId=&month=
   app.get(

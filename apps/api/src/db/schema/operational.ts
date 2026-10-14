@@ -94,26 +94,36 @@ export const evaluasiBulanan = pgTable("evaluasi_bulanan", {
 
 // --- Hafalan Targets (Target Bulanan Ziyadah) ---
 
-export const hafalanTargets = pgTable("hafalan_targets", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  schoolId: uuid("school_id")
-    .notNull()
-    .references(() => schools.id),
-  studentId: uuid("student_id")
-    .notNull()
-    .references(() => users.id),
-  teacherId: uuid("teacher_id")
-    .notNull()
-    .references(() => users.id),
-  bulan: text("bulan").notNull(), // YYYY-MM
-  targetSurahStart: text("target_surah_start"),
-  targetAyatStart: text("target_ayat_start"),
-  targetSurahEnd: text("target_surah_end"),
-  targetAyatEnd: text("target_ayat_end"),
-  catatan: text("catatan"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const hafalanTargets = pgTable(
+  "hafalan_targets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => users.id),
+    teacherId: uuid("teacher_id")
+      .notNull()
+      .references(() => users.id),
+    bulan: text("bulan").notNull(), // YYYY-MM
+    targetSurahStart: text("target_surah_start"),
+    targetAyatStart: text("target_ayat_start"),
+    targetSurahEnd: text("target_surah_end"),
+    targetAyatEnd: text("target_ayat_end"),
+    catatan: text("catatan"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    unqStudentMonthSchool: unique("hafalan_targets_student_month_school").on(
+      t.studentId,
+      t.bulan,
+      t.schoolId
+    ),
+  })
+);
 
 // --- Notifications ---
 

@@ -12,6 +12,16 @@ export interface SetHafalanTargetInput {
   catatan?: string | null;
 }
 
+export interface StudentHafalanPosition {
+  lastSurah: string | null;
+  lastSurahNumber: number | null;
+  lastAyat: number | null;
+  lastSetoranDate: string | null;
+  suggestedStartSurah: string;
+  suggestedStartSurahNumber: number;
+  suggestedStartAyat: number;
+}
+
 export interface IHafalanTargetRepository {
   findByStudentAndMonth(
     studentId: string,
@@ -24,6 +34,11 @@ export interface IHafalanTargetRepository {
     bulan: string,
     schoolId: string
   ): Promise<HafalanTargetEntity[]>;
+
+  findStudentLastZiyadahPosition(
+    studentId: string,
+    schoolId: string
+  ): Promise<StudentHafalanPosition>;
 
   setTargets(input: SetHafalanTargetInput): Promise<HafalanTargetEntity[]>;
 }

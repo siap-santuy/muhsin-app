@@ -72,6 +72,7 @@ const app = createApp({
   notificationRepo: {} as never,
   getTargetUseCase: {} as never,
   setTargetUseCase: {} as never,
+  getStudentPositionUseCase: {} as never,
 });
 
 async function signToken(userId: string, schoolId: string, role: string) {

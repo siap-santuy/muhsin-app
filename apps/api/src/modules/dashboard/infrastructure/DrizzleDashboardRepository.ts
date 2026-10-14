@@ -149,27 +149,23 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       caption: `${yaumiyahDaysCount} dari ${TARGET_YAUMIYAH} hari`,
     };
 
+    const targetHafalanSummary = target
+      ? {
+          surahStart: target.targetSurahStart ?? "An-Naba'",
+          ayatStart: Number(target.targetAyatStart ?? 1),
+          surahEnd: target.targetSurahEnd ?? "An-Naba'",
+          ayatEnd: Number(target.targetAyatEnd ?? 40),
+          progressAyat: "Target Bulan Ini",
+        }
+      : null;
+
     return {
       studentName: studentRows[0]?.name ?? "Siswa",
       level: gam?.level ?? 1,
       totalExp: gam?.totalExp ?? 0,
       currentStreak: gam?.currentStreak ?? 0,
       longestStreak: gam?.longestStreak ?? 0,
-      targetHafalan: target
-        ? {
-            surahStart: target.targetSurahStart ?? "Al-Baqarah",
-            ayatStart: Number(target.targetAyatStart ?? 1),
-            surahEnd: target.targetSurahEnd ?? "Al-Baqarah",
-            ayatEnd: Number(target.targetAyatEnd ?? 75),
-            progressAyat: "Ayat Aktif",
-          }
-        : {
-            surahStart: "Al-Baqarah",
-            ayatStart: 1,
-            surahEnd: "Al-Baqarah",
-            ayatEnd: 75,
-            progressAyat: "Ayat 1-5",
-          },
+      targetHafalan: targetHafalanSummary,
       progresBulanIni: {
         ziyadahCount,
         murojaahCount,
