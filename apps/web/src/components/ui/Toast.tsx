@@ -27,7 +27,7 @@ export function Toast({ message, variant = "success", duration = 3000, onClose }
   const Icon = config.icon;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
       <div className={cn("flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-lg bg-white/95 backdrop-blur-sm pointer-events-auto min-w-[280px] max-w-[420px]", config.bg)}>
         <Icon className={cn("h-5 w-5 shrink-0", config.text)} />
         <span className={cn("text-xs font-semibold flex-1 leading-snug", config.text)}>{message}</span>
@@ -45,7 +45,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col-reverse gap-2 items-end pointer-events-none px-4 max-w-md w-full">
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 items-end pointer-events-none px-4 max-w-md w-full">
       {toasts.map((t: ToastItem) => (
         <Toast
           key={t.id}

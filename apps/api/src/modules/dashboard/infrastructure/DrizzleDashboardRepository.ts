@@ -20,6 +20,7 @@ import type {
   ParentDashboardSummary,
   KoordinatorDashboardSummary,
 } from "../domain/entities/Dashboard";
+import { estimateQuranPages, findSurah } from "@muhsin/shared";
 
 export class DrizzleDashboardRepository implements IDashboardRepository {
   constructor(private readonly db: Db) {}
@@ -70,6 +71,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         id: setoranEntries.id,
         subcatCode: assessmentSubcategories.code,
         referenceStart: setoranEntries.referenceStart,
+        referenceEnd: setoranEntries.referenceEnd,
       })
       .from(setoranEntries)
       .leftJoin(
@@ -85,6 +87,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       );
 
     let ziyadahCount = 0;
+    let ziyadahEstimatedPages = 0;
     let murojaahCount = 0;
     let tahsinCount = 0;
 
@@ -94,6 +97,15 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         murojaahCount++;
       } else if (subCode.includes("ZIYADAH") || (s.referenceStart && (s.referenceStart as any).surah)) {
         ziyadahCount++;
+        const refStart = s.referenceStart as any;
+        const refEnd = (s.referenceEnd as any) || refStart;
+        if (refStart?.surah) {
+          const sStartNo = Number(refStart.surahNumber || findSurah(refStart.surah)?.no || 78);
+          const sEndNo = Number(refEnd.surahNumber || findSurah(refEnd.surah)?.no || sStartNo);
+          const aStart = Number(refStart.ayat || 1);
+          const aEnd = Number(refEnd.ayat || aStart);
+          ziyadahEstimatedPages += estimateQuranPages(sStartNo, aStart, sEndNo, aEnd);
+        }
       } else {
         tahsinCount++;
       }
@@ -121,11 +133,14 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
     const TARGET_MUROJAAH = 20;
     const TARGET_YAUMIYAH = daysInCurrentMonth;
 
+    const roundedPages = Math.round(ziyadahEstimatedPages * 10) / 10;
+    const ziyadahPercent = Math.min(100, Math.round((roundedPages / TARGET_ZIYADAH) * 100));
+
     const progresZiyadah = {
-      count: ziyadahCount,
+      count: roundedPages,
       target: TARGET_ZIYADAH,
-      percentage: Math.min(100, Math.round((ziyadahCount / TARGET_ZIYADAH) * 100)),
-      caption: `Target ${TARGET_ZIYADAH} halaman`,
+      percentage: ziyadahPercent,
+      caption: `${roundedPages} dari ${TARGET_ZIYADAH} halaman`,
     };
 
     const progresTahsin = {
@@ -533,6 +548,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           id: setoranEntries.id,
           subcatCode: assessmentSubcategories.code,
           referenceStart: setoranEntries.referenceStart,
+          referenceEnd: setoranEntries.referenceEnd,
         })
         .from(setoranEntries)
         .leftJoin(
@@ -547,12 +563,23 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           )
         );
 
+      let childZiyadahEstimatedPages = 0;
+
       for (const s of childSetoran) {
         const subCode = (s.subcatCode || "").toUpperCase();
         if (subCode.includes("MUROJAAH")) {
           childMurojaah++;
         } else if (subCode.includes("ZIYADAH") || (s.referenceStart && (s.referenceStart as any).surah)) {
           childZiyadah++;
+          const refStart = s.referenceStart as any;
+          const refEnd = (s.referenceEnd as any) || refStart;
+          if (refStart?.surah) {
+            const sStartNo = Number(refStart.surahNumber || findSurah(refStart.surah)?.no || 78);
+            const sEndNo = Number(refEnd.surahNumber || findSurah(refEnd.surah)?.no || sStartNo);
+            const aStart = Number(refStart.ayat || 1);
+            const aEnd = Number(refEnd.ayat || aStart);
+            childZiyadahEstimatedPages += estimateQuranPages(sStartNo, aStart, sEndNo, aEnd);
+          }
         } else {
           childTahsin++;
         }
@@ -637,11 +664,14 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       const TARGET_MUROJAAH = 20;
       const TARGET_YAUMIYAH = daysInCurrentMonthParent;
 
+      const roundedChildPages = Math.round(childZiyadahEstimatedPages * 10) / 10;
+      const childZiyadahPercent = Math.min(100, Math.round((roundedChildPages / TARGET_ZIYADAH) * 100));
+
       const progresZiyadah = {
-        count: childZiyadah,
+        count: roundedChildPages,
         target: TARGET_ZIYADAH,
-        percentage: Math.min(100, Math.round((childZiyadah / TARGET_ZIYADAH) * 100)),
-        caption: `Target ${TARGET_ZIYADAH} halaman`,
+        percentage: childZiyadahPercent,
+        caption: `${roundedChildPages} dari ${TARGET_ZIYADAH} halaman`,
       };
 
       const progresTahsin = {

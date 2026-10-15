@@ -301,7 +301,10 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
             }
           : null,
       });
-      setToast({ message: "Draft ibadah berhasil disimpan", variant: "warning" });
+      setToast({ message: "Draft ibadah berhasil disimpan", variant: "success" });
+      setTimeout(() => {
+        window.location.hash = `#/yaumiyah-view?date=${selectedDate}`;
+      }, 1000);
     } catch (err: any) {
       setToast({ message: err.message || "Gagal menyimpan draft", variant: "warning" });
     } finally {

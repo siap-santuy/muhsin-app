@@ -220,3 +220,44 @@ export function validateReferenceRange(
 
   return { valid: true };
 }
+
+/**
+ * Estimasi pecahan halaman Al-Qur'an (Mushaf Madinah standar 15 baris)
+ * berdasarkan rentang ayat yang disetor.
+ */
+export function estimateQuranPages(
+  surahStart: number,
+  ayatStart: number,
+  surahEnd: number,
+  ayatEnd: number
+): number {
+  if (surahEnd < surahStart) return 0;
+
+  // Jika di surah yang sama
+  if (surahStart === surahEnd) {
+    const s = getSurahByNo(surahStart);
+    if (!s || s.totalAyat <= 0) return 0.1;
+    const ayatCount = Math.max(1, ayatEnd - ayatStart + 1);
+
+    // Di Juz 30 (Surah 78-114), 1 halaman mushaf rata-rata memuat ~15-20 ayat pendek
+    if (s.no >= 78) {
+      const avgAyatPerPage = Math.max(10, Math.round(s.totalAyat / Math.max(1, Math.ceil(s.totalAyat / 15))));
+      return Math.round((ayatCount / avgAyatPerPage) * 10) / 10;
+    }
+
+    // Di Surah panjang (Juz 1-29), 1 halaman memuat rata-rata ~15 baris (sekitar 7-10 ayat)
+    return Math.round((ayatCount / 8) * 10) / 10;
+  }
+
+  // Jika lintas surah
+  let totalEstimated = 0;
+  for (let no = surahStart; no <= surahEnd; no++) {
+    const s = getSurahByNo(no);
+    if (!s) continue;
+    const aStart = no === surahStart ? ayatStart : 1;
+    const aEnd = no === surahEnd ? ayatEnd : s.totalAyat;
+    totalEstimated += estimateQuranPages(no, aStart, no, aEnd);
+  }
+
+  return Math.round(totalEstimated * 10) / 10;
+}

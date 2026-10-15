@@ -51,6 +51,7 @@ import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { PublicYaumiyahPage } from "@/pages/public/PublicYaumiyahPage";
 import { MobileAppShell } from "@/components/layout/MobileAppShell";
 import { PushNotificationPrompt } from "@/components/pwa/PushNotificationPrompt";
+import { LevelUpCelebration } from "@/components/gamification/LevelUpCelebration";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
@@ -356,6 +357,7 @@ function App() {
   return (
     <MobileAppShell>
       <PushNotificationPrompt />
+      <LevelUpCelebration />
       {renderContent(user, path, searchParams)}
     </MobileAppShell>
   );

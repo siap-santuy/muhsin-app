@@ -61,23 +61,12 @@ export function StudentDashboardPage() {
   const firstName = user?.name ? user.name.split(" ")[0] : "Siswa";
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
-  const [showLevelUpModal, setShowLevelUpModal] = useState<number | null>(null);
   const todayStr = formatLocalDate(new Date());
   const [todayIbadahStatus, setTodayIbadahStatus] = useState<"submitted" | "draft" | "empty">("empty");
 
   useEffect(() => {
     api.getDashboardSummary()
-      .then((data) => {
-        setSummary(data);
-        if (data?.level && typeof window !== "undefined" && user?.id) {
-          const key = `muhsin_last_seen_level_${user.id}`;
-          const lastSeen = localStorage.getItem(key);
-          if (lastSeen && Number(lastSeen) < data.level) {
-            setShowLevelUpModal(data.level);
-          }
-          localStorage.setItem(key, String(data.level));
-        }
-      })
+      .then(setSummary)
       .catch(() => {
         // Fallback
       });
@@ -89,7 +78,7 @@ export function StudentDashboardPage() {
         else setTodayIbadahStatus("empty");
       })
       .catch(() => setTodayIbadahStatus("empty"));
-  }, [todayStr, user?.id]);
+  }, [todayStr]);
 
   const currentExp = summary?.totalExp ?? 0;
   const levelInfo = calculateProgressiveLevel(currentExp);
@@ -262,39 +251,6 @@ export function StudentDashboardPage() {
                 <span>{Math.max(0, levelInfo.nextThreshold - currentExp)} EXP lagi menuju Level {level + 1}</span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Perayaan Level Up */}
-      {showLevelUpModal !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setShowLevelUpModal(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl border border-brand-line animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-amber/20 text-brand-amber animate-bounce">
-              <Star className="h-12 w-12 fill-brand-amber" />
-            </div>
-            <h3 className="mt-4 text-xl font-black text-brand-navy">
-              🎉 Barakallahu Fiik!
-            </h3>
-            <p className="mt-1 text-sm font-extrabold text-brand-cyan-dark">
-              Selamat, Kamu Naik ke Level {showLevelUpModal}!
-            </p>
-            <p className="mt-2 text-xs text-brand-text-muted leading-relaxed">
-              Terus istiqomah dalam mutaba&apos;ah ibadah dan setoran hafalan Al-Qur&apos;an untuk meraih level berikutnya!
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowLevelUpModal(null)}
-              className="mt-5 w-full rounded-xl bg-brand-cyan py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-cyan-dark transition-all"
-            >
-              Alhamdulillah, Lanjutkan!
-            </button>
           </div>
         </div>
       )}
