@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import Redis from "ioredis";
 import { createDb, type Db } from "../db/client";
 
@@ -189,7 +188,19 @@ export function createApp(deps: ContainerDeps): Hono {
 
   app.onError((err, c) => errorHandler(err, c));
 
-  app.use("*", logger());
+  // Request logger dengan format timestamp yang jelas: [YYYY-MM-DD HH:mm:ss]
+  app.use("*", async (c, next) => {
+    const start = Date.now();
+    const time = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const method = c.req.method;
+    const path = c.req.path;
+
+    console.log(`[${time}] <-- ${method} ${path}`);
+    await next();
+    const duration = Date.now() - start;
+    const status = c.res.status;
+    console.log(`[${time}] --> ${method} ${path} ${status} ${duration}ms`);
+  });
 
   app.use(
     "*",

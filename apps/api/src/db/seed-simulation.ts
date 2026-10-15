@@ -165,6 +165,8 @@ async function main() {
   // 5.2 SISWA (ANAK) (Abdul Rayhan Pradipta / nengdara.hdr@gmail.com)
   const STUDENT_EMAIL = "nengdara.hdr@gmail.com";
   const STUDENT_NAME = "Abdul Rayhan Pradipta";
+  const STUDENT_USERNAME = "abdulpradipta";
+  const STUDENT_BIRTHDATE_PWD = "15042014"; // Password resmi tgl lahir santri
 
   // Ambil SEMUA siswa yang cocok dengan email/nama/username Abdul Rayhan
   const matchedStudents = await db
@@ -186,15 +188,16 @@ async function main() {
   let student = matchedStudents[0];
 
   if (!student) {
+    const studentPasswordHash = await hash(STUDENT_BIRTHDATE_PWD);
     [student] = await db
       .insert(users)
       .values({
         schoolId: school.id,
         role: "student",
         name: STUDENT_NAME,
-        username: "abdulrayhan",
+        username: STUDENT_USERNAME,
         email: STUDENT_EMAIL,
-        passwordHash: defaultPasswordHash,
+        passwordHash: studentPasswordHash,
         gender: "ikhwan",
         birthPlace: "Payakumbuh",
         birthDate: "2014-04-15",
@@ -202,14 +205,14 @@ async function main() {
       })
       .returning();
   } else {
-    // Update student utama agar email, username, dan password pasti 'muhsin123'
+    // Update student utama agar email dan username sinkron, TETAPI JANGAN timpa password santri yang sudah ada
     await db
       .update(users)
       .set({
         email: STUDENT_EMAIL,
         name: STUDENT_NAME,
-        username: "abdulrayhan",
-        passwordHash: defaultPasswordHash,
+        username: STUDENT_USERNAME,
+        // passwordHash TIDAK di-overwrite agar password santri tetap utuh
       })
       .where(eq(users.id, student.id));
 
@@ -223,7 +226,7 @@ async function main() {
       await db.delete(users).where(eq(users.id, dup.id));
     }
   }
-  console.log(`[sim] Siswa: ${student.name} (${student.email}, id: ${student.id})`);
+  console.log(`[sim] Siswa: ${student.name} (${student.email}, username: ${student.username}, id: ${student.id})`);
 
   // 5.3 ORANG TUA (Dara Indah Pertiwi / ortu_daraindahpertiwi)
   const PARENT_USERNAME = "ortu_daraindahpertiwi";
@@ -800,8 +803,9 @@ async function main() {
   console.log(`\nAkun Terhubung:`);
   console.log(`1. SISWA:`);
   console.log(`   - Nama    : ${student.name}`);
+  console.log(`   - Username: ${student.username}`);
   console.log(`   - Email   : ${student.email}`);
-  console.log(`   - Password: ${DEFAULT_PASSWORD}`);
+  console.log(`   - Password: [Password Tetap Aman / ${STUDENT_BIRTHDATE_PWD}]`);
   console.log(`   - Kelas   : ${targetClass.name}`);
   console.log(`   - Gamifikasi: ${cumulativeExp} EXP | Level ${computedLevel} | Streak 30 Hari`);
   console.log(`\n2. ORANG TUA:`);
