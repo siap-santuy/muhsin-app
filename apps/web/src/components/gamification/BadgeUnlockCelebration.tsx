@@ -165,7 +165,7 @@ export function BadgeUnlockCelebration() {
         </div>
 
         {/* Title & Description */}
-        <h3 className="mt-2 text-xl font-black text-brand-navy">
+        <h3 className="mt-2 text-xl font-black text-brand-navy break-words px-2 leading-snug">
           🎉 {currentBadge.title}
         </h3>
         <p className="mt-1 text-xs font-semibold text-brand-muted">

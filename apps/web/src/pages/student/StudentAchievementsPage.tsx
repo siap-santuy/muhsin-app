@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Crown,
   BookOpen,
-  Layers,
+  FileText,
   Lock,
   CheckCircle2,
   Sparkles,
   ChevronLeft,
   Search,
+  X,
+  Calendar,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { StudentAchievementsSummary, StudentBadge } from "@muhsin/shared";
@@ -24,6 +26,7 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
   const [activeCategory, setActiveCategory] = useState<"all" | "surah" | "juz" | "sabiq">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "unlocked" | "in_progress" | "locked">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBadge, setSelectedBadge] = useState<StudentBadge | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -42,7 +45,7 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
 
   const filteredBadges = useMemo(() => {
     if (!data?.badges) return [];
-    return data.badges.filter((b) => {
+    const list = data.badges.filter((b) => {
       // Filter kategori
       if (activeCategory !== "all" && b.category !== activeCategory) {
         return false;
@@ -61,6 +64,26 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
         );
       }
       return true;
+    });
+
+    // Auto-sort: yang sudah dapat badge (unlocked) paling atas, lalu in_progress, lalu locked
+    const statusWeight: Record<string, number> = {
+      unlocked: 3,
+      in_progress: 2,
+      locked: 1,
+    };
+
+    return [...list].sort((a, b) => {
+      const weightDiff = (statusWeight[b.status] || 0) - (statusWeight[a.status] || 0);
+      if (weightDiff !== 0) return weightDiff;
+      // Jika sama-sama in_progress, prioritaskan yang progress-nya lebih tinggi
+      if (a.status === "in_progress" && b.status === "in_progress") {
+        if (b.progressPercent !== a.progressPercent) {
+          return b.progressPercent - a.progressPercent;
+        }
+      }
+      // Urutan stabil berdasarkan kode/nomor
+      return Number(a.code) - Number(b.code);
     });
   }, [data, activeCategory, statusFilter, searchQuery]);
 
@@ -264,7 +287,7 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
               </div>
             </div>
 
-            {/* Badges Grid */}
+            {/* Badges Grid - Simple Circular Emblem (Maks 3 di mobile, 4-5 di desktop) */}
             {filteredBadges.length === 0 ? (
               <div className="rounded-2xl border border-brand-line bg-white p-8 text-center">
                 <p className="text-xs font-semibold text-brand-muted">
@@ -272,138 +295,296 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
                 {filteredBadges.map((badge) => (
-                  <BadgeCard key={badge.id} badge={badge} />
+                  <BadgeCircularCard
+                    key={badge.id}
+                    badge={badge}
+                    onClick={() => setSelectedBadge(badge)}
+                  />
                 ))}
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Modal Detail Badge */}
+      {selectedBadge && (
+        <BadgeDetailModal
+          badge={selectedBadge}
+          onClose={() => setSelectedBadge(null)}
+        />
+      )}
     </div>
   );
 }
 
-function BadgeCard({ badge }: { badge: StudentBadge }) {
+function BadgeCircularCard({
+  badge,
+  onClick,
+}: {
+  badge: StudentBadge;
+  onClick: () => void;
+}) {
   const isUnlocked = badge.status === "unlocked";
-  const isInProgress = badge.status === "in_progress";
 
-  const getBadgeIcon = () => {
-    if (badge.category === "juz") {
-      return <Crown className="h-5 w-5" />;
-    }
-    if (badge.category === "sabiq") {
-      return <Layers className="h-5 w-5" />;
-    }
-    return <BookOpen className="h-5 w-5" />;
-  };
-
+  // Desain Lingkaran Badge:
+  // Warna aktif menyala HANYA jika sudah 100% (unlocked).
+  // Jika belum (in_progress atau locked), tampil grayscale/abu-abu netral elegan.
+  // Opacity ikon siluet background diturunkan ke 20-25% agar angka utama kontras jelas dan tidak beradu.
   const getTheme = () => {
-    if (!isUnlocked && !isInProgress) {
-      // Locked
+    if (!isUnlocked) {
       return {
-        cardBorder: "border-gray-200 bg-gray-50/70 opacity-70",
-        iconBox: "bg-gray-200 text-gray-400",
-        barColor: "bg-gray-300",
-        badgePill: "bg-gray-100 text-gray-500",
+        outerRing: "border-gray-200 bg-gray-50/80 text-gray-400 hover:border-gray-300 hover:bg-gray-100/70",
+        bgIcon: "text-gray-400/20",
+        numberText: "text-gray-600",
+        glowEffect: "",
+        labelText: "text-gray-500",
       };
     }
 
     if (badge.category === "juz") {
       return {
-        cardBorder: isUnlocked
-          ? "border-amber-300 bg-gradient-to-br from-amber-50/60 to-white shadow-sm"
-          : "border-brand-line bg-white",
-        iconBox: isUnlocked ? "bg-amber-400 text-white shadow-md shadow-amber-400/20" : "bg-amber-100 text-amber-600",
-        barColor: "bg-amber-400",
-        badgePill: isUnlocked ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600",
+        outerRing:
+          "border-amber-400 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-md shadow-amber-400/25 text-white ring-3 ring-amber-100",
+        bgIcon: "text-black/25",
+        numberText: "text-white drop-shadow-md",
+        glowEffect: "shadow-amber-400/25",
+        labelText: "text-amber-900 font-extrabold",
       };
     }
 
     if (badge.category === "sabiq") {
       return {
-        cardBorder: isUnlocked
-          ? "border-sky-300 bg-gradient-to-br from-sky-50/60 to-white shadow-sm"
-          : "border-brand-line bg-white",
-        iconBox: isUnlocked ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "bg-sky-100 text-sky-600",
-        barColor: "bg-sky-500",
-        badgePill: isUnlocked ? "bg-sky-100 text-sky-700" : "bg-gray-100 text-gray-600",
+        outerRing:
+          "border-sky-400 bg-gradient-to-br from-sky-400 via-sky-500 to-sky-600 shadow-md shadow-sky-500/25 text-white ring-3 ring-sky-100",
+        bgIcon: "text-black/25",
+        numberText: "text-white drop-shadow-md",
+        glowEffect: "shadow-sky-500/25",
+        labelText: "text-sky-900 font-extrabold",
       };
     }
 
-    // Surah default (Emerald)
+    // Surah (Emerald)
     return {
-      cardBorder: isUnlocked
-        ? "border-emerald-300 bg-gradient-to-br from-emerald-50/60 to-white shadow-sm"
-        : "border-brand-line bg-white",
-      iconBox: isUnlocked ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-emerald-100 text-emerald-600",
-      barColor: "bg-emerald-500",
-      badgePill: isUnlocked ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600",
+      outerRing:
+        "border-emerald-400 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/25 text-white ring-3 ring-emerald-100",
+      bgIcon: "text-black/25",
+      numberText: "text-white drop-shadow-md",
+      glowEffect: "shadow-emerald-500/25",
+      labelText: "text-emerald-900 font-extrabold",
     };
   };
 
   const theme = getTheme();
 
   return (
-    <div className={`relative flex flex-col justify-between rounded-2xl border p-4 transition-all ${theme.cardBorder}`}>
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.iconBox}`}>
-              {getBadgeIcon()}
-            </div>
-            <div>
-              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${theme.badgePill}`}>
-                {badge.category === "surah" ? `Surah ${badge.code}` : badge.category === "juz" ? `Juz ${badge.code}` : `Jilid ${badge.code}`}
-              </span>
-              <h3 className="text-xs font-bold text-brand-navy line-clamp-1">{badge.title}</h3>
-            </div>
-          </div>
-
-          <div className="shrink-0">
-            {isUnlocked ? (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                <CheckCircle2 className="h-4 w-4" />
-              </span>
-            ) : !isInProgress ? (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-gray-400">
-                <Lock className="h-3 w-3" />
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold text-brand-cyan">
-                {badge.progressPercent}%
-              </span>
-            )}
-          </div>
-        </div>
-
-        <p className="mt-2 text-[11px] font-medium text-brand-muted line-clamp-1">
-          {badge.subtitle}
-        </p>
-      </div>
-
-      <div className="mt-3">
-        {/* Progress bar */}
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${theme.barColor}`}
-            style={{ width: `${badge.progressPercent}%` }}
-          />
-        </div>
-
-        <div className="mt-1.5 flex items-center justify-between text-[10px] text-brand-muted">
-          <span>
-            {badge.currentValue} / {badge.targetValue} {badge.unit}
-          </span>
-          {isUnlocked && badge.unlockedAt ? (
-            <span className="text-emerald-700 font-semibold">Tuntas ({badge.unlockedAt})</span>
-          ) : isInProgress ? (
-            <span className="text-brand-cyan font-semibold">Sedang Dihafal</span>
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative flex flex-col items-center justify-start p-1.5 sm:p-2 text-center transition-all cursor-pointer active:scale-95"
+    >
+      {/* 1. Lingkaran Badge Utama (Ukuran lebih compact: h-15 w-15 sm:h-16 sm:w-16) */}
+      <div
+        className={`relative flex h-15 w-15 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-105 ${theme.outerRing}`}
+      >
+        {/* Ikon Background dengan Opacity Rendah (20-25%) agar tidak beradu dengan angka */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-transform ${theme.bgIcon}`}
+        >
+          {badge.category === "juz" ? (
+            <Crown className="h-9 w-9 sm:h-10 sm:w-10" />
+          ) : badge.category === "sabiq" ? (
+            <FileText className="h-8 w-8 sm:h-9 sm:w-9" />
           ) : (
-            <span className="text-gray-400">Belum Disetor</span>
+            <BookOpen className="h-8 w-8 sm:h-9 sm:w-9" />
           )}
         </div>
+
+        {/* Angka Perwakilan di Tengah Lingkaran (Lebih besar: text-lg sm:text-xl) */}
+        <span
+          className={`relative z-10 text-lg sm:text-xl font-black tracking-tight ${theme.numberText}`}
+        >
+          {badge.code}
+        </span>
+
+        {/* Checklist jika sudah tuntas */}
+        {isUnlocked && (
+          <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-emerald-600 shadow-sm border border-emerald-200">
+            <CheckCircle2 className="h-3.5 w-3.5 fill-emerald-100 text-emerald-600" />
+          </span>
+        )}
+      </div>
+
+      {/* 2. Label Nama Badge Ringkas di Bawah Lingkaran */}
+      <div className="mt-2 w-full px-0.5">
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted block">
+          {badge.category === "surah"
+            ? "Surah"
+            : badge.category === "juz"
+            ? "Juz"
+            : "Jilid"}
+        </span>
+        <h4
+          className={`text-xs font-bold leading-tight line-clamp-1 truncate w-full ${theme.labelText}`}
+          title={badge.title}
+        >
+          {badge.category === "surah"
+            ? badge.title.replace(/^Penghafal\s+/i, "")
+            : badge.category === "juz"
+            ? `Juz ${badge.code}`
+            : `Jilid ${badge.code}`}
+        </h4>
+      </div>
+    </button>
+  );
+}
+
+function BadgeDetailModal({
+  badge,
+  onClose,
+}: {
+  badge: StudentBadge;
+  onClose: () => void;
+}) {
+  const isUnlocked = badge.status === "unlocked";
+  const isInProgress = badge.status === "in_progress";
+
+  const getTheme = () => {
+    if (badge.category === "juz") {
+      return {
+        icon: <Crown className="h-10 w-10 text-white" />,
+        bgGlow: "bg-amber-400 text-white shadow-xl shadow-amber-400/40",
+        pill: "bg-amber-100 text-amber-800 border-amber-200",
+        label: "Hafizh Juz",
+        barColor: "bg-amber-400",
+      };
+    }
+    if (badge.category === "sabiq") {
+      return {
+        icon: <FileText className="h-10 w-10 text-white" />,
+        bgGlow: "bg-sky-500 text-white shadow-xl shadow-sky-500/40",
+        pill: "bg-sky-100 text-sky-800 border-sky-200",
+        label: "Sabiq Tahsin",
+        barColor: "bg-sky-500",
+      };
+    }
+    return {
+      icon: <BookOpen className="h-10 w-10 text-white" />,
+      bgGlow: "bg-emerald-500 text-white shadow-xl shadow-emerald-500/40",
+      pill: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      label: "Hafalan Surah",
+      barColor: "bg-emerald-500",
+    };
+  };
+
+  const theme = getTheme();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl border border-brand-line animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+          aria-label="Tutup"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Ikon Emblem Besar */}
+        <div
+          className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${
+            isUnlocked
+              ? theme.bgGlow
+              : isInProgress
+              ? "bg-brand-cyan text-white shadow-lg shadow-brand-cyan/30"
+              : "bg-gray-200 text-gray-400"
+          }`}
+        >
+          {isUnlocked || isInProgress ? (
+            theme.icon
+          ) : (
+            <Lock className="h-9 w-9 text-gray-400" />
+          )}
+        </div>
+
+        {/* Tag Kategori & Status */}
+        <div className="mt-4 flex items-center justify-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${theme.pill}`}
+          >
+            <Sparkles className="h-3 w-3" />
+            {theme.label}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+              isUnlocked
+                ? "bg-emerald-100 text-emerald-700"
+                : isInProgress
+                ? "bg-cyan-100 text-cyan-800"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
+            {isUnlocked ? "Tuntas" : isInProgress ? "Sedang Dihafal" : "Terkunci"}
+          </span>
+        </div>
+
+        {/* Judul & Detail Informasi */}
+        <h3 className="mt-2.5 text-lg font-black text-brand-navy leading-snug">
+          {badge.title}
+        </h3>
+        <p className="mt-1 text-xs font-semibold text-brand-muted">
+          {badge.subtitle}
+        </p>
+
+        {/* Card Progres di dalam Modal */}
+        <div className="mt-4 rounded-2xl border border-brand-line/60 bg-gray-50 p-3.5 text-left">
+          <div className="flex items-center justify-between text-xs font-bold text-brand-navy">
+            <span>Capaian</span>
+            <span className="text-brand-cyan-dark">{badge.progressPercent}%</span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                isUnlocked ? theme.barColor : "bg-brand-cyan"
+              }`}
+              style={{ width: `${badge.progressPercent}%` }}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-brand-muted font-medium">
+            <span>
+              {badge.currentValue} dari {badge.targetValue} {badge.unit}
+            </span>
+            <span>
+              {isUnlocked
+                ? "100% Selesai"
+                : `${badge.targetValue - badge.currentValue} ${badge.unit} tersisa`}
+            </span>
+          </div>
+
+          {isUnlocked && badge.unlockedAt && (
+            <div className="mt-3 flex items-center gap-1.5 border-t border-brand-line/60 pt-2 text-[11px] font-semibold text-emerald-700">
+              <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Diraih pada tanggal: {badge.unlockedAt}</span>
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-5 w-full rounded-xl bg-brand-navy py-2.5 text-xs font-bold text-white shadow-sm hover:bg-brand-navy/90 active:scale-[0.98] transition-all"
+        >
+          Tutup
+        </button>
       </div>
     </div>
   );
