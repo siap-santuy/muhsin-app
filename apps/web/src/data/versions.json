@@ -1,9 +1,44 @@
 [
   {
-    "version": "v1.1.0",
-    "releaseDate": "8 Oktober 2026",
+    "version": "v1.2.0",
+    "releaseDate": "23 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Peta Capaian Hafalan, Sistem Badge Penghafal, & Reset Password Cerdas",
+    "summary": "Pembaruan fitur skala besar: dukungan setoran Al-Qur'an urutan mundur (metode Juz 'Amma) dan maju di semua form, peluncuran Peta Capaian & Koleksi Badge Penghafal (Surah, Juz, Sabiq) dengan popup perayaan khusus santri, serta sistem reset password default oleh koordinator dan form pengajuan di halaman login.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Menu Peta Capaian & Koleksi Badge Hafalan (114 Surah, 30 Juz, 7 Jilid Sabiq) yang dapat diakses oleh Siswa, Orang Tua, Guru, dan Koordinator."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Popup animasi selebrasi raihan badge baru khusus untuk santri saat menuntaskan surah atau juz."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Dukungan setoran surah dan ayat dengan urutan mundur (An-Nas ke Al-Ikhlas, An-Nazi'at ke An-Naba') maupun maju di form Ziyadah, Muroja'ah, Talaqi, Yaumiyah, dan Target."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Form pengajuan reset password di halaman login yang mengirimkan push notification langsung ke Koordinator Sekolah."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Fitur reset password instan oleh Koordinator: mengembalikan akun santri & orang tua ke tanggal lahir santri (format DDMMYYYY) dan akun guru ke 'muhsin123'."
+      }
+    ]
+  },
+  {
+    "version": "v1.1.0",
+    "releaseDate": "8 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Rilis Resmi Produksi: Target Hafalan Guru, Pengalaman Orang Tua & Optimasi PWA",
     "summary": "Pembaruan besar menyambut rilis resmi produksi: penetapan target hafalan bulanan santri (bulk per kelas & per santri), integrasi dashboard cerdas orang tua dan santri, soft-prompt izin notifikasi push, selebrasi level up, serta pembukaan raport langsung 1-ketukan.",
     "changes": [
