@@ -22,6 +22,12 @@ function makeDeps(user: User | null) {
       return null;
     },
     findById: async () => user,
+    findByIdentifierAnySchool: async (identifier: string) => {
+      if (!user) return null;
+      if (user.email === identifier || user.username === identifier) return user;
+      return null;
+    },
+    findKoordinatorBySchool: async () => [],
     updateProfile: async () => user!,
     updatePasswordHash: async () => {},
     createUser: async () => user!,

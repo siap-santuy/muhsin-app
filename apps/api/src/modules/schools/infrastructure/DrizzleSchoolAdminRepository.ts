@@ -7,8 +7,9 @@ import {
   studentClassEnrollment,
   teacherClasses,
   munaqosahPeriods,
+  parentStudentMapping,
 } from "../../../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import type {
   ISchoolAdminRepository,
   CreateSchoolUserParams,
@@ -183,5 +184,56 @@ export class DrizzleSchoolAdminRepository implements ISchoolAdminRepository {
       classId,
       schoolId,
     });
+  }
+
+  async findStudentWithParents(studentId: string, schoolId: string): Promise<{
+    student: { id: string; name: string; birthDate: string | null };
+    parentIds: string[];
+  } | null> {
+    const studentRows = await this.db
+      .select({ id: users.id, name: users.name, birthDate: users.birthDate })
+      .from(users)
+      .where(and(eq(users.id, studentId), eq(users.schoolId, schoolId), eq(users.role, "student")))
+      .limit(1);
+
+    if (!studentRows[0]) return null;
+
+    const parentMappings = await this.db
+      .select({ parentId: parentStudentMapping.parentId })
+      .from(parentStudentMapping)
+      .where(and(eq(parentStudentMapping.studentId, studentId), eq(parentStudentMapping.schoolId, schoolId)));
+
+    return {
+      student: studentRows[0],
+      parentIds: parentMappings.map((p) => p.parentId),
+    };
+  }
+
+  async findTeacher(teacherId: string, schoolId: string): Promise<{
+    id: string;
+    name: string;
+  } | null> {
+    const teacherRows = await this.db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(and(eq(users.id, teacherId), eq(users.schoolId, schoolId), eq(users.role, "teacher")))
+      .limit(1);
+
+    return teacherRows[0] || null;
+  }
+
+  async updateUserPassword(userId: string, schoolId: string, passwordHash: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ passwordHash })
+      .where(and(eq(users.id, userId), eq(users.schoolId, schoolId)));
+  }
+
+  async updateUsersPassword(userIds: string[], schoolId: string, passwordHash: string): Promise<void> {
+    if (userIds.length === 0) return;
+    await this.db
+      .update(users)
+      .set({ passwordHash })
+      .where(and(inArray(users.id, userIds), eq(users.schoolId, schoolId)));
   }
 }

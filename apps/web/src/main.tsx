@@ -20,6 +20,7 @@ import { StudentSemesterRaportPage } from "@/pages/student/StudentSemesterRaport
 import { StudentYaumiyahInputPage } from "@/pages/student/StudentYaumiyahInputPage";
 import { StudentYaumiyahPage } from "@/pages/student/StudentYaumiyahPage";
 import { StudentYaumiyahViewPage } from "@/pages/student/StudentYaumiyahViewPage";
+import { StudentAchievementsPage } from "@/pages/student/StudentAchievementsPage";
 import { TeacherDashboardPage } from "@/pages/teacher/TeacherDashboardPage";
 import { TeacherExaminerPage } from "@/pages/teacher/TeacherExaminerPage";
 import { TeacherMonthlyRaportPage } from "@/pages/teacher/TeacherMonthlyRaportPage";
@@ -52,6 +53,7 @@ import { PublicYaumiyahPage } from "@/pages/public/PublicYaumiyahPage";
 import { MobileAppShell } from "@/components/layout/MobileAppShell";
 import { PushNotificationPrompt } from "@/components/pwa/PushNotificationPrompt";
 import { LevelUpCelebration } from "@/components/gamification/LevelUpCelebration";
+import { BadgeUnlockCelebration } from "@/components/gamification/BadgeUnlockCelebration";
 import { useAuthStore } from "@/store/authStore";
 import { ToastContainer } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
@@ -140,6 +142,8 @@ function renderContent(
 ): React.ReactNode {
   // Common App Shell & Settings Routes (All Roles)
   switch (path) {
+    case "achievements":
+      return <StudentAchievementsPage studentId={searchParams.get("studentId") || searchParams.get("student") || undefined} />;
     case "notifications":
       return <NotificationPage />;
     case "edit-profile":
@@ -333,6 +337,8 @@ function App() {
   // Role: KOORDINATOR TTQ (Full Desktop Shell Layout)
   if (user.role === "koordinator_ttq") {
     switch (path) {
+      case "achievements":
+        return <StudentAchievementsPage studentId={searchParams.get("studentId") || searchParams.get("student") || undefined} />;
       case "students":
         return <KoorStudentPage />;
       case "teachers":
@@ -358,6 +364,7 @@ function App() {
     <MobileAppShell>
       <PushNotificationPrompt />
       <LevelUpCelebration />
+      <BadgeUnlockCelebration />
       {renderContent(user, path, searchParams)}
     </MobileAppShell>
   );

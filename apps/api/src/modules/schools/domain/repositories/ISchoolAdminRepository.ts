@@ -42,4 +42,14 @@ export interface ISchoolAdminRepository {
   getMunaqosahPeriods(schoolId: string): Promise<MunaqosahPeriodItem[]>;
   enrollStudent(studentId: string, classId: string, schoolId: string, academicPeriodId: string): Promise<void>;
   assignTeacherClass(teacherId: string, classId: string, schoolId: string): Promise<void>;
+  findStudentWithParents(studentId: string, schoolId: string): Promise<{
+    student: { id: string; name: string; birthDate: string | null };
+    parentIds: string[];
+  } | null>;
+  findTeacher(teacherId: string, schoolId: string): Promise<{
+    id: string;
+    name: string;
+  } | null>;
+  updateUserPassword(userId: string, schoolId: string, passwordHash: string): Promise<void>;
+  updateUsersPassword(userIds: string[], schoolId: string, passwordHash: string): Promise<void>;
 }

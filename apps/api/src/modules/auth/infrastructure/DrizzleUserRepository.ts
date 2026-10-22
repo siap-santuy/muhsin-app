@@ -18,24 +18,56 @@ export class DrizzleUserRepository implements IUserRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  async findByIdentifier(identifier: string, schoolId: string): Promise<User | null> {
+  async findByIdentifier(identifier: string, schoolId?: string): Promise<User | null> {
+    const trimmed = identifier.trim().toLowerCase();
+    const conditions = [
+      or(
+        sql`lower(${users.email}) = ${trimmed}`,
+        sql`lower(${users.username}) = ${trimmed}`
+      ),
+    ];
+    if (schoolId) {
+      conditions.push(eq(users.schoolId, schoolId));
+    }
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(and(...conditions))
+      .limit(1);
+
+    const row = rows[0];
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByIdentifierAnySchool(identifier: string): Promise<User | null> {
     const trimmed = identifier.trim().toLowerCase();
     const rows = await this.db
       .select()
       .from(users)
       .where(
-        and(
-          eq(users.schoolId, schoolId),
-          or(
-            sql`lower(${users.email}) = ${trimmed}`,
-            sql`lower(${users.username}) = ${trimmed}`
-          )
+        or(
+          sql`lower(${users.email}) = ${trimmed}`,
+          sql`lower(${users.username}) = ${trimmed}`
         )
       )
       .limit(1);
 
     const row = rows[0];
     return row ? this.toDomain(row) : null;
+  }
+
+  async findKoordinatorBySchool(schoolId: string): Promise<User[]> {
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.schoolId, schoolId),
+          eq(users.role, "koordinator_ttq")
+        )
+      );
+
+    return rows.map((r) => this.toDomain(r));
   }
 
   async findById(id: string, schoolId: string): Promise<User | null> {

@@ -5,6 +5,7 @@ import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetTeachersUseCase } from "../application/use-cases/GetTeachersUseCase";
 import type { ManageSubstitutionUseCase } from "../application/use-cases/ManageSubstitutionUseCase";
 import type { ManageTeacherUseCase } from "../../schools/application/use-cases/ManageSchoolUserUseCase";
+import type { ResetDefaultPasswordUseCase } from "../../schools/application/use-cases/ResetDefaultPasswordUseCase";
 
 const createSubstitutionSchema = z.object({
   absentTeacherId: z.string().uuid(),
@@ -28,6 +29,7 @@ export interface TeacherRoutesDeps {
   getTeachersUseCase: GetTeachersUseCase;
   manageSubstitutionUseCase?: ManageSubstitutionUseCase;
   manageTeacherUseCase?: ManageTeacherUseCase;
+  resetDefaultPasswordUseCase?: ResetDefaultPasswordUseCase;
 }
 
 export function createTeacherRoutes(deps: TeacherRoutesDeps) {
@@ -85,6 +87,21 @@ export function createTeacherRoutes(deps: TeacherRoutesDeps) {
     const user = c.get("user");
     await deps.manageTeacherUseCase.delete(c.req.param("id") ?? "", user.schoolId);
     return c.json({ data: { success: true }, error: null, meta: null }, 200);
+  });
+
+  // POST /teachers/:id/reset-password — reset password guru ke default awal 'muhsin123'
+  app.post("/:id/reset-password", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { code: "NOT_CONFIGURED", message: "Service reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const teacherId = c.req.param("id") ?? "";
+    try {
+      const res = await deps.resetDefaultPasswordUseCase.resetTeacher(teacherId, user.schoolId);
+      return c.json({ data: res, error: null, meta: null }, 200);
+    } catch (err: any) {
+      return c.json({ data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null }, 422);
+    }
   });
 
   // GET /teachers/substitutions — list all substitutions (koordinator & teacher)

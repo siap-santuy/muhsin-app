@@ -13,6 +13,7 @@ import { RefreshTokenUseCase } from "../modules/auth/application/use-cases/Refre
 import { GetProfileUseCase } from "../modules/auth/application/use-cases/GetProfileUseCase";
 import { UpdateProfileUseCase } from "../modules/auth/application/use-cases/UpdateProfileUseCase";
 import { ChangePasswordUseCase } from "../modules/auth/application/use-cases/ChangePasswordUseCase";
+import { RequestPasswordResetUseCase } from "../modules/auth/application/use-cases/RequestPasswordResetUseCase";
 import { buildAuthRoutes, buildAuthProtectedRoutes } from "../modules/auth/presentation/routes";
 
 // Daily Ibadah module
@@ -25,7 +26,9 @@ import { createDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/ro
 // Gamification module
 import { DrizzleGamificationRepository } from "../modules/gamification/infrastructure/DrizzleGamificationRepository";
 import { DrizzleExpTransactionRepository } from "../modules/gamification/infrastructure/DrizzleExpTransactionRepository";
+import { DrizzleAchievementRepository } from "../modules/gamification/infrastructure/DrizzleAchievementRepository";
 import { GetGamificationSummaryUseCase } from "../modules/gamification/application/use-cases/GetGamificationSummaryUseCase";
+import { GetStudentAchievementsUseCase } from "../modules/gamification/application/use-cases/GetStudentAchievementsUseCase";
 import { AddExpUseCase } from "../modules/gamification/application/use-cases/AddExpUseCase";
 import { UpdateStreakUseCase } from "../modules/gamification/application/use-cases/UpdateStreakUseCase";
 import { createGamificationRoutes } from "../modules/gamification/presentation/routes";
@@ -113,6 +116,7 @@ import { createPublicSchoolRoutes, createSchoolAdminRoutes } from "../modules/sc
 import { createPublicDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/public-routes";
 import { DrizzleSchoolAdminRepository } from "../modules/schools/infrastructure/DrizzleSchoolAdminRepository";
 import { ManageStudentUseCase, ManageTeacherUseCase } from "../modules/schools/application/use-cases/ManageSchoolUserUseCase";
+import { ResetDefaultPasswordUseCase } from "../modules/schools/application/use-cases/ResetDefaultPasswordUseCase";
 import { errorHandler } from "../middleware/error-handler";
 import { resolveStudentIdForUser } from "../shared/domain/resolve-student";
 
@@ -120,6 +124,7 @@ export interface ContainerDeps {
   db: Db;
   loginUseCase: LoginUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
+  requestPasswordResetUseCase: RequestPasswordResetUseCase;
   getProfileUseCase: GetProfileUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
@@ -131,6 +136,7 @@ export interface ContainerDeps {
   getDailyIbadahStatsUseCase: GetDailyIbadahStatsUseCase;
   // Gamification
   getGamificationSummaryUseCase: GetGamificationSummaryUseCase;
+  getStudentAchievementsUseCase: GetStudentAchievementsUseCase;
   // Setoran
   createSetoranUseCase: CreateSetoranUseCase;
   correctSetoranUseCase: CorrectSetoranUseCase;
@@ -145,6 +151,7 @@ export interface ContainerDeps {
   getTeachersUseCase: GetTeachersUseCase;
   manageSubstitutionUseCase: ManageSubstitutionUseCase;
   manageTeacherUseCase: ManageTeacherUseCase;
+  resetDefaultPasswordUseCase: ResetDefaultPasswordUseCase;
   schoolAdminRepo: DrizzleSchoolAdminRepository;
   // Reports
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
@@ -276,6 +283,7 @@ export function createApp(deps: ContainerDeps): Hono {
     adminRepo: deps.schoolAdminRepo,
     manageStudentUseCase: deps.manageStudentUseCase,
     manageTeacherUseCase: deps.manageTeacherUseCase,
+    resetDefaultPasswordUseCase: deps.resetDefaultPasswordUseCase,
   });
   app.use("/school-admin/*", protectedAuth, tenantScopeMiddleware);
   app.use("/school-admin", protectedAuth, tenantScopeMiddleware);
@@ -301,7 +309,8 @@ export function createApp(deps: ContainerDeps): Hono {
   // Gamification
   const gamificationRoutes = createGamificationRoutes(
     deps.getGamificationSummaryUseCase,
-    resolveStudent
+    resolveStudent,
+    deps.getStudentAchievementsUseCase
   );
   app.use("/gamification/*", protectedAuth, tenantScopeMiddleware);
   app.use("/gamification", protectedAuth, tenantScopeMiddleware);
@@ -325,6 +334,7 @@ export function createApp(deps: ContainerDeps): Hono {
     getStudentsUseCase: deps.getStudentsUseCase,
     getStudentByIdUseCase: deps.getStudentByIdUseCase,
     manageStudentUseCase: deps.manageStudentUseCase,
+    resetDefaultPasswordUseCase: deps.resetDefaultPasswordUseCase,
   });
   app.use("/students/*", protectedAuth, tenantScopeMiddleware);
   app.use("/students", protectedAuth, tenantScopeMiddleware);
@@ -335,6 +345,7 @@ export function createApp(deps: ContainerDeps): Hono {
     getTeachersUseCase: deps.getTeachersUseCase,
     manageSubstitutionUseCase: deps.manageSubstitutionUseCase,
     manageTeacherUseCase: deps.manageTeacherUseCase,
+    resetDefaultPasswordUseCase: deps.resetDefaultPasswordUseCase,
   });
   app.use("/teachers/*", protectedAuth, tenantScopeMiddleware);
   app.use("/teachers", protectedAuth, tenantScopeMiddleware);
@@ -425,6 +436,7 @@ export function buildContainer() {
   const dailyIbadahRepo = new DrizzleDailyIbadahRepository(db);
   const gamificationRepo = new DrizzleGamificationRepository(db);
   const expTxRepo = new DrizzleExpTransactionRepository(db);
+  const achievementRepo = new DrizzleAchievementRepository(db);
   const setoranRepo = new DrizzleSetoranRepository(db);
   const teacherSubRepo = new DrizzleTeacherSubstitutionRepository(db);
   const studentRepo = new DrizzleStudentRepository(db);
@@ -464,6 +476,7 @@ export function buildContainer() {
   const addExpUseCase = new AddExpUseCase(gamificationRepo, expTxRepo);
   const updateStreakUseCase = new UpdateStreakUseCase(gamificationRepo);
   const getGamificationSummaryUseCase = new GetGamificationSummaryUseCase(gamificationRepo);
+  const getStudentAchievementsUseCase = new GetStudentAchievementsUseCase(achievementRepo);
 
   // UseCases — Daily Ibadah
   const saveDraftDailyIbadahUseCase = new SaveDraftDailyIbadahUseCase(dailyIbadahRepo);
@@ -488,6 +501,7 @@ export function buildContainer() {
   const manageSubstitutionUseCase = new ManageSubstitutionUseCase(teacherSubRepo);
   const manageStudentUseCase = new ManageStudentUseCase(schoolAdminRepo, passwordHasher);
   const manageTeacherUseCase = new ManageTeacherUseCase(schoolAdminRepo, passwordHasher);
+  const resetDefaultPasswordUseCase = new ResetDefaultPasswordUseCase(schoolAdminRepo, passwordHasher);
 
   // UseCases — Reports
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
@@ -502,6 +516,7 @@ export function buildContainer() {
   const savePushSubscriptionUseCase = new SavePushSubscriptionUseCase(pushSubscriptionRepo);
   const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
   const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
+  const requestPasswordResetUseCase = new RequestPasswordResetUseCase(userRepository, notificationRepo, sendPushToUserUseCase);
 
   // UseCases — Dashboard
   const getDashboardSummaryUseCase = new GetDashboardSummaryUseCase(dashboardRepo);
@@ -537,6 +552,7 @@ export function buildContainer() {
       db,
       loginUseCase,
       refreshTokenUseCase,
+      requestPasswordResetUseCase,
       getProfileUseCase,
       updateProfileUseCase,
       changePasswordUseCase,
@@ -546,6 +562,7 @@ export function buildContainer() {
       saveDraftDailyIbadahUseCase,
       getDailyIbadahStatsUseCase,
       getGamificationSummaryUseCase,
+      getStudentAchievementsUseCase,
       createSetoranUseCase,
       correctSetoranUseCase,
       getSetoranHistoryUseCase,
@@ -557,6 +574,7 @@ export function buildContainer() {
       getTeachersUseCase,
       manageSubstitutionUseCase,
       manageTeacherUseCase,
+      resetDefaultPasswordUseCase,
       schoolAdminRepo,
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,

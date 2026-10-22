@@ -4,6 +4,7 @@ import {
   CalendarClock,
   Edit2,
   GraduationCap,
+  KeyRound,
   Loader2,
   Plus,
   Repeat,
@@ -125,6 +126,22 @@ export function KoorTeacherPage() {
       load();
     } catch (err: any) {
       toast.warning(err.message || "Gagal membatalkan penugasan");
+    }
+  }
+
+  async function handleResetPassword(teacherId: string, teacherName: string) {
+    if (
+      !window.confirm(
+        `Reset password guru ${teacherName} kembali ke default awal ('muhsin123')?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.resetTeacherPassword(teacherId);
+      toast.success(`Password guru ${teacherName} berhasil di-reset ke 'muhsin123'`);
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal mereset password");
     }
   }
 
@@ -397,6 +414,14 @@ export function KoorTeacherPage() {
                               title="Edit Guru"
                             >
                               <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResetPassword(t.id, t.name)}
+                              className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-50 transition-colors"
+                              title="Reset Password Guru (Kembali ke 'muhsin123')"
+                            >
+                              <KeyRound className="h-4 w-4" />
                             </button>
                             <button
                               type="button"

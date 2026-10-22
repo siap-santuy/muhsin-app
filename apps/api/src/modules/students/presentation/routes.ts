@@ -5,6 +5,7 @@ import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetStudentsUseCase } from "../application/use-cases/GetStudentsUseCase";
 import type { GetStudentByIdUseCase } from "../application/use-cases/GetStudentByIdUseCase";
 import type { ManageStudentUseCase } from "../../schools/application/use-cases/ManageSchoolUserUseCase";
+import type { ResetDefaultPasswordUseCase } from "../../schools/application/use-cases/ResetDefaultPasswordUseCase";
 
 const legacyStudentSchema = z.object({
   name: z.string().min(1),
@@ -21,6 +22,7 @@ export interface StudentRoutesDeps {
   getStudentsUseCase: GetStudentsUseCase;
   getStudentByIdUseCase: GetStudentByIdUseCase;
   manageStudentUseCase?: ManageStudentUseCase;
+  resetDefaultPasswordUseCase?: ResetDefaultPasswordUseCase;
 }
 
 export function createStudentRoutes(deps: StudentRoutesDeps) {
@@ -90,6 +92,21 @@ export function createStudentRoutes(deps: StudentRoutesDeps) {
     const user = c.get("user");
     await deps.manageStudentUseCase.delete(c.req.param("id") ?? "", user.schoolId);
     return c.json({ data: { success: true }, error: null, meta: null }, 200);
+  });
+
+  // POST /students/:id/reset-password — reset password santri & orang tua ke default tanggal lahir santri (DDMMYYYY)
+  app.post("/:id/reset-password", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { code: "NOT_CONFIGURED", message: "Service reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const studentId = c.req.param("id") ?? "";
+    try {
+      const res = await deps.resetDefaultPasswordUseCase.resetStudentAndParent(studentId, user.schoolId);
+      return c.json({ data: res, error: null, meta: null }, 200);
+    } catch (err: any) {
+      return c.json({ data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null }, 422);
+    }
   });
 
   // GET /students/:id — get student detail

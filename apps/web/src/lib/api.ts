@@ -2,6 +2,7 @@ import type {
   LoginInput,
   LoginOutput,
   GamificationSummary,
+  StudentAchievementsSummary,
   DailyIbadahInput,
   PublicDailyIbadahSubmitInput,
   CreateSetoranInput,
@@ -230,11 +231,36 @@ class ApiClient {
     return handleResponse<LoginOutput>(res);
   }
 
+  async requestPasswordReset(identifier: string, schoolId?: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/auth/request-password-reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier, schoolId }),
+    });
+    return handleResponse<{ success: boolean; message: string }>(res);
+  }
+
+  async resetStudentPassword(studentId: string): Promise<{ defaultPassword: string; studentName: string; parentsResetCount: number }> {
+    return this.request("POST", `/students/${studentId}/reset-password`);
+  }
+
+  async resetTeacherPassword(teacherId: string): Promise<{ defaultPassword: string; teacherName: string }> {
+    return this.request("POST", `/teachers/${teacherId}/reset-password`);
+  }
+
   async getGamificationSummary(studentId?: string): Promise<GamificationSummary> {
     const url = studentId
       ? `/gamification/summary?studentId=${studentId}`
       : `/gamification/summary`;
     return this.request<GamificationSummary>("GET", url);
+  }
+
+  async getStudentAchievements(studentId?: string): Promise<StudentAchievementsSummary> {
+    const targetStudentId = studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    const url = targetStudentId
+      ? `/gamification/achievements?studentId=${targetStudentId}`
+      : `/gamification/achievements`;
+    return this.request<StudentAchievementsSummary>("GET", url);
   }
 
   async getDailyIbadah(date: string, studentId?: string) {

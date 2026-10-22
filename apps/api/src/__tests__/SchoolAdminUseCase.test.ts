@@ -13,6 +13,10 @@ function makeRepo(overrides: Partial<ISchoolAdminRepository> = {}): ISchoolAdmin
     getMunaqosahPeriods: vi.fn().mockResolvedValue([]),
     enrollStudent: vi.fn().mockResolvedValue(undefined),
     assignTeacherClass: vi.fn().mockResolvedValue(undefined),
+    findStudentWithParents: vi.fn().mockResolvedValue(null),
+    findTeacher: vi.fn().mockResolvedValue(null),
+    updateUserPassword: vi.fn().mockResolvedValue(undefined),
+    updateUsersPassword: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

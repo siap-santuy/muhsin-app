@@ -233,6 +233,41 @@ export const remindStudentInputSchema = z.object({
 });
 export type RemindStudentInput = z.infer<typeof remindStudentInputSchema>;
 
-// --- Surah Reference ---
+export const requestPasswordResetSchema = z.object({
+  identifier: z.string().min(1, "Username atau email wajib diisi"),
+  schoolId: z.string().uuid().optional().nullable(),
+});
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
+
+/**
+ * Format tanggal lahir santri menjadi default password (DDMMYYYY).
+ * Mendukung format ISO (YYYY-MM-DD), format Indo (DD-MM-YYYY / DD/MM/YYYY), atau raw 8 digit.
+ * Fallback ke "muhsin123" jika tanggal kosong atau tidak valid.
+ */
+export function formatBirthDateToDefaultPassword(birthDate?: string | null): string {
+  if (!birthDate) return "muhsin123";
+  const str = String(birthDate).trim();
+  const matchIso = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (matchIso) {
+    const yyyy = matchIso[1];
+    const mm = matchIso[2].padStart(2, "0");
+    const dd = matchIso[3].padStart(2, "0");
+    return `${dd}${mm}${yyyy}`;
+  }
+  const matchId = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (matchId) {
+    const dd = matchId[1].padStart(2, "0");
+    const mm = matchId[2].padStart(2, "0");
+    const yyyy = matchId[3];
+    return `${dd}${mm}${yyyy}`;
+  }
+  if (/^\d{8}$/.test(str)) {
+    return str;
+  }
+  return "muhsin123";
+}
+
+// --- Surah Reference & Achievements ---
 export * from "./surah";
+export * from "./achievements";
 

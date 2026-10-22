@@ -5,6 +5,7 @@ import {
   Download,
   Edit2,
   Filter,
+  KeyRound,
   Loader2,
   Plus,
   Search,
@@ -120,6 +121,24 @@ export function KoorStudentPage() {
       toast.success(`Pengingat terkirim ke ortu ${studentName}`);
     } catch (err: any) {
       toast.warning(err.message || "Gagal mengirim pengingat");
+    }
+  }
+
+  async function handleResetPassword(studentId: string, studentName: string) {
+    if (
+      !window.confirm(
+        `Reset password santri ${studentName} & akun orang tua ke default tanggal lahir santri (format DDMMYYYY)?`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await api.resetStudentPassword(studentId);
+      toast.success(
+        `Password ${studentName} & ortu berhasil di-reset ke: ${res.defaultPassword}`
+      );
+    } catch (err: any) {
+      toast.warning(err.message || "Gagal mereset password");
     }
   }
 
@@ -448,11 +467,28 @@ export function KoorStudentPage() {
                             </button>
                             <button
                               type="button"
+                              onClick={() => handleResetPassword(st.id, st.name)}
+                              className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-50 transition-colors"
+                              title="Reset Password Siswa & Ortu (Kembali ke Tanggal Lahir DDMMYYYY)"
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleDeleteStudent(st.id, st.name)}
                               className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
                               title="Hapus Siswa"
                             >
                               <Trash2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => (window.location.hash = `#/achievements?studentId=${st.id}`)}
+                              className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-500 hover:text-white transition-all ml-1 flex items-center gap-1"
+                              title="Lihat Peta Hafalan & Koleksi Badge Siswa"
+                            >
+                              <Award className="h-3.5 w-3.5" />
+                              <span>Badge</span>
                             </button>
                             <button
                               type="button"

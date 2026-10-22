@@ -29,7 +29,9 @@ export interface UpdateUserAdminData {
 
 export interface IUserRepository {
   findByEmail(email: string, schoolId: string): Promise<User | null>;
-  findByIdentifier(identifier: string, schoolId: string): Promise<User | null>;
+  findByIdentifier(identifier: string, schoolId?: string): Promise<User | null>;
+  findByIdentifierAnySchool(identifier: string): Promise<User | null>;
+  findKoordinatorBySchool(schoolId: string): Promise<User[]>;
   findById(id: string, schoolId: string): Promise<User | null>;
   updateProfile(id: string, schoolId: string, data: UpdateUserData): Promise<User>;
   updatePasswordHash(id: string, schoolId: string, passwordHash: string): Promise<void>;

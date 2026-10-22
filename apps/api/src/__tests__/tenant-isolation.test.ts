@@ -13,6 +13,7 @@ const app = createApp({
   db: {} as never,
   loginUseCase: {} as never,
   refreshTokenUseCase: {} as never,
+  requestPasswordResetUseCase: {} as never,
   getProfileUseCase: {
     execute: async (userId: string, schoolId: string) => ({
       id: userId,
@@ -32,6 +33,7 @@ const app = createApp({
   saveDraftDailyIbadahUseCase: {} as never,
   getDailyIbadahStatsUseCase: {} as never,
   getGamificationSummaryUseCase: {} as never,
+  getStudentAchievementsUseCase: {} as never,
   createSetoranUseCase: {} as never,
   correctSetoranUseCase: {} as never,
   getStudentsUseCase: {} as never,
@@ -40,6 +42,7 @@ const app = createApp({
   getTeachersUseCase: {} as never,
   manageSubstitutionUseCase: {} as never,
   manageTeacherUseCase: {} as never,
+  resetDefaultPasswordUseCase: {} as never,
   schoolAdminRepo: {} as never,
   getSetoranHistoryUseCase: {} as never,
   getSetoranByIdUseCase: {} as never,

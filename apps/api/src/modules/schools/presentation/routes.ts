@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { ManageStudentUseCase, ManageTeacherUseCase } from "../application/use-cases/ManageSchoolUserUseCase";
+import type { ResetDefaultPasswordUseCase } from "../application/use-cases/ResetDefaultPasswordUseCase";
 import type { ISchoolAdminRepository } from "../domain/repositories/ISchoolAdminRepository";
 
 export function createPublicSchoolRoutes(db: Db) {
@@ -126,6 +127,7 @@ export interface SchoolAdminRoutesDeps {
   adminRepo: ISchoolAdminRepository;
   manageStudentUseCase: ManageStudentUseCase;
   manageTeacherUseCase: ManageTeacherUseCase;
+  resetDefaultPasswordUseCase?: ResetDefaultPasswordUseCase;
 }
 
 export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
@@ -221,6 +223,46 @@ export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
     const user = c.get("user");
     await deps.manageTeacherUseCase.delete(c.req.param("id") ?? "", user.schoolId);
     return c.json({ data: { success: true }, error: null, meta: null }, 200);
+  });
+
+  // POST /schools/students/:id/reset-password
+  // Reset password santri & orang tua ke default tanggal lahir santri (DDMMYYYY)
+  app.post("/students/:id/reset-password", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const studentId = c.req.param("id") ?? "";
+    try {
+      const res = await deps.resetDefaultPasswordUseCase.resetStudentAndParent(studentId, user.schoolId);
+      return c.json({
+        data: res,
+        error: null,
+        meta: null,
+      }, 200);
+    } catch (err: any) {
+      return handleError(err, c);
+    }
+  });
+
+  // POST /schools/teachers/:id/reset-password
+  // Reset password guru ke default awal 'muhsin123'
+  app.post("/teachers/:id/reset-password", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const teacherId = c.req.param("id") ?? "";
+    try {
+      const res = await deps.resetDefaultPasswordUseCase.resetTeacher(teacherId, user.schoolId);
+      return c.json({
+        data: res,
+        error: null,
+        meta: null,
+      }, 200);
+    } catch (err: any) {
+      return handleError(err, c);
+    }
   });
 
   return app;

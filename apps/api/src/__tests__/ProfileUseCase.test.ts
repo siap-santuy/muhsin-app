@@ -28,20 +28,30 @@ function makeMockUser(overrides: Partial<User> = {}): User {
   };
 }
 
+function makeMockUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository {
+  return {
+    findByEmail: async () => null,
+    findByIdentifier: async () => null,
+    findByIdentifierAnySchool: async () => null,
+    findKoordinatorBySchool: async () => [],
+    findById: async () => null,
+    updateProfile: async () => makeMockUser(),
+    updatePasswordHash: async () => {},
+    createUser: async () => makeMockUser(),
+    updateUser: async () => makeMockUser(),
+    deleteUser: async () => {},
+    ...overrides,
+  };
+}
+
 describe("Profile UseCases", () => {
   it("GetProfileUseCase returns sanitized profile", async () => {
     const user = makeMockUser();
-    const userRepo: IUserRepository = {
-      findByEmail: async () => null,
-      findByIdentifier: async () => null,
+    const userRepo = makeMockUserRepo({
       findById: async (id, schoolId) =>
         id === user.id && schoolId === user.schoolId ? user : null,
       updateProfile: async () => user,
-      updatePasswordHash: async () => {},
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new GetProfileUseCase(userRepo);
     const result = await useCase.execute("user-123", "school-1");
@@ -54,16 +64,9 @@ describe("Profile UseCases", () => {
   });
 
   it("GetProfileUseCase throws UserNotFoundError when user not found", async () => {
-    const userRepo: IUserRepository = {
-      findByEmail: async () => null,
-      findByIdentifier: async () => null,
+    const userRepo = makeMockUserRepo({
       findById: async () => null,
-      updateProfile: async () => makeMockUser(),
-      updatePasswordHash: async () => {},
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new GetProfileUseCase(userRepo);
     await expect(useCase.execute("bad-id", "school-1")).rejects.toThrow(
@@ -73,20 +76,15 @@ describe("Profile UseCases", () => {
 
   it("UpdateProfileUseCase updates name, email, phone, avatarUrl, gender, birthPlace, birthDate", async () => {
     let current = makeMockUser();
-    const userRepo: IUserRepository = {
+    const userRepo = makeMockUserRepo({
       findByEmail: async (email) => (email === current.email ? current : null),
-      findByIdentifier: async () => null,
       findById: async (id, schoolId) =>
         id === current.id && schoolId === current.schoolId ? current : null,
       updateProfile: async (_id, _schoolId, data: UpdateUserData) => {
         current = { ...current, ...data };
         return current;
       },
-      updatePasswordHash: async () => {},
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new UpdateProfileUseCase(userRepo);
     const result = await useCase.execute("user-123", "school-1", {
@@ -115,17 +113,12 @@ describe("Profile UseCases", () => {
     });
     const current = makeMockUser();
 
-    const userRepo: IUserRepository = {
+    const userRepo = makeMockUserRepo({
       findByEmail: async (email) =>
         email === existingOther.email ? existingOther : null,
-      findByIdentifier: async () => null,
       findById: async () => current,
       updateProfile: async () => current,
-      updatePasswordHash: async () => {},
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new UpdateProfileUseCase(userRepo);
     await expect(
@@ -142,18 +135,13 @@ describe("Profile UseCases", () => {
     });
     let updatedHash = "";
 
-    const userRepo: IUserRepository = {
-      findByEmail: async () => null,
-      findByIdentifier: async () => null,
+    const userRepo = makeMockUserRepo({
       findById: async () => current,
       updateProfile: async () => current,
       updatePasswordHash: async (_id, _schoolId, hash) => {
         updatedHash = hash;
       },
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new ChangePasswordUseCase(userRepo, hasher);
     await useCase.execute("user-123", "school-1", {
@@ -170,16 +158,10 @@ describe("Profile UseCases", () => {
       passwordHash: await hasher.hashPassword("correctpass123"),
     });
 
-    const userRepo: IUserRepository = {
-      findByEmail: async () => null,
-      findByIdentifier: async () => null,
+    const userRepo = makeMockUserRepo({
       findById: async () => current,
       updateProfile: async () => current,
-      updatePasswordHash: async () => {},
-      createUser: async () => makeMockUser(),
-      updateUser: async () => makeMockUser(),
-      deleteUser: async () => {},
-    };
+    });
 
     const useCase = new ChangePasswordUseCase(userRepo, hasher);
     await expect(
