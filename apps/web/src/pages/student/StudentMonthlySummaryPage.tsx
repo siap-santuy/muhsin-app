@@ -107,7 +107,10 @@ export function StudentMonthlySummaryPage({ initialTab: propInitialTab }: Studen
 
     let title = s.subcategoryName || s.categoryName || "Setoran";
     if (s.referenceStart?.surah) {
-      title = `${title} — ${s.referenceStart.surah}: ${s.referenceStart.ayat}-${s.referenceEnd?.ayat ?? s.referenceStart.ayat}`;
+      const isDiffSurah = s.referenceEnd?.surah && s.referenceEnd.surah !== s.referenceStart.surah;
+      title = isDiffSurah
+        ? `${title} — ${s.referenceStart.surah}:${s.referenceStart.ayat} s/d ${s.referenceEnd.surah}:${s.referenceEnd.ayat}`
+        : `${title} — ${s.referenceStart.surah}: ${s.referenceStart.ayat}-${s.referenceEnd?.ayat ?? s.referenceStart.ayat}`;
     } else if (s.referenceStart?.halaman) {
       title = `${title} — Halaman ${s.referenceStart.halaman}`;
     }

@@ -491,8 +491,8 @@ export function TeacherStudentListPage() {
                     const aStartNum = parseInt(targetAyatStart || "1", 10) || 1;
                     const aEndNum = parseInt(targetAyatEnd || "1", 10) || 1;
 
-                    if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
-                      toast.warning("Surah atau ayat target selesai tidak boleh kurang atau mundur dari target mulai");
+                    if (sEndNum === sStartNum && aEndNum < aStartNum) {
+                      toast.warning("Ayat target selesai tidak boleh lebih kecil dari target mulai");
                       return;
                     }
 
@@ -612,8 +612,7 @@ export function TeacherStudentListPage() {
                                 const val = e.target.value;
                                 setTargetSurahStart(val);
                                 const sNum = Number(val);
-                                const currentEndNum = Number(targetSurahEnd);
-                                if (!targetSurahEnd || (currentEndNum && currentEndNum < sNum)) {
+                                if (!targetSurahEnd) {
                                   setTargetSurahEnd(val);
                                 }
                                 const info = SURAH_LIST.find((s) => s.no === sNum);
@@ -666,8 +665,7 @@ export function TeacherStudentListPage() {
                                 <option
                                   key={`end-${s.no}`}
                                   value={s.no}
-                                  disabled={Boolean(targetSurahStart && s.no < Number(targetSurahStart))}
-                                  className={targetSurahStart && s.no < Number(targetSurahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                                  className="text-brand-navy"
                                 >
                                   {s.no}. {s.nameLatin}
                                 </option>

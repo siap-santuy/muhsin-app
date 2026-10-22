@@ -119,13 +119,7 @@ export const tilawahSchema = z
       });
     }
 
-    if (data.surahEnd < data.surahStart) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Surah akhir tidak boleh lebih kecil dari surah awal",
-        path: ["surahEnd"],
-      });
-    } else if (data.surahEnd === data.surahStart && data.ayatEnd < data.ayatStart) {
+    if (data.surahEnd === data.surahStart && data.ayatEnd < data.ayatStart) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Ayat akhir tidak boleh lebih kecil dari ayat awal",

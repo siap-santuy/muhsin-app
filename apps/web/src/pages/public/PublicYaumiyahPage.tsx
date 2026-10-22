@@ -352,9 +352,9 @@ export function PublicYaumiyahPage() {
         const aStart = Number(ayatStart);
         const aEnd = Number(ayatEnd || ayatStart);
 
-        if (sEnd < sStart || (sEnd === sStart && aEnd < aStart)) {
+        if (sEnd === sStart && aEnd < aStart) {
           setToast({
-            message: "Surah atau ayat akhir tidak boleh kurang atau mundur dari awal",
+            message: "Ayat akhir tidak boleh lebih kecil dari ayat awal",
             variant: "warning",
           });
           return;
@@ -673,8 +673,7 @@ export function PublicYaumiyahPage() {
                           const val = e.target.value;
                           setSurahStart(val);
                           const sNum = Number(val);
-                          const currentEndNum = Number(surahEnd);
-                          if (!surahEnd || (currentEndNum && currentEndNum < sNum)) {
+                          if (!surahEnd) {
                             setSurahEnd(val);
                           }
                           const info = SURAH_LIST.find((s) => s.no === sNum);
@@ -752,8 +751,7 @@ export function PublicYaumiyahPage() {
                           <option
                             key={s.no}
                             value={String(s.no)}
-                            disabled={Boolean(surahStart && s.no < Number(surahStart))}
-                            className={surahStart && s.no < Number(surahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                            className="text-brand-navy"
                           >
                             {s.no}. {s.nameLatin}
                           </option>

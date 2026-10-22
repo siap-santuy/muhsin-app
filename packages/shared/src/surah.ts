@@ -167,10 +167,6 @@ export function validateSurahAyatRange(
     };
   }
 
-  if (surahEnd < surahStart) {
-    return { valid: false, error: "Surah akhir tidak boleh lebih kecil dari surah awal" };
-  }
-
   if (surahEnd === surahStart && ayatEnd < ayatStart) {
     return { valid: false, error: "Ayat akhir tidak boleh lebih kecil dari ayat awal" };
   }
@@ -231,8 +227,6 @@ export function estimateQuranPages(
   surahEnd: number,
   ayatEnd: number
 ): number {
-  if (surahEnd < surahStart) return 0;
-
   // Jika di surah yang sama
   if (surahStart === surahEnd) {
     const s = getSurahByNo(surahStart);
@@ -249,9 +243,10 @@ export function estimateQuranPages(
     return Math.round((ayatCount / 8) * 10) / 10;
   }
 
-  // Jika lintas surah
+  // Jika lintas surah (mendukung urutan maju 1->114 maupun mundur Juz 'Amma 114->78)
   let totalEstimated = 0;
-  for (let no = surahStart; no <= surahEnd; no++) {
+  const step = surahStart <= surahEnd ? 1 : -1;
+  for (let no = surahStart; step > 0 ? no <= surahEnd : no >= surahEnd; no += step) {
     const s = getSurahByNo(no);
     if (!s) continue;
     const aStart = no === surahStart ? ayatStart : 1;

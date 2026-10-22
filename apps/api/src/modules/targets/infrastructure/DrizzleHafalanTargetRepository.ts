@@ -61,23 +61,51 @@ export class DrizzleHafalanTargetRepository implements IHafalanTargetRepository 
       };
     }
 
+    const refStart = (lastZiyadah.referenceStart as any) || {};
     const refEnd = (lastZiyadah.referenceEnd as any) || (lastZiyadah.referenceStart as any);
+    const startSurahNo = Number(refStart.surahNumber || 78);
     const surahNumber = Number(refEnd.surahNumber || 78);
     const ayat = Number(refEnd.ayat || 1);
     const surahObj = SURAH_LIST.find((s) => s.no === surahNumber);
+
+    // Deteksi arah hafalan (mundur atau maju) dari setoran terakhir / riwayat
+    let isBackward = startSurahNo > surahNumber;
+    if (!isBackward && rows.length > 1) {
+      const secondZiyadah = rows.slice(1).find((r) => {
+        const code = (r.subcatCode || "").toUpperCase();
+        const isSurah = !!(r.referenceStart && (r.referenceStart as any).surah);
+        return code.includes("ZIYADAH") || (!code && isSurah);
+      });
+      if (secondZiyadah && secondZiyadah.referenceStart) {
+        const prevEnd = (secondZiyadah.referenceEnd as any) || (secondZiyadah.referenceStart as any);
+        const prevNo = Number(prevEnd.surahNumber || 0);
+        if (prevNo > surahNumber) {
+          isBackward = true;
+        }
+      }
+    }
 
     let nextSurahNo = surahNumber;
     let nextAyat = ayat + 1;
 
     // Jika ayat terakhir sudah selesai di surah tersebut, lanjut ke surah berikutnya
     if (surahObj && nextAyat > surahObj.totalAyat) {
-      if (surahNumber < 114) {
-        nextSurahNo = surahNumber + 1;
-        nextAyat = 1;
+      if (isBackward) {
+        if (surahNumber > 1) {
+          nextSurahNo = surahNumber - 1;
+          nextAyat = 1;
+        } else {
+          nextSurahNo = 1;
+          nextAyat = surahObj.totalAyat;
+        }
       } else {
-        // Sudah khatam 114
-        nextSurahNo = 114;
-        nextAyat = surahObj.totalAyat;
+        if (surahNumber < 114) {
+          nextSurahNo = surahNumber + 1;
+          nextAyat = 1;
+        } else {
+          nextSurahNo = 114;
+          nextAyat = surahObj.totalAyat;
+        }
       }
     }
 

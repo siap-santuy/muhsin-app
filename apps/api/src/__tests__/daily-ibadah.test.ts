@@ -135,17 +135,14 @@ describe("tilawahSchema Anti-Mundur & Boundary Validation", () => {
     }
   });
 
-  it("menolak surah akhir yang mundur dari surah awal", () => {
+  it("menerima surah urutan mundur lintas surah (misal An-Naziat ke An-Naba atau An-Nas ke Al-Ikhlas)", () => {
     const res = tilawahSchema.safeParse({
       surahStart: 79,
       ayatStart: 1,
       surahEnd: 78,
       ayatEnd: 10,
     });
-    expect(res.success).toBe(false);
-    if (!res.success) {
-      expect(res.error.issues[0].message).toContain("Surah akhir tidak boleh lebih kecil dari surah awal");
-    }
+    expect(res.success).toBe(true);
   });
 
   it("menolak ayat melebihi total ayat surah tersebut", () => {

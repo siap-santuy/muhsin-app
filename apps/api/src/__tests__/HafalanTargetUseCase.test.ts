@@ -85,20 +85,20 @@ describe("Targets Module UseCases", () => {
     expect(mockRepo.setTargets).toHaveBeenCalled();
   });
 
-  it("SetHafalanTargetUseCase harus menolak target jika surah akhir mundur", async () => {
+  it("SetHafalanTargetUseCase harus menerima target jika surah urutan mundur (misal An-Nazi'at ke An-Naba')", async () => {
     const uc = new SetHafalanTargetUseCase(mockRepo);
-    await expect(
-      uc.execute({
-        schoolId: "sch-1",
-        teacherId: "t-1",
-        bulan: "2026-10",
-        studentIds: ["s-1"],
-        targetSurahStart: "An-Nazi'at",
-        targetAyatStart: "1",
-        targetSurahEnd: "An-Naba'",
-        targetAyatEnd: "40",
-      })
-    ).rejects.toThrow("Surah akhir tidak boleh lebih kecil dari surah awal");
+    const res = await uc.execute({
+      schoolId: "sch-1",
+      teacherId: "t-1",
+      bulan: "2026-10",
+      studentIds: ["s-1"],
+      targetSurahStart: "An-Nazi'at",
+      targetAyatStart: "1",
+      targetSurahEnd: "An-Naba'",
+      targetAyatEnd: "40",
+    });
+    expect(res).toHaveLength(2);
+    expect(mockRepo.setTargets).toHaveBeenCalled();
   });
 
   it("SetHafalanTargetUseCase harus menolak target jika ayat akhir mundur dalam surah yang sama", async () => {

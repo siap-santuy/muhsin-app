@@ -263,8 +263,8 @@ export function TeacherTTQInputPage({
             const aStartNum = ayatStart ? Number(ayatStart) : 1;
             const aEndNum = ayatEnd ? Number(ayatEnd) : aStartNum;
 
-            if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
-              toast.warning("Surah atau ayat akhir tidak boleh kurang atau mundur dari awal");
+            if (sEndNum === sStartNum && aEndNum < aStartNum) {
+              toast.warning("Ayat akhir tidak boleh lebih kecil dari ayat awal");
               setLoading(false);
               return;
             }
@@ -340,8 +340,8 @@ export function TeacherTTQInputPage({
             const aStartNum = ayatStart ? Number(ayatStart) : 1;
             const aEndNum = ayatEnd ? Number(ayatEnd) : aStartNum;
 
-            if (sEndNum < sStartNum || (sEndNum === sStartNum && aEndNum < aStartNum)) {
-              toast.warning("Surah atau ayat akhir tidak boleh kurang atau mundur dari awal");
+            if (sEndNum === sStartNum && aEndNum < aStartNum) {
+              toast.warning("Ayat akhir tidak boleh lebih kecil dari ayat awal");
               setLoading(false);
               return;
             }
@@ -654,8 +654,7 @@ export function TeacherTTQInputPage({
                               const val = e.target.value;
                               setSurahStart(val);
                               const sNum = Number(val);
-                              const currentEndNum = Number(surahEnd);
-                              if (!surahEnd || (currentEndNum && currentEndNum < sNum)) {
+                              if (!surahEnd) {
                                 setSurahEnd(val);
                               }
                               const info = SURAH_LIST.find((s) => s.no === sNum);
@@ -710,8 +709,7 @@ export function TeacherTTQInputPage({
                               <option
                                 key={s.no}
                                 value={s.no}
-                                disabled={Boolean(surahStart && s.no < Number(surahStart))}
-                                className={surahStart && s.no < Number(surahStart) ? "text-gray-300 bg-gray-100" : "text-brand-navy"}
+                                className="text-brand-navy"
                               >
                                 {s.no}. {s.nameLatin}
                               </option>
