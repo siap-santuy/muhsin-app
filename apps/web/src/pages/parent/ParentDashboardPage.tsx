@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  Award,
   BookOpen,
   BookOpenCheck,
   ChevronRight,
@@ -137,6 +138,25 @@ export function ParentDashboardPage() {
                 Rekor Istiqomah Ibadah &amp; Setoran Ananda
               </p>
             </div>
+          </div>
+
+          {/* Banner Capaian Badge & Hafalan Ananda */}
+          <div
+            onClick={() => (window.location.hash = "#/achievements")}
+            className="flex items-center justify-between rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/40 p-3.5 shadow-xs cursor-pointer hover:border-amber-300 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-white shadow-sm shadow-amber-400/20">
+                <Award className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-brand-navy">Pencapaian &amp; Badge Hafalan</h3>
+                <p className="text-[11px] font-medium text-amber-800/80">Pantau koleksi surah &amp; juz yang telah tuntas</p>
+              </div>
+            </div>
+            <span className="flex items-center text-xs font-bold text-amber-700">
+              Buka →
+            </span>
           </div>
 
           {/* Widget Setoran Terakhir Ananda */}

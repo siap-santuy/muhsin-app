@@ -10,6 +10,7 @@ import {
   Eye,
   Loader2,
   Search,
+  Sparkles,
   Target,
   X,
 } from "lucide-react";
@@ -994,6 +995,14 @@ export function TeacherStudentListPage() {
                       >
                         <Award className="h-4 w-4" />
                         <span>MUNAQOSAH</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => (window.location.hash = `#/achievements?studentId=${s.id}`)}
+                        title="Lihat Peta Capaian & Badge Santri"
+                        className="flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-3 text-[11px] font-extrabold text-amber-700 shadow-xs transition-all hover:bg-amber-100 active:scale-[0.99]"
+                      >
+                        <Sparkles className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

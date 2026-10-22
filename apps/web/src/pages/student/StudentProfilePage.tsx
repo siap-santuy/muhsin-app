@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  Award,
   ChevronRight,
   HelpCircle,
   Info,
@@ -83,6 +84,28 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
               STUDENT
             </span>
           </div>
+
+          {/* Prestasi Section */}
+          <section>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-navy">
+              PRESTASI &amp; CAPAIAN
+            </h3>
+            <div className="rounded-2xl border border-brand-line bg-white px-4 py-1 shadow-sm divide-y divide-brand-line/40">
+              <button
+                type="button"
+                onClick={() => (window.location.hash = "#/achievements")}
+                className="flex w-full items-center justify-between py-3 text-left transition-opacity hover:opacity-75"
+              >
+                <div className="flex items-center gap-3">
+                  <Award className="h-5 w-5 text-amber-500" />
+                  <span className="text-xs font-bold text-brand-navy">
+                    Peta Hafalan &amp; Koleksi Badge
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </button>
+            </div>
+          </section>
 
           {/* Akun Section */}
           <section>

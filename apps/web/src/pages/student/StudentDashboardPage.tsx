@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpenCheck, Flame, PenLine, Star, Trophy, X, Zap } from "lucide-react";
+import { Award, BookOpenCheck, Flame, PenLine, Star, Trophy, X, Zap } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DailyQuote } from "@/components/student/DailyQuote";
@@ -145,6 +145,24 @@ export function StudentDashboardPage() {
             onStreakPress={() => setDialog("streak")}
             onLevelPress={() => setDialog("level")}
           />
+          {/* Menu Pencapaian & Badge Hafalan */}
+          <div
+            onClick={() => (window.location.hash = "#/achievements")}
+            className="flex items-center justify-between rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/40 p-3.5 shadow-sm cursor-pointer hover:border-amber-300 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-white shadow-sm shadow-amber-400/20">
+                <Award className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-brand-navy">Pencapaian & Badge Hafalan</h3>
+                <p className="text-[11px] font-medium text-amber-800/80">Koleksi surah, juz & sabiq yang telah tuntas</p>
+              </div>
+            </div>
+            <span className="flex items-center text-xs font-bold text-amber-700">
+              Lihat →
+            </span>
+          </div>
           {/* Target Ziyadah Bulan Ini */}
           <div className="flex items-center gap-3 rounded-2xl border border-brand-cyan/30 bg-brand-cyan/5 px-4 py-3">
             <BookOpenCheck className="h-6 w-6 shrink-0 text-brand-cyan" />
