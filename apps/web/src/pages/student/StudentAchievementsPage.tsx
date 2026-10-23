@@ -287,7 +287,7 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
               </div>
             </div>
 
-            {/* Badges Grid - Simple Circular Emblem (Maks 3 di mobile, 4-5 di desktop) */}
+            {/* Badges Gallery - Flexbox Wrap with Center Justify */}
             {filteredBadges.length === 0 ? (
               <div className="rounded-2xl border border-brand-line bg-white p-8 text-center">
                 <p className="text-xs font-semibold text-brand-muted">
@@ -295,7 +295,7 @@ export function StudentAchievementsPage({ studentId }: StudentAchievementsPagePr
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-4.5 py-1">
                 {filteredBadges.map((badge) => (
                   <BadgeCircularCard
                     key={badge.id}
@@ -383,28 +383,28 @@ function BadgeCircularCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex flex-col items-center justify-start p-1.5 sm:p-2 text-center transition-all cursor-pointer active:scale-95"
+      className="group relative flex w-[90px] sm:w-[104px] flex-col items-center justify-start p-1.5 text-center transition-all cursor-pointer active:scale-95 shrink-0"
     >
-      {/* 1. Lingkaran Badge Utama (Ukuran lebih compact: h-15 w-15 sm:h-16 sm:w-16) */}
+      {/* 1. Lingkaran Badge Utama */}
       <div
-        className={`relative flex h-15 w-15 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-105 ${theme.outerRing}`}
+        className={`relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-105 shrink-0 ${theme.outerRing}`}
       >
         {/* Ikon Background dengan Opacity Rendah (20-25%) agar tidak beradu dengan angka */}
         <div
           className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-transform ${theme.bgIcon}`}
         >
           {badge.category === "juz" ? (
-            <Crown className="h-9 w-9 sm:h-10 sm:w-10" />
+            <Crown className="h-8 w-8 sm:h-9 sm:w-9" />
           ) : badge.category === "sabiq" ? (
-            <FileText className="h-8 w-8 sm:h-9 sm:w-9" />
+            <FileText className="h-7 w-7 sm:h-8 sm:w-8" />
           ) : (
-            <BookOpen className="h-8 w-8 sm:h-9 sm:w-9" />
+            <BookOpen className="h-7 w-7 sm:h-8 sm:w-8" />
           )}
         </div>
 
-        {/* Angka Perwakilan di Tengah Lingkaran (Lebih besar: text-lg sm:text-xl) */}
+        {/* Angka Perwakilan di Tengah Lingkaran */}
         <span
-          className={`relative z-10 text-lg sm:text-xl font-black tracking-tight ${theme.numberText}`}
+          className={`relative z-10 text-base sm:text-lg font-black tracking-tight ${theme.numberText}`}
         >
           {badge.code}
         </span>
@@ -418,8 +418,8 @@ function BadgeCircularCard({
       </div>
 
       {/* 2. Label Nama Badge Ringkas di Bawah Lingkaran */}
-      <div className="mt-2 w-full px-0.5">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted block">
+      <div className="mt-1.5 w-full px-0.5">
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted block leading-none mb-1">
           {badge.category === "surah"
             ? "Surah"
             : badge.category === "juz"
