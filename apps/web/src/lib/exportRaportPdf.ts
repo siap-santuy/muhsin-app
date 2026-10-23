@@ -197,7 +197,7 @@ export async function exportRaportPdf(
 
   const denom = (() => {
     const m = String(absensi.kehadiranRatio ?? '').match(/\/(\d+)/);
-    return m ? m[1] : (reportType === 'monthly' ? '30' : '180');
+    return m ? m[1] : (reportType === 'monthly' ? '16' : '96');
   })();
 
   const semLabel = period.semester

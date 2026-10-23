@@ -315,18 +315,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
         )
       );
 
-    // Hitung total hari kerja (Senin-Jumat, Sabtu & Minggu libur) dalam bulan ini
-    const [yearNum, monthNum] = currentMonth.split("-").map(Number);
-    const dateCursor = new Date(yearNum, monthNum - 1, 1);
-    let totalWorkingDays = 0;
-    while (dateCursor.getMonth() === monthNum - 1) {
-      const dayOfWeek = dateCursor.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        totalWorkingDays++;
-      }
-      dateCursor.setDate(dateCursor.getDate() + 1);
-    }
-    const safeWorkingDays = Math.max(1, totalWorkingDays);
+    // Target pertemuan program TTQ dalam 1 bulan adalah 16 kali pertemuan
+    const safeWorkingDays = 16;
 
     // Map studentId -> classId
     const studentToClassMap = new Map<string, string>();

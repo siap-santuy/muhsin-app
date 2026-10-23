@@ -273,17 +273,8 @@ export class DrizzleRaportRepository implements IRaportRepository {
       }
     }
 
-    const [yearNum, monthNum] = month.split("-").map(Number);
-    const dateCursor = new Date(yearNum, monthNum - 1, 1);
-    let totalWorkingDays = 0;
-    while (dateCursor.getMonth() === monthNum - 1) {
-      const dayOfWeek = dateCursor.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        totalWorkingDays++;
-      }
-      dateCursor.setDate(dateCursor.getDate() + 1);
-    }
-    const safeTargetDays = Math.max(1, totalWorkingDays);
+    // Target pertemuan TTQ dalam 1 bulan adalah 16 kali pertemuan
+    const safeTargetDays = 16;
     const hadirCount = attendedDates.size;
     const tidakSetoranCount = Math.max(0, safeTargetDays - hadirCount - sakitCount - izinCount - alpaCount);
 
@@ -486,8 +477,8 @@ export class DrizzleRaportRepository implements IRaportRepository {
         kelancaran: cntTahsin > 0 ? Math.round((sumKelancaran / cntTahsin) * 10) / 10 : 0,
       },
       absensi: {
-        kehadiranRatio: `${setoranCountTotal}/${targetSemesterTotal || 120}`,
-        tidakSetoranCount: Math.max(0, (targetSemesterTotal || 120) - setoranCountTotal - totalSakit - totalIzin - totalAlpa),
+        kehadiranRatio: `${setoranCountTotal}/${targetSemesterTotal || 96}`,
+        tidakSetoranCount: Math.max(0, (targetSemesterTotal || 96) - setoranCountTotal - totalSakit - totalIzin - totalAlpa),
         sakitCount: totalSakit,
         izinCount: totalIzin,
         alpaCount: totalAlpa,
