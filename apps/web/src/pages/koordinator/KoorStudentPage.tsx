@@ -106,6 +106,7 @@ export function KoorStudentPage() {
   const [isParentModalOpen, setIsParentModalOpen] = useState(false);
   const [editingParent, setEditingParent] = useState<ParentRecord | null>(null);
   const [parentModalLoading, setParentModalLoading] = useState(false);
+  const [parentSearchStudent, setParentSearchStudent] = useState("");
   const [parentFormData, setParentFormData] = useState({
     name: "",
     email: "",
@@ -727,6 +728,7 @@ export function KoorStudentPage() {
                                 type="button"
                                 onClick={() => {
                                   setEditingParent(p);
+                                  setParentSearchStudent("");
                                   setParentFormData({
                                     name: p.name,
                                     email: p.email,
@@ -922,49 +924,95 @@ export function KoorStudentPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-brand-navy">Santri yang Terhubung (Anak Kandung)</label>
-                    <span className="text-[10px] font-bold text-brand-cyan">
-                      {parentFormData.selectedStudentIds.length} anak terpilih
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800 border border-emerald-300">
+                      ✓ {parentFormData.selectedStudentIds.length} Anak Terpilih
                     </span>
                   </div>
                   <p className="text-[11px] text-brand-text-muted mb-2">
-                    Centang santri yang merupakan anak dari akun orang tua ini agar dapat dipantau sekaligus via switcher anak.
+                    Anak yang dicentang otomatis ditaruh paling atas agar mudah diperiksa.
                   </p>
 
-                  <div className="max-h-48 overflow-y-auto rounded-xl border border-brand-line/70 bg-brand-page/50 p-2 space-y-1 divide-y divide-brand-line/40">
-                    {students.map((st) => {
-                      const isChecked = parentFormData.selectedStudentIds.includes(st.id);
-                      return (
-                        <label
-                          key={st.id}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setParentFormData({
-                                    ...parentFormData,
-                                    selectedStudentIds: [...parentFormData.selectedStudentIds, st.id],
-                                  });
-                                } else {
-                                  setParentFormData({
-                                    ...parentFormData,
-                                    selectedStudentIds: parentFormData.selectedStudentIds.filter((id) => id !== st.id),
-                                  });
-                                }
-                              }}
-                              className="h-4 w-4 rounded border-brand-line text-brand-cyan focus:ring-brand-cyan"
-                            />
-                            <div>
-                              <p className="text-xs font-bold text-brand-navy">{st.name}</p>
-                              <p className="text-[10px] text-brand-text-muted">{st.className ?? "Tanpa Kelas"}</p>
-                            </div>
-                          </div>
-                        </label>
+                  {/* Filter Pencarian Santri di Modal */}
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      value={parentSearchStudent}
+                      onChange={(e) => setParentSearchStudent(e.target.value)}
+                      placeholder="Cari nama santri atau kelas..."
+                      className="w-full rounded-xl border border-brand-line bg-brand-page px-3 py-1.5 text-xs text-brand-navy outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div className="max-h-52 overflow-y-auto rounded-xl border border-brand-line/70 bg-brand-page/50 p-2 space-y-1 divide-y divide-brand-line/40">
+                    {(() => {
+                      const q = parentSearchStudent.toLowerCase();
+                      const list = students.filter(
+                        (st) =>
+                          st.name.toLowerCase().includes(q) ||
+                          (st.className && st.className.toLowerCase().includes(q))
                       );
-                    })}
+
+                      // Urutkan: Yang sudah dipilih (checked) selalu paling atas!
+                      const sorted = [...list].sort((a, b) => {
+                        const aChecked = parentFormData.selectedStudentIds.includes(a.id);
+                        const bChecked = parentFormData.selectedStudentIds.includes(b.id);
+                        if (aChecked && !bChecked) return -1;
+                        if (!aChecked && bChecked) return 1;
+                        return a.name.localeCompare(b.name);
+                      });
+
+                      if (sorted.length === 0) {
+                        return (
+                          <p className="py-4 text-center text-xs text-brand-text-muted">
+                            Tidak ada santri yang cocok.
+                          </p>
+                        );
+                      }
+
+                      return sorted.map((st) => {
+                        const isChecked = parentFormData.selectedStudentIds.includes(st.id);
+                        return (
+                          <label
+                            key={st.id}
+                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                              isChecked ? "bg-emerald-50/80 border border-emerald-200" : "hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setParentFormData({
+                                      ...parentFormData,
+                                      selectedStudentIds: [...parentFormData.selectedStudentIds, st.id],
+                                    });
+                                  } else {
+                                    setParentFormData({
+                                      ...parentFormData,
+                                      selectedStudentIds: parentFormData.selectedStudentIds.filter((id) => id !== st.id),
+                                    });
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-brand-line text-brand-cyan focus:ring-brand-cyan"
+                              />
+                              <div>
+                                <p className={`text-xs font-bold ${isChecked ? "text-emerald-900" : "text-brand-navy"}`}>
+                                  {st.name}
+                                </p>
+                                <p className="text-[10px] text-brand-text-muted">{st.className ?? "Tanpa Kelas"}</p>
+                              </div>
+                            </div>
+                            {isChecked && (
+                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                Terpilih
+                              </span>
+                            )}
+                          </label>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
 
