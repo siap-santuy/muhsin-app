@@ -459,8 +459,39 @@ class ApiClient {
     return this.request("GET", `/raport/semester?${query.toString()}`);
   }
 
-  async getDashboardSummary<T = any>(): Promise<T> {
-    return this.request<T>("GET", `/dashboard/summary`);
+  async getDashboardSummary<T = any>(studentId?: string): Promise<T> {
+    const targetStudentId = studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
+    const url = targetStudentId ? `/dashboard/summary?studentId=${targetStudentId}` : `/dashboard/summary`;
+    return this.request<T>("GET", url);
+  }
+
+  async getSchoolParents(): Promise<Array<{
+    id: string;
+    name: string;
+    username: string | null;
+    email: string;
+    phone: string | null;
+    children: Array<{
+      id: string;
+      name: string;
+      username: string | null;
+      className: string | null;
+    }>;
+  }>> {
+    return this.request("GET", `/school-admin/parents`);
+  }
+
+  async updateSchoolParent(parentId: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string | null;
+    studentIds?: string[];
+  }): Promise<{ success: boolean }> {
+    return this.request("PUT", `/school-admin/parents/${parentId}`, data);
+  }
+
+  async resetSchoolParentPassword(parentId: string): Promise<{ defaultPassword: string }> {
+    return this.request("POST", `/school-admin/parents/${parentId}/reset-password`);
   }
 
   async getKoorStudentActivity(params: { date?: string; classId?: string } = {}): Promise<Array<{

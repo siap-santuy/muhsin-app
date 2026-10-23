@@ -1,9 +1,39 @@
 [
   {
-    "version": "v1.2.0",
+    "version": "v1.3.0",
     "releaseDate": "23 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Dukungan Multi-Anak Wali Murid & Manajemen Relasi Santri Koordinator",
+    "summary": "Pembaruan arsitektur orang tua: dukungan multi-anak dengan Dropdown Switcher Anak di Dashboard Orang Tua, serta antarmuka khusus Koordinator untuk mengelola daftar wali murid, menghubungkan santri bersaudara, dan mereset password akun wali secara instan.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Dropdown Switcher Anak di Dashboard Orang Tua untuk berganti pantauan anak secara instan tanpa perlu logout."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Sub-tab 'Data Wali Murid' di halaman Koordinator untuk melihat akun wali, username, dan daftar santri yang terhubung."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Modal kelola relasi santri bagi Koordinator untuk menghubungkan anak-anak kandung ke satu akun orang tua tanpa perlu query SQL manual."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tombol reset password langsung untuk akun orang tua oleh Koordinator."
+      }
+    ]
+  },
+  {
+    "version": "v1.2.0",
+    "releaseDate": "23 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Peta Capaian Hafalan, Sistem Badge Penghafal, & Reset Password Cerdas",
     "summary": "Pembaruan fitur skala besar: dukungan setoran Al-Qur'an urutan mundur (metode Juz 'Amma) dan maju di semua form, peluncuran Peta Capaian & Koleksi Badge Penghafal (Surah, Juz, Sabiq) dengan popup perayaan khusus santri, serta sistem reset password default oleh koordinator dan form pengajuan di halaman login.",
     "changes": [

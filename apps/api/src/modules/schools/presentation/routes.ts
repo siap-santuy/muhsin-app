@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { ManageStudentUseCase, ManageTeacherUseCase } from "../application/use-cases/ManageSchoolUserUseCase";
+import type { ManageParentUseCase } from "../application/use-cases/ManageParentUseCase";
 import type { ResetDefaultPasswordUseCase } from "../application/use-cases/ResetDefaultPasswordUseCase";
 import type { ISchoolAdminRepository } from "../domain/repositories/ISchoolAdminRepository";
 
@@ -127,6 +128,7 @@ export interface SchoolAdminRoutesDeps {
   adminRepo: ISchoolAdminRepository;
   manageStudentUseCase: ManageStudentUseCase;
   manageTeacherUseCase: ManageTeacherUseCase;
+  manageParentUseCase?: ManageParentUseCase;
   resetDefaultPasswordUseCase?: ResetDefaultPasswordUseCase;
 }
 
@@ -260,6 +262,51 @@ export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
         error: null,
         meta: null,
       }, 200);
+    } catch (err: any) {
+      return handleError(err, c);
+    }
+  });
+
+  // GET /schools/parents — Daftar Orang Tua & Relasi Santri
+  app.get("/parents", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.manageParentUseCase) {
+      return c.json({ data: null, error: { message: "Service belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    try {
+      const data = await deps.manageParentUseCase.list(user.schoolId);
+      return c.json({ data, error: null, meta: null }, 200);
+    } catch (err: any) {
+      return handleError(err, c);
+    }
+  });
+
+  // PUT /schools/parents/:id — Update Profil Ortu & Relasi Anak
+  app.put("/parents/:id", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.manageParentUseCase) {
+      return c.json({ data: null, error: { message: "Service belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const parentId = c.req.param("id") ?? "";
+    const body = await c.req.json().catch(() => ({}));
+    try {
+      await deps.manageParentUseCase.update(parentId, user.schoolId, body);
+      return c.json({ data: { success: true }, error: null, meta: null }, 200);
+    } catch (err: any) {
+      return handleError(err, c);
+    }
+  });
+
+  // POST /schools/parents/:id/reset-password — Reset Password Akun Orang Tua Langsung
+  app.post("/parents/:id/reset-password", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const parentId = c.req.param("id") ?? "";
+    try {
+      const res = await deps.resetDefaultPasswordUseCase.resetParentDirect(parentId, user.schoolId);
+      return c.json({ data: res, error: null, meta: null }, 200);
     } catch (err: any) {
       return handleError(err, c);
     }

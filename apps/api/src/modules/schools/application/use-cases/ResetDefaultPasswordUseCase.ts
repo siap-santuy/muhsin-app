@@ -63,4 +63,32 @@ export class ResetDefaultPasswordUseCase {
       teacherName: teacher.name,
     };
   }
+
+  async resetParentDirect(parentId: string, schoolId: string): Promise<{
+    defaultPassword: string;
+  }> {
+    if (!parentId || !schoolId) {
+      throw new Error("Parent ID dan School ID wajib diisi");
+    }
+
+    // Ambil santri pertama dari orang tua ini jika ada untuk format DDMMYYYY, atau fallback muhsin123
+    const parents = await this.repo.getParents(schoolId);
+    const parent = parents.find((p) => p.id === parentId);
+    if (!parent) {
+      throw new Error("Orang tua tidak ditemukan di sekolah ini");
+    }
+
+    let defaultPassword = "muhsin123";
+    if (parent.children.length > 0) {
+      const studentData = await this.repo.findStudentWithParents(parent.children[0].id, schoolId);
+      if (studentData?.student.birthDate) {
+        defaultPassword = formatBirthDateToDefaultPassword(studentData.student.birthDate);
+      }
+    }
+
+    const hash = await this.passwordHasher.hashPassword(defaultPassword);
+    await this.repo.updateUserPassword(parentId, schoolId, hash);
+
+    return { defaultPassword };
+  }
 }

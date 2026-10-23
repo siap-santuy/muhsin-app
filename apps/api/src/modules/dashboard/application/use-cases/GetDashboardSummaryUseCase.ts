@@ -3,14 +3,14 @@ import type { IDashboardRepository } from "../../domain/repositories/IDashboardR
 export class GetDashboardSummaryUseCase {
   constructor(private readonly repo: IDashboardRepository) {}
 
-  async execute(user: { userId: string; role: string; schoolId: string }) {
+  async execute(user: { userId: string; role: string; schoolId: string; studentId?: string }) {
     switch (user.role) {
       case "student":
         return this.repo.getStudentDashboard(user.userId, user.schoolId);
       case "teacher":
         return this.repo.getTeacherDashboard(user.userId, user.schoolId);
       case "parent":
-        return this.repo.getParentDashboard(user.userId, user.schoolId);
+        return this.repo.getParentDashboard(user.userId, user.schoolId, user.studentId);
       case "koordinator_ttq":
       default:
         return this.repo.getKoordinatorDashboard(user.schoolId);

@@ -42,6 +42,7 @@ const app = createApp({
   getTeachersUseCase: {} as never,
   manageSubstitutionUseCase: {} as never,
   manageTeacherUseCase: {} as never,
+  manageParentUseCase: {} as never,
   resetDefaultPasswordUseCase: {} as never,
   schoolAdminRepo: {} as never,
   getSetoranHistoryUseCase: {} as never,

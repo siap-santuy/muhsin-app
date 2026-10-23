@@ -63,8 +63,15 @@ export interface TeacherDashboardSummary {
   };
 }
 
+export interface ParentDashboardChildItem {
+  id: string;
+  name: string;
+  className: string;
+}
+
 export interface ParentDashboardSummary {
   parentName: string;
+  children?: ParentDashboardChildItem[];
   childId?: string;
   childName: string;
   childClassName: string;

@@ -34,25 +34,23 @@ export function createDashboardRoutes(deps: DashboardRoutesDeps | GetDashboardSu
   // GET /dashboard/summary
   app.get("/summary", async (c) => {
     const user = c.get("user");
+    const requestedStudentId = c.req.query("studentId");
     const summary = await summaryOnly.execute({
       userId: user.userId,
       role: user.role,
       schoolId: user.schoolId,
+      studentId: requestedStudentId,
     });
     if (full && user.role === "parent") {
-      void full.recordParentViewUseCase
-        .resolveFirstChild(user.userId, user.schoolId)
-        .then((targetId) =>
-          targetId
-            ? full.recordParentViewUseCase.execute({
-                schoolId: user.schoolId,
-                parentId: user.userId,
-                studentId: targetId,
-                source: "dashboard",
-              })
-            : undefined
-        )
-        .catch(() => {});
+      const activeChildId = (summary as any)?.childId;
+      if (activeChildId) {
+        void full.recordParentViewUseCase.execute({
+          schoolId: user.schoolId,
+          parentId: user.userId,
+          studentId: activeChildId,
+          source: "dashboard",
+        }).catch(() => {});
+      }
     }
     return c.json({ data: summary, error: null, meta: null }, 200);
   });

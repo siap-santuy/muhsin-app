@@ -462,7 +462,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
   async getParentDashboard(
     parentId: string,
-    schoolId: string
+    schoolId: string,
+    requestedStudentId?: string
   ): Promise<ParentDashboardSummary> {
     const parentRows = await this.db
       .select({ name: users.name })
@@ -470,7 +471,8 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
       .where(and(eq(users.id, parentId), eq(users.schoolId, schoolId)))
       .limit(1);
 
-    const childMapping = await this.db
+    // Ambil seluruh santri yang terhubung ke orang tua ini
+    const allChildrenMappings = await this.db
       .select({
         studentId: parentStudentMapping.studentId,
         studentName: users.name,
@@ -491,10 +493,19 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
           eq(parentStudentMapping.parentId, parentId),
           eq(parentStudentMapping.schoolId, schoolId)
         )
-      )
-      .limit(1);
+      );
 
-    const child = childMapping[0];
+    const childrenList = allChildrenMappings.map((c) => ({
+      id: c.studentId,
+      name: c.studentName,
+      className: c.className ?? "-",
+    }));
+
+    // Tentukan anak aktif: gunakan requestedStudentId jika valid di daftar anak, jika tidak gunakan anak pertama
+    let child = allChildrenMappings.find((c) => c.studentId === requestedStudentId);
+    if (!child && allChildrenMappings.length > 0) {
+      child = allChildrenMappings[0];
+    }
     const childId = child?.studentId;
 
     let gam: any = null;
@@ -687,6 +698,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
       return {
         parentName: parentRows[0]?.name ?? "Orang Tua",
+        children: childrenList,
         childId: childId ?? undefined,
         childName: child?.studentName ?? "Ananda",
         childClassName: child?.className ?? "Kelas VII",
@@ -712,6 +724,7 @@ export class DrizzleDashboardRepository implements IDashboardRepository {
 
     return {
       parentName: parentRows[0]?.name ?? "Orang Tua",
+      children: childrenList,
       childId: childId ?? undefined,
       childName: child?.studentName ?? "Ananda",
       childClassName: child?.className ?? "Kelas VII",

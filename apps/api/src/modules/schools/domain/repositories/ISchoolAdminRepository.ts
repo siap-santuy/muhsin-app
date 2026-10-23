@@ -32,6 +32,20 @@ export interface CreateSchoolUserParams {
   classId?: string | null;
 }
 
+export interface SchoolParentItem {
+  id: string;
+  name: string;
+  username: string | null;
+  email: string;
+  phone: string | null;
+  children: Array<{
+    id: string;
+    name: string;
+    username: string | null;
+    className: string | null;
+  }>;
+}
+
 export interface ISchoolAdminRepository {
   createUser(data: CreateSchoolUserParams): Promise<{ id: string }>;
   updateUser(id: string, schoolId: string, data: { name?: string; email?: string; phone?: string | null }): Promise<void>;
@@ -52,4 +66,6 @@ export interface ISchoolAdminRepository {
   } | null>;
   updateUserPassword(userId: string, schoolId: string, passwordHash: string): Promise<void>;
   updateUsersPassword(userIds: string[], schoolId: string, passwordHash: string): Promise<void>;
+  getParents(schoolId: string): Promise<SchoolParentItem[]>;
+  updateParentMappings(parentId: string, schoolId: string, studentIds: string[]): Promise<void>;
 }

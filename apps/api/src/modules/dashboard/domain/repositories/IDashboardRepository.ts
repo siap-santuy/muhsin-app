@@ -8,6 +8,6 @@ import type {
 export interface IDashboardRepository {
   getStudentDashboard(studentId: string, schoolId: string): Promise<StudentDashboardSummary>;
   getTeacherDashboard(teacherId: string, schoolId: string): Promise<TeacherDashboardSummary>;
-  getParentDashboard(parentId: string, schoolId: string): Promise<ParentDashboardSummary>;
+  getParentDashboard(parentId: string, schoolId: string, requestedStudentId?: string): Promise<ParentDashboardSummary>;
   getKoordinatorDashboard(schoolId: string): Promise<KoordinatorDashboardSummary>;
 }

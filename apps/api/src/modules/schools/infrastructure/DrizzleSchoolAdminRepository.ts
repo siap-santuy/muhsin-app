@@ -16,6 +16,7 @@ import type {
   SchoolClassItem,
   AcademicPeriodItem,
   MunaqosahPeriodItem,
+  SchoolParentItem,
 } from "../domain/repositories/ISchoolAdminRepository";
 
 export class DrizzleSchoolAdminRepository implements ISchoolAdminRepository {
@@ -235,5 +236,83 @@ export class DrizzleSchoolAdminRepository implements ISchoolAdminRepository {
       .update(users)
       .set({ passwordHash })
       .where(and(inArray(users.id, userIds), eq(users.schoolId, schoolId)));
+  }
+
+  async getParents(schoolId: string): Promise<SchoolParentItem[]> {
+    const parentRows = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        email: users.email,
+        phone: users.phone,
+      })
+      .from(users)
+      .where(and(eq(users.schoolId, schoolId), eq(users.role, "parent")))
+      .orderBy(users.name);
+
+    if (parentRows.length === 0) return [];
+
+    const parentIds = parentRows.map((p) => p.id);
+
+    const mappingRows = await this.db
+      .select({
+        parentId: parentStudentMapping.parentId,
+        studentId: users.id,
+        studentName: users.name,
+        studentUsername: users.username,
+        className: classes.name,
+      })
+      .from(parentStudentMapping)
+      .innerJoin(users, eq(users.id, parentStudentMapping.studentId))
+      .leftJoin(
+        studentClassEnrollment,
+        and(
+          eq(studentClassEnrollment.studentId, users.id),
+          eq(studentClassEnrollment.schoolId, schoolId)
+        )
+      )
+      .leftJoin(classes, eq(classes.id, studentClassEnrollment.classId))
+      .where(
+        and(
+          eq(parentStudentMapping.schoolId, schoolId),
+          inArray(parentStudentMapping.parentId, parentIds)
+        )
+      );
+
+    const childrenMap = new Map<string, SchoolParentItem["children"]>();
+    for (const m of mappingRows) {
+      const arr = childrenMap.get(m.parentId) || [];
+      arr.push({
+        id: m.studentId,
+        name: m.studentName,
+        username: m.studentUsername,
+        className: m.className ?? null,
+      });
+      childrenMap.set(m.parentId, arr);
+    }
+
+    return parentRows.map((p) => ({
+      ...p,
+      children: childrenMap.get(p.id) || [],
+    }));
+  }
+
+  async updateParentMappings(parentId: string, schoolId: string, studentIds: string[]): Promise<void> {
+    // 1. Hapus mapping lama milik orang tua ini
+    await this.db
+      .delete(parentStudentMapping)
+      .where(and(eq(parentStudentMapping.parentId, parentId), eq(parentStudentMapping.schoolId, schoolId)));
+
+    // 2. Masukkan relasi mapping baru (jika ada)
+    if (studentIds.length > 0) {
+      await this.db.insert(parentStudentMapping).values(
+        studentIds.map((sId) => ({
+          schoolId,
+          parentId,
+          studentId: sId,
+        }))
+      );
+    }
   }
 }

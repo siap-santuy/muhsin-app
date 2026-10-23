@@ -3,6 +3,7 @@ import {
   Award,
   BookOpen,
   BookOpenCheck,
+  ChevronDown,
   ChevronRight,
   Flame,
   HeartHandshake,
@@ -28,19 +29,40 @@ const QUOTE = {
 export function ParentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<any>(null);
+  const [activeChildId, setActiveChildId] = useState<string | null>(() => {
+    return typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") : null;
+  });
 
-  useEffect(() => {
-    api.getDashboardSummary()
+  const loadSummary = (targetChildId?: string) => {
+    api.getDashboardSummary(targetChildId)
       .then((data) => {
         setSummary(data);
-        if (data?.childId && typeof window !== "undefined") {
-          localStorage.setItem("parent_active_child_id", data.childId);
+        if (data?.childId) {
+          setActiveChildId(data.childId);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("parent_active_child_id", data.childId);
+          }
         }
       })
       .catch(() => {
         // Fallback
       });
+  };
+
+  useEffect(() => {
+    loadSummary(activeChildId || undefined);
   }, []);
+
+  const handleSwitchChild = (newChildId: string) => {
+    if (!newChildId || newChildId === activeChildId) return;
+    setActiveChildId(newChildId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("parent_active_child_id", newChildId);
+    }
+    loadSummary(newChildId);
+  };
+
+  const children: Array<{ id: string; name: string; className: string }> = summary?.children || [];
 
   const parentName = getDisplayName(
     user?.name ?? "Orang Tua",
@@ -92,16 +114,40 @@ export function ParentDashboardPage() {
       <main className="flex-1 overflow-y-auto px-4 pt-1 pb-4">
         <div className="flex flex-col gap-4">
           <section className="flex items-end justify-between">
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold leading-snug text-brand-navy">
                 Assalamu&apos;alaikum,
               </h1>
               <p className="text-lg font-semibold leading-snug text-brand-navy">
                 {parentName}
               </p>
-              <p className="text-xs text-brand-text-muted">
-                Wali dari {childName} &mdash; {childClass}
-              </p>
+              
+              {/* Dropdown Switcher Anak jika > 1, atau label statis jika 1 anak */}
+              {children.length > 1 ? (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-brand-text-muted shrink-0">
+                    Memantau:
+                  </span>
+                  <div className="relative inline-block max-w-[240px]">
+                    <select
+                      value={summary?.childId || ""}
+                      onChange={(e) => handleSwitchChild(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-brand-cyan/40 bg-white py-1 pl-2.5 pr-7 text-xs font-extrabold text-brand-navy outline-none shadow-xs focus:border-brand-cyan"
+                    >
+                      {children.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.className})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-cyan" />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-brand-text-muted">
+                  Wali dari {childName} &mdash; {childClass}
+                </p>
+              )}
             </div>
           </section>
 

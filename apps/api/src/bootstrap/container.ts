@@ -116,6 +116,7 @@ import { createPublicSchoolRoutes, createSchoolAdminRoutes } from "../modules/sc
 import { createPublicDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/public-routes";
 import { DrizzleSchoolAdminRepository } from "../modules/schools/infrastructure/DrizzleSchoolAdminRepository";
 import { ManageStudentUseCase, ManageTeacherUseCase } from "../modules/schools/application/use-cases/ManageSchoolUserUseCase";
+import { ManageParentUseCase } from "../modules/schools/application/use-cases/ManageParentUseCase";
 import { ResetDefaultPasswordUseCase } from "../modules/schools/application/use-cases/ResetDefaultPasswordUseCase";
 import { errorHandler } from "../middleware/error-handler";
 import { resolveStudentIdForUser } from "../shared/domain/resolve-student";
@@ -151,6 +152,7 @@ export interface ContainerDeps {
   getTeachersUseCase: GetTeachersUseCase;
   manageSubstitutionUseCase: ManageSubstitutionUseCase;
   manageTeacherUseCase: ManageTeacherUseCase;
+  manageParentUseCase: ManageParentUseCase;
   resetDefaultPasswordUseCase: ResetDefaultPasswordUseCase;
   schoolAdminRepo: DrizzleSchoolAdminRepository;
   // Reports
@@ -283,6 +285,7 @@ export function createApp(deps: ContainerDeps): Hono {
     adminRepo: deps.schoolAdminRepo,
     manageStudentUseCase: deps.manageStudentUseCase,
     manageTeacherUseCase: deps.manageTeacherUseCase,
+    manageParentUseCase: deps.manageParentUseCase,
     resetDefaultPasswordUseCase: deps.resetDefaultPasswordUseCase,
   });
   app.use("/school-admin/*", protectedAuth, tenantScopeMiddleware);
@@ -501,6 +504,7 @@ export function buildContainer() {
   const manageSubstitutionUseCase = new ManageSubstitutionUseCase(teacherSubRepo);
   const manageStudentUseCase = new ManageStudentUseCase(schoolAdminRepo, passwordHasher);
   const manageTeacherUseCase = new ManageTeacherUseCase(schoolAdminRepo, passwordHasher);
+  const manageParentUseCase = new ManageParentUseCase(schoolAdminRepo);
   const resetDefaultPasswordUseCase = new ResetDefaultPasswordUseCase(schoolAdminRepo, passwordHasher);
 
   // UseCases — Reports
@@ -574,6 +578,7 @@ export function buildContainer() {
       getTeachersUseCase,
       manageSubstitutionUseCase,
       manageTeacherUseCase,
+      manageParentUseCase,
       resetDefaultPasswordUseCase,
       schoolAdminRepo,
       getMonthlyRaportUseCase,

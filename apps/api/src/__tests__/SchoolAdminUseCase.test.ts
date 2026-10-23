@@ -17,6 +17,8 @@ function makeRepo(overrides: Partial<ISchoolAdminRepository> = {}): ISchoolAdmin
     findTeacher: vi.fn().mockResolvedValue(null),
     updateUserPassword: vi.fn().mockResolvedValue(undefined),
     updateUsersPassword: vi.fn().mockResolvedValue(undefined),
+    getParents: vi.fn().mockResolvedValue([]),
+    updateParentMappings: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
