@@ -88,6 +88,7 @@ export function KoorStudentPage() {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [parentPage, setParentPage] = useState(1);
 
   // Modal State Santri
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -316,6 +317,16 @@ export function KoorStudentPage() {
     return matchParent || matchChild;
   });
 
+  const PARENT_PAGE_SIZE = 10;
+  const parentTotalPages = Math.max(1, Math.ceil(filteredParents.length / PARENT_PAGE_SIZE));
+  const currentParentPage = Math.min(parentPage, parentTotalPages);
+  const parentStartIdx = filteredParents.length === 0 ? 0 : (currentParentPage - 1) * PARENT_PAGE_SIZE + 1;
+  const parentEndIdx = Math.min(currentParentPage * PARENT_PAGE_SIZE, filteredParents.length);
+  const paginatedParents = filteredParents.slice(
+    (currentParentPage - 1) * PARENT_PAGE_SIZE,
+    currentParentPage * PARENT_PAGE_SIZE
+  );
+
   return (
     <KoorShell
       activePath="students"
@@ -344,7 +355,7 @@ export function KoorStudentPage() {
             type="button"
             onClick={() => {
               setActiveTab("parents");
-              setPage(1);
+              setParentPage(1);
             }}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold transition-all ${
               activeTab === "parents"
@@ -661,7 +672,10 @@ export function KoorStudentPage() {
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setParentPage(1);
+                  }}
                   placeholder="Cari nama wali atau nama anak..."
                   className="h-10 w-full rounded-xl border border-brand-line/60 bg-brand-page pl-9 pr-3 text-xs font-medium text-brand-navy outline-none placeholder:text-gray-400 focus:border-brand-cyan"
                 />
@@ -688,14 +702,14 @@ export function KoorStudentPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-brand-line/40 font-medium">
-                    {filteredParents.length === 0 ? (
+                    {paginatedParents.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="py-8 text-center text-xs text-brand-text-muted">
                           Tidak ada data wali murid ditemukan.
                         </td>
                       </tr>
                     ) : (
-                      filteredParents.map((p) => (
+                      paginatedParents.map((p) => (
                         <tr key={p.id} className="hover:bg-brand-page/50">
                           <td className="px-4 py-3">
                             <p className="font-bold text-brand-navy">{p.name}</p>
@@ -760,6 +774,15 @@ export function KoorStudentPage() {
                 </table>
               </div>
             )}
+
+            {/* Pagination Footer Wali Murid */}
+            <div className="flex flex-col gap-3 border-t border-brand-line/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between text-xs text-brand-text-muted">
+              <span>
+                Menampilkan <span className="font-bold text-brand-navy">{parentStartIdx}–{parentEndIdx}</span> dari{" "}
+                <span className="font-bold text-brand-navy">{filteredParents.length}</span> wali murid
+              </span>
+              <Pagination page={currentParentPage} totalPages={parentTotalPages} onPageChange={setParentPage} />
+            </div>
           </div>
         )}
 

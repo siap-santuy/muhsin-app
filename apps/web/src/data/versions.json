@@ -1,9 +1,29 @@
 [
   {
-    "version": "v1.3.0",
+    "version": "v1.3.1",
     "releaseDate": "23 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Pembaruan Patch Keamanan & Paginasi Tab Wali Murid",
+    "summary": "Peningkatan kenyamanan koordinator dengan paginasi pada tab Data Wali Murid, penataan modal relasi santri teratas, serta pembaruan patch keamanan DOMPurify 3.4.17.",
+    "changes": [
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Paginasi 10 data per halaman pada tab Data Wali Murid di halaman Koordinator Siswa & Wali."
+      },
+      {
+        "category": "security",
+        "categoryLabel": "Keamanan",
+        "description": "Pembaruan patch keamanan dompurify ke versi 3.4.17 untuk mitigasi kerentanan sanitasi template HTML."
+      }
+    ]
+  },
+  {
+    "version": "v1.3.0",
+    "releaseDate": "23 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Dukungan Multi-Anak Wali Murid & Manajemen Relasi Santri Koordinator",
     "summary": "Pembaruan arsitektur orang tua: dukungan multi-anak dengan Dropdown Switcher Anak di Dashboard Orang Tua, serta antarmuka khusus Koordinator untuk mengelola daftar wali murid, menghubungkan santri bersaudara, dan mereset password akun wali secara instan.",
     "changes": [
