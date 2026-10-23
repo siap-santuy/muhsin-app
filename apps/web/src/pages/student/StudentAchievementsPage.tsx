@@ -328,52 +328,77 @@ function BadgeCircularCard({
   onClick: () => void;
 }) {
   const isUnlocked = badge.status === "unlocked";
+  const isInProgress = badge.status === "in_progress";
 
-  // Desain Lingkaran Badge:
-  // Warna aktif menyala HANYA jika sudah 100% (unlocked).
-  // Jika belum (in_progress atau locked), tampil grayscale/abu-abu netral elegan.
-  // Opacity ikon siluet background diturunkan ke 20-25% agar angka utama kontras jelas dan tidak beradu.
+  // Desain Ring Progress SVG:
+  // - Radius: 25.5 (diameter viewBox 58x58) -> keliling C ≈ 2 * PI * 25.5 ≈ 160.22
+  const circumference = 160.22;
+  const strokeDashoffset = isUnlocked
+    ? 0
+    : isInProgress
+    ? circumference - (circumference * badge.progressPercent) / 100
+    : circumference;
+
   const getTheme = () => {
-    if (!isUnlocked) {
+    if (isUnlocked) {
+      if (badge.category === "juz") {
+        return {
+          innerBg: "bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-md shadow-amber-400/25 ring-2 ring-amber-100",
+          ringColor: "text-amber-500",
+          bgIcon: "text-black/25",
+          numberText: "text-white drop-shadow-md",
+          labelText: "text-amber-900 font-extrabold",
+        };
+      }
+      if (badge.category === "sabiq") {
+        return {
+          innerBg: "bg-gradient-to-br from-sky-400 via-sky-500 to-sky-600 shadow-md shadow-sky-500/25 ring-2 ring-sky-100",
+          ringColor: "text-sky-500",
+          bgIcon: "text-black/25",
+          numberText: "text-white drop-shadow-md",
+          labelText: "text-sky-900 font-extrabold",
+        };
+      }
+      // Surah (Emerald)
       return {
-        outerRing: "border-gray-200 bg-gray-50/80 text-gray-400 hover:border-gray-300 hover:bg-gray-100/70",
-        bgIcon: "text-gray-400/20",
-        numberText: "text-gray-600",
-        glowEffect: "",
-        labelText: "text-gray-500",
-      };
-    }
-
-    if (badge.category === "juz") {
-      return {
-        outerRing:
-          "border-amber-400 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-md shadow-amber-400/25 text-white ring-3 ring-amber-100",
+        innerBg: "bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/25 ring-2 ring-emerald-100",
+        ringColor: "text-emerald-500",
         bgIcon: "text-black/25",
         numberText: "text-white drop-shadow-md",
-        glowEffect: "shadow-amber-400/25",
-        labelText: "text-amber-900 font-extrabold",
+        labelText: "text-emerald-900 font-extrabold",
       };
     }
 
-    if (badge.category === "sabiq") {
+    if (isInProgress) {
+      // Sedang Dihafal: Ring menyala sesuai progres persentase, dalam lingkaran tetap lembut
+      const ringColor =
+        badge.category === "juz"
+          ? "text-amber-500"
+          : badge.category === "sabiq"
+          ? "text-sky-500"
+          : "text-emerald-500";
+      const numberColor =
+        badge.category === "juz"
+          ? "text-amber-700"
+          : badge.category === "sabiq"
+          ? "text-sky-700"
+          : "text-emerald-700";
       return {
-        outerRing:
-          "border-sky-400 bg-gradient-to-br from-sky-400 via-sky-500 to-sky-600 shadow-md shadow-sky-500/25 text-white ring-3 ring-sky-100",
-        bgIcon: "text-black/25",
-        numberText: "text-white drop-shadow-md",
-        glowEffect: "shadow-sky-500/25",
-        labelText: "text-sky-900 font-extrabold",
+        innerBg: "bg-white border border-brand-line/50 shadow-xs",
+        ringColor,
+        bgIcon: "text-gray-300/35",
+        numberText: `${numberColor} font-black`,
+        labelText: "text-brand-navy font-bold",
       };
     }
 
-    // Surah (Emerald)
+    // Locked: Grayscale netral
     return {
-      outerRing:
-        "border-emerald-400 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/25 text-white ring-3 ring-emerald-100",
-      bgIcon: "text-black/25",
-      numberText: "text-white drop-shadow-md",
-      glowEffect: "shadow-emerald-500/25",
-      labelText: "text-emerald-900 font-extrabold",
+      innerBg: "bg-gray-50/80 border border-gray-200/70",
+      ringColor: "text-transparent",
+      bgIcon: "text-gray-400/20",
+      numberText: "text-gray-400",
+      labelText: "text-gray-400",
     };
   };
 
@@ -385,33 +410,70 @@ function BadgeCircularCard({
       onClick={onClick}
       className="group relative flex w-[90px] sm:w-[104px] flex-col items-center justify-start p-1.5 text-center transition-all cursor-pointer active:scale-95 shrink-0"
     >
-      {/* 1. Lingkaran Badge Utama */}
-      <div
-        className={`relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-105 shrink-0 ${theme.outerRing}`}
-      >
-        {/* Ikon Background dengan Opacity Rendah (20-25%) agar tidak beradu dengan angka */}
-        <div
-          className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-transform ${theme.bgIcon}`}
+      {/* 1. Kontainer Lingkaran Badge dengan SVG Progress Ring */}
+      <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0">
+        {/* SVG Progress Ring di sekeliling lingkaran */}
+        <svg
+          className="absolute inset-0 h-full w-full -rotate-90 pointer-events-none"
+          viewBox="0 0 58 58"
         >
-          {badge.category === "juz" ? (
-            <Crown className="h-8 w-8 sm:h-9 sm:w-9" />
-          ) : badge.category === "sabiq" ? (
-            <FileText className="h-7 w-7 sm:h-8 sm:w-8" />
-          ) : (
-            <BookOpen className="h-7 w-7 sm:h-8 sm:w-8" />
+          {/* Track Ring Abu-abu Halus */}
+          <circle
+            cx="29"
+            cy="29"
+            r="25.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            className={isInProgress ? "text-gray-200" : "text-transparent"}
+          />
+          {/* Active Progress Ring Menyala */}
+          {(isInProgress || isUnlocked) && (
+            <circle
+              cx="29"
+              cy="29"
+              r="25.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              className={`transition-all duration-700 ease-out ${theme.ringColor}`}
+              style={{
+                strokeDasharray: circumference,
+                strokeDashoffset,
+              }}
+            />
           )}
-        </div>
+        </svg>
 
-        {/* Angka Perwakilan di Tengah Lingkaran */}
-        <span
-          className={`relative z-10 text-base sm:text-lg font-black tracking-tight ${theme.numberText}`}
+        {/* Lingkaran Inti Badge (Berjarak pas dari ring) */}
+        <div
+          className={`relative flex h-11 w-11 sm:h-12.5 sm:w-12.5 items-center justify-center rounded-full overflow-hidden ${theme.innerBg}`}
         >
-          {badge.code}
-        </span>
+          {/* Ikon Background dengan Opacity Rendah */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-transform ${theme.bgIcon}`}
+          >
+            {badge.category === "juz" ? (
+              <Crown className="h-6.5 w-6.5 sm:h-7.5 sm:w-7.5" />
+            ) : badge.category === "sabiq" ? (
+              <FileText className="h-6 w-6 sm:h-7 sm:w-7" />
+            ) : (
+              <BookOpen className="h-6 w-6 sm:h-7 sm:w-7" />
+            )}
+          </div>
+
+          {/* Angka Perwakilan di Tengah Lingkaran */}
+          <span
+            className={`relative z-10 text-sm sm:text-base font-black tracking-tight ${theme.numberText}`}
+          >
+            {badge.code}
+          </span>
+        </div>
 
         {/* Checklist jika sudah tuntas */}
         {isUnlocked && (
-          <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-emerald-600 shadow-sm border border-emerald-200">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-emerald-600 shadow-sm border border-emerald-200">
             <CheckCircle2 className="h-3.5 w-3.5 fill-emerald-100 text-emerald-600" />
           </span>
         )}
@@ -427,7 +489,7 @@ function BadgeCircularCard({
             : "Jilid"}
         </span>
         <h4
-          className={`text-xs font-bold leading-tight line-clamp-1 truncate w-full ${theme.labelText}`}
+          className={`text-xs leading-tight line-clamp-1 truncate w-full ${theme.labelText}`}
           title={badge.title}
         >
           {badge.category === "surah"
