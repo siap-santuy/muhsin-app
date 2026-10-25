@@ -1,9 +1,34 @@
 [
   {
-    "version": "v1.4.0",
+    "version": "v1.4.1",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Tabel Antrean Reset Password Koordinator, Validasi Akun, & Rate Limiting",
+    "summary": "Peningkatan manajemen akun dan keamanan: tabel permohonan reset password di Dashboard Koordinator dengan aksi cepat reset/tolak, validasi keberadaan username/email saat permohonan, serta proteksi rate limiting pada alur login dan reset password.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan tombol Reset Default dan Tolak."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Validasi keberadaan username/email saat permohonan reset password: pesan error informatif jika akun belum terdaftar atau salah ketik."
+      },
+      {
+        "category": "security",
+        "categoryLabel": "Keamanan",
+        "description": "Rate limiting berbasis IP dan Redis untuk mitigasi brute-force pada endpoint login (maks. 5x/menit) dan request reset password (maks. 3x/5 menit)."
+      }
+    ]
+  },
+  {
+    "version": "v1.4.0",
+    "releaseDate": "25 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Aturan Window Input Yaumiyah & Izin Susulan Rentang Tanggal",
     "summary": "Pembatasan pengisian ibadah harian ke jendela H & H-1 dengan alur pengajuan izin susulan rentang tanggal bagi santri, notifikasi in-app otomatis, dashboard monitoring approval & dispensasi langsung bagi Guru dan Koordinator.",
     "changes": [
