@@ -38,6 +38,11 @@
         "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan validasi akun informatif dan tombol Reset Default/Tolak."
       },
       {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Ekspor PDF resmi ber-KOP ganda (Pemkot Bandung & SMPIT Al Fitrah): Cetak Surat Pemberitahuan Pelaksanaan & Lampiran Jadwal Munaqosah oleh Koordinator, serta cetak/unduh Surat Keterangan (SK) Hasil Ujian Munaqosah per santri di Dashboard Koordinator, Siswa, dan Orang Tua."
+      },
+      {
         "category": "enhancement",
         "categoryLabel": "Peningkatan",
         "description": "Lembar penilaian penguji munaqosah Tajwid & Kelancaran (angka 0-100) dengan kalkulasi live nilai rata-rata, konversi predikat huruf (Mumtaz - Maqbul), dan status kelulusan."

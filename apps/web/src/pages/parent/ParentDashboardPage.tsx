@@ -5,8 +5,10 @@ import {
   BookOpenCheck,
   ChevronDown,
   ChevronRight,
+  Download,
   Flame,
   HeartHandshake,
+  Loader2,
   NotebookPen,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -16,10 +18,12 @@ import { ProgressGrid, type ProgressItem } from "@/components/student/ProgressGr
 import { MascotTip } from "@/components/ui/MascotTip";
 import { MenuCard } from "@/components/ui/MenuCard";
 import { ReminderBanner } from "@/components/ui/ReminderBanner";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
 import { getDisplayName } from "@/lib/utils";
 import { toast } from "@/store/toastStore";
+import { exportSuratHasilMunaqosahPdf } from "@/lib/exportMunaqosahPdf";
 
 const QUOTE = {
   text: '"Sesungguhnya Allah mencintai orang-orang yang berbuat ihsan."',
@@ -30,6 +34,7 @@ export function ParentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<any>(null);
   const [munaqosahList, setMunaqosahList] = useState<any[]>([]);
+  const [downloadingSk, setDownloadingSk] = useState(false);
   const [activeChildId, setActiveChildId] = useState<string | null>(() => {
     return typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") : null;
   });
@@ -274,6 +279,35 @@ export function ParentDashboardPage() {
                       &ldquo;{activeMunaqosah.catatanPenguji}&rdquo;
                     </p>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      setDownloadingSk(true);
+                      try {
+                        await exportSuratHasilMunaqosahPdf({
+                          ...activeMunaqosah,
+                          studentName: childName,
+                          className: childClass,
+                        });
+                      } catch (err: any) {
+                        alert("Gagal mengunduh SK Hasil: " + (err?.message || err));
+                      } finally {
+                        setDownloadingSk(false);
+                      }
+                    }}
+                    disabled={downloadingSk}
+                    className="mt-3 h-8 w-full rounded-xl border-emerald-400 text-emerald-700 bg-white hover:bg-emerald-50 text-xs font-bold"
+                  >
+                    {downloadingSk ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="mr-1.5 h-3.5 w-3.5" /> Unduh Surat Keterangan Hasil (PDF)
+                      </>
+                    )}
+                  </Button>
                 </div>
               );
             }

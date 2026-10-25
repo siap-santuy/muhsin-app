@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Award, BookOpenCheck, Flame, PenLine, Star, Trophy, X, Zap } from "lucide-react";
+import { Award, BookOpenCheck, Download, Flame, Loader2, PenLine, Star, Trophy, X, Zap } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DailyQuote } from "@/components/student/DailyQuote";
@@ -8,6 +8,7 @@ import { StreakLevelBanner } from "@/components/student/StreakLevelBanner";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/api";
+import { exportSuratHasilMunaqosahPdf } from "@/lib/exportMunaqosahPdf";
 
 const QUOTE = {
   text: '"Sesungguhnya Allah mencintai orang-orang yang berbuat ihsan."',
@@ -62,6 +63,7 @@ export function StudentDashboardPage() {
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
   const [munaqosahList, setMunaqosahList] = useState<any[]>([]);
+  const [downloadingSk, setDownloadingSk] = useState(false);
   const todayStr = formatLocalDate(new Date());
   const [todayIbadahStatus, setTodayIbadahStatus] = useState<"submitted" | "draft" | "empty">("empty");
 
@@ -252,6 +254,34 @@ export function StudentDashboardPage() {
                       &ldquo;{activeMunaqosah.catatanPenguji}&rdquo;
                     </p>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      setDownloadingSk(true);
+                      try {
+                        await exportSuratHasilMunaqosahPdf({
+                          ...activeMunaqosah,
+                          studentName: user?.name || "Santri",
+                        });
+                      } catch (err: any) {
+                        alert("Gagal mengunduh SK Hasil: " + (err?.message || err));
+                      } finally {
+                        setDownloadingSk(false);
+                      }
+                    }}
+                    disabled={downloadingSk}
+                    className="mt-3 h-8 w-full rounded-xl border-emerald-400 text-emerald-700 bg-white hover:bg-emerald-50 text-xs font-bold"
+                  >
+                    {downloadingSk ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="mr-1.5 h-3.5 w-3.5" /> Unduh Surat Keterangan Hasil (PDF)
+                      </>
+                    )}
+                  </Button>
                 </div>
               );
             }

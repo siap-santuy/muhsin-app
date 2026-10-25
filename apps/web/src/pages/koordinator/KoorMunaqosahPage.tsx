@@ -8,11 +8,17 @@ import {
   EyeOff,
   Clock,
   AlertTriangle,
+  Printer,
+  FileText,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import {
+  exportSuratPenjadwalanPdf,
+  exportSuratHasilMunaqosahPdf,
+} from "@/lib/exportMunaqosahPdf";
 
 interface MunaqosahRequestItem {
   id: string;
@@ -89,6 +95,8 @@ export function KoorMunaqosahPage() {
   const [newPeriodEnd, setNewPeriodEnd] = useState("");
   const [creatingPeriod, setCreatingPeriod] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [exportingSchedule, setExportingSchedule] = useState(false);
+  const [exportingResultId, setExportingResultId] = useState<string | null>(null);
 
   async function loadData() {
     try {
@@ -373,6 +381,35 @@ export function KoorMunaqosahPage() {
               </Button>
             )}
 
+            {/* Tombol Cetak Surat Jadwal & Pemberitahuan */}
+            {currentPeriod && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setExportingSchedule(true);
+                  try {
+                    await exportSuratPenjadwalanPdf(currentPeriod, scheduledList);
+                  } catch (err: any) {
+                    alert("Gagal mencetak surat jadwal: " + (err?.message || err));
+                  } finally {
+                    setExportingSchedule(false);
+                  }
+                }}
+                disabled={exportingSchedule || !currentPeriod}
+                className="h-9 rounded-xl border-purple-300 text-purple-700 bg-purple-50/70 hover:bg-purple-100 text-xs font-bold"
+              >
+                {exportingSchedule ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Printer className="mr-1.5 h-3.5 w-3.5" /> Cetak Surat Jadwal
+                  </>
+                )}
+              </Button>
+            )}
+
             {/* Tombol Tambah Periode Baru */}
             <Button
               type="button"
@@ -618,7 +655,8 @@ export function KoorMunaqosahPage() {
                             <th className="py-3 px-3">Juz Diuji</th>
                             <th className="py-3 px-3">Tanggal Ujian</th>
                             <th className="py-3 px-3">Hasil / Nilai</th>
-                            <th className="py-3 px-4">Catatan</th>
+                            <th className="py-3 px-3">Catatan</th>
+                            <th className="py-3 px-4 text-right">SK Hasil</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-brand-line/60">
@@ -649,8 +687,37 @@ export function KoorMunaqosahPage() {
                                     </span>
                                   )}
                                 </td>
-                                <td className="py-3 px-4 text-gray-600 italic max-w-xs truncate">
+                                <td className="py-3 px-3 text-gray-600 italic max-w-xs truncate">
                                   {req.catatanPenguji ? `"${req.catatanPenguji}"` : req.rejectionNote ? `Alasan tolak: "${req.rejectionNote}"` : "-"}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  {(req.status === "lulus" || req.status === "tidak_lulus") && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={async () => {
+                                        setExportingResultId(req.id);
+                                        try {
+                                          await exportSuratHasilMunaqosahPdf(req);
+                                        } catch (err: any) {
+                                          alert("Gagal mencetak SK Hasil: " + (err?.message || err));
+                                        } finally {
+                                          setExportingResultId(null);
+                                        }
+                                      }}
+                                      disabled={exportingResultId === req.id}
+                                      className="h-7 px-2 text-[11px] font-bold border-brand-cyan text-brand-cyan hover:bg-brand-cyan/10"
+                                    >
+                                      {exportingResultId === req.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <FileText className="mr-1 h-3 w-3" /> Cetak SK
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -862,7 +929,7 @@ export function KoorMunaqosahPage() {
                   className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-semibold text-brand-navy outline-none focus:border-brand-cyan"
                 >
                   {periods.length === 0 ? (
-                    <option value="">— Belum ada periode aktif, buat periode baru terlebih dahulu —</option>
+                    <option value="">— Belum ada periode aktif —</option>
                   ) : (
                     periods.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -887,7 +954,7 @@ export function KoorMunaqosahPage() {
                       const load = teacherLoads[t.id] ?? 0;
                       return (
                         <option key={t.id} value={t.id}>
-                          {t.name} ({load} santri di-assign di periode ini)
+                          {t.name} - {load} santri di-assign
                         </option>
                       );
                     })
