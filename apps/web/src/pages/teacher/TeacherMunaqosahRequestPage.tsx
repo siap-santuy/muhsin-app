@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
@@ -9,10 +9,15 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
   const [periods, setPeriods] = useState<Array<{ id: string; nama: string; status: string }>>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>(initialStudentId ?? "");
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
-  const [selectedJuz, setSelectedJuz] = useState<number[]>([30]);
+  const [selectedJuz, setSelectedJuz] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Eligibility Info per selected student
+  const [passedJuz, setPassedJuz] = useState<number[]>([]);
+  const [pendingJuz, setPendingJuz] = useState<number[]>([]);
+  const [loadingEligibility, setLoadingEligibility] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -43,7 +48,37 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
     load();
   }, []);
 
+  // Fetch eligibility when student changes
+  useEffect(() => {
+    if (!selectedStudentId) return;
+    setLoadingEligibility(true);
+    api.getStudentEligibility(selectedStudentId)
+      .then((res) => {
+        setPassedJuz(res.passedJuz || []);
+        setPendingJuz(res.pendingJuz || []);
+        // Set default chosen juz to first available from 30 down
+        const available = [30, 29, 28, 27, 26, 1, 2].find(
+          (j) => !res.passedJuz.includes(j) && !res.pendingJuz.includes(j)
+        );
+        setSelectedJuz(available ? [available] : []);
+      })
+      .catch(() => {
+        setPassedJuz([]);
+        setPendingJuz([]);
+      })
+      .finally(() => setLoadingEligibility(false));
+  }, [selectedStudentId]);
+
   function toggleJuz(juz: number) {
+    if (passedJuz.includes(juz)) {
+      toast.warning(`Juz ${juz} sudah LULUS munaqosah sebelumnya`);
+      return;
+    }
+    if (pendingJuz.includes(juz)) {
+      toast.warning(`Juz ${juz} sedang dalam proses pengajuan/ujian`);
+      return;
+    }
+
     if (selectedJuz.includes(juz)) {
       if (selectedJuz.length === 1) {
         toast.warning("Pilih minimal 1 juz untuk ujian");
@@ -61,7 +96,7 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
       return;
     }
     if (selectedJuz.length === 0) {
-      toast.warning("Pilih minimal 1 juz untuk diuji");
+      toast.warning("Pilih minimal 1 juz yang belum pernah diujikan");
       return;
     }
     setSubmitting(true);
@@ -125,7 +160,7 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
                 className="w-full appearance-none rounded-xl border border-brand-line bg-gray-50/50 py-3 pl-3 pr-9 text-xs font-bold text-brand-navy outline-none focus:border-brand-cyan"
               >
                 {periods.length === 0 ? (
-                  <option value="">Tidak ada periode munaqosah aktif</option>
+                  <option value="">— Belum ada periode aktif, hubungi Koordinator —</option>
                 ) : (
                   periods.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -155,9 +190,25 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
-            <p className="mt-2 text-[11px] text-brand-text-muted">
-              Catatan: 1 siswa hanya dapat diajukan 1 kali ujian pada setiap periode munaqosah.
-            </p>
+
+            {loadingEligibility ? (
+              <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" /> Memeriksa histori juz siswa...
+              </p>
+            ) : (
+              <div className="mt-2.5 flex flex-wrap gap-2 text-[10px]">
+                {passedJuz.length > 0 && (
+                  <span className="rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 border border-emerald-200">
+                    ✓ Sudah Lulus: Juz {passedJuz.join(", ")}
+                  </span>
+                )}
+                {pendingJuz.length > 0 && (
+                  <span className="rounded-md bg-amber-50 px-2 py-0.5 font-bold text-amber-700 border border-amber-200">
+                    ⏳ Sedang Berjalan: Juz {pendingJuz.join(", ")}
+                  </span>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Pilih Juz (Multi-Juz) */}
@@ -169,47 +220,50 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
               </span>
             </div>
             <p className="mt-1 text-[11px] text-brand-text-muted">
-              Klik pada nomor juz untuk memilih/membatalkan. Siswa bisa munaqosah lebih dari 1 juz sekaligus (misal Juz 29 & 30).
+              Juz yang sudah pernah lulus atau sedang dalam antrean otomatis dinonaktifkan (disabled).
             </p>
 
-            {/* Quick Chips for Popular Juz */}
-            <div className="mt-3 flex flex-wrap gap-1.5 border-b border-brand-line/50 pb-3">
-              <span className="text-[10px] font-bold text-gray-400 self-center mr-1">Pilihan Cepat:</span>
-              {[30, 29, 28, 1, 2].map((j) => {
-                const isSelected = selectedJuz.includes(j);
-                return (
-                  <button
-                    key={j}
-                    type="button"
-                    onClick={() => toggleJuz(j)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
-                      isSelected
-                        ? "bg-brand-cyan text-white shadow-xs"
-                        : "bg-gray-100 text-brand-navy hover:bg-gray-200"
-                    }`}
-                  >
-                    Juz {j}
-                  </button>
-                );
-              })}
+            {/* Legend */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-3 text-[10px] text-brand-text-muted border-b border-brand-line/50 pb-2.5">
+              <span className="flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-sm bg-emerald-100 border border-emerald-400" /> Sudah Lulus
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-sm bg-amber-100 border border-amber-400" /> Sedang Proses
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-sm bg-brand-cyan" /> Terpilih
+              </span>
             </div>
 
             {/* Grid 1-30 */}
             <div className="mt-3 grid grid-cols-6 gap-2">
               {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => {
+                const isPassed = passedJuz.includes(j);
+                const isPending = pendingJuz.includes(j);
                 const isSelected = selectedJuz.includes(j);
+                const isDisabled = isPassed || isPending;
+
+                let btnClass = "border-brand-line bg-white text-brand-navy hover:border-brand-cyan/50";
+                if (isSelected) {
+                  btnClass = "border-brand-cyan bg-brand-cyan text-white shadow-xs";
+                } else if (isPassed) {
+                  btnClass = "border-emerald-200 bg-emerald-50 text-emerald-600 opacity-80 cursor-not-allowed";
+                } else if (isPending) {
+                  btnClass = "border-amber-200 bg-amber-50 text-amber-600 opacity-80 cursor-not-allowed";
+                }
+
                 return (
                   <button
                     key={j}
                     type="button"
+                    disabled={isDisabled}
                     onClick={() => toggleJuz(j)}
-                    className={`flex h-10 flex-col items-center justify-center rounded-xl border text-xs font-bold transition-all ${
-                      isSelected
-                        ? "border-brand-cyan bg-brand-cyan text-white shadow-xs"
-                        : "border-brand-line bg-white text-brand-navy hover:border-brand-cyan/50"
-                    }`}
+                    className={`relative flex h-12 flex-col items-center justify-center rounded-xl border text-xs font-bold transition-all ${btnClass}`}
                   >
                     <span>{j}</span>
+                    {isPassed && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                    {isPending && <Clock className="h-3 w-3 text-amber-600" />}
                   </button>
                 );
               })}
@@ -219,8 +273,8 @@ export function TeacherMunaqosahRequestPage({ initialStudentId }: { initialStude
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting}
-            className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-md hover:bg-brand-cyan-dark"
+            disabled={submitting || selectedJuz.length === 0}
+            className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-md hover:bg-brand-cyan-dark disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim Pengajuan ke Koordinator"}
           </Button>

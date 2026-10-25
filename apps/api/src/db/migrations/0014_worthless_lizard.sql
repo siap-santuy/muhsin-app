@@ -1,0 +1,1 @@
+ALTER TABLE "munaqosah_requests" ADD COLUMN "rejection_note" text;

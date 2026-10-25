@@ -79,6 +79,7 @@ export const munaqosahRequests = pgTable("munaqosah_requests", {
   status: text("status", { enum: munaqosahRequestStatus })
     .notNull()
     .default("diajukan"),
+  rejectionNote: text("rejection_note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1,9 +1,39 @@
 [
   {
-    "version": "v1.5.0",
+    "version": "v1.5.1",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Validasi Status Juz Munaqosah, Tabel Antrean Berpaginasi, & Plot Jadwal Efisien",
+    "summary": "Peningkatan alur munaqosah: penonaktifan otomatis tombol juz yang sudah lulus atau sedang dalam proses ujian saat guru mengajukan santri, tabel antrean terstruktur berpaginasi di Koordinator, modal penolakan dengan catatan alasan dan notifikasi in-app ke guru, serta plot jadwal langsung dengan sesi ~1 jam dan counter beban penguji live.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Deteksi eligibility otomatis: tombol pemilihan juz otomatis di-disable untuk juz yang sudah lulus (badge hijau) atau sedang dalam antrean/ujian (badge kuning)."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Modal konfirmasi penolakan munaqosah dengan input catatan alasan (rejection note) yang otomatis dikirimkan sebagai notifikasi ke guru pengaju."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Penyederhanaan approval koordinator menjadi tabel rapi dengan pagination untuk antrean pending, jadwal ujian, dan riwayat."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Plot jadwal fleksibel langsung memilih semua guru disertai counter live jumlah santri yang di-assign, input waktu sesi (~1 jam), dan ringkasan rentang waktu harian."
+      }
+    ]
+  },
+  {
+    "version": "v1.5.0",
+    "releaseDate": "25 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Penyempurnaan Fitur Munaqosah: Multi-Juz, Rilis Nilai Raport, & Jadwal Terpadu",
     "summary": "Pembaruan komprehensif alur ujian munaqosah: dukungan pengajuan multi-juz (minimal 1 juz atau lebih), pembatasan 1 ujian per periode, pembuatan periode dinamis oleh Koordinator, form penilaian penguji Tajwid & Kelancaran dengan konversi predikat, kontrol rilis nilai raport resmi sebelum dibuka ke siswa & orang tua, serta sinkronisasi jadwal di ketiga dashboard.",
     "changes": [

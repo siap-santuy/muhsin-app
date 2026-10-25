@@ -30,15 +30,13 @@ export class ScheduleMunaqosahUseCase {
     assignedBy: string;
     schoolId: string;
   }) {
+    // Cek kapasitas penguji jika guru sudah didaftarkan di pool (fleksibel: jika belum di pool, langsung diizinkan)
     const capacity = await this.repo.checkExaminerCapacity(
       params.periodId,
       params.examinerTeacherId,
       params.schoolId
     );
-    if (!capacity) {
-      throw new ExaminerNotInPoolError();
-    }
-    if (capacity.penuh) {
+    if (capacity && capacity.penuh) {
       throw new ExaminerCapacityFullError(capacity.kapasitas);
     }
 

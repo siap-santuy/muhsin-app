@@ -189,6 +189,36 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     }
   );
 
+  // GET /munaqosah/student-eligibility — cek juz yang sudah lulus / pending / siap uji
+  app.get(
+    "/student-eligibility",
+    requireRole("teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const studentId = c.req.query("studentId");
+      if (!studentId) {
+        return c.json({ data: null, error: { message: "studentId wajib diisi" }, meta: null }, 400);
+      }
+      const data = await deps.repo.getStudentEligibility(studentId, user.schoolId);
+      return c.json({ data, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /munaqosah/teacher-loads?periodId=
+  app.get(
+    "/teacher-loads",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const periodId = c.req.query("periodId");
+      if (!periodId) {
+        return c.json({ data: [], error: null, meta: null }, 200);
+      }
+      const list = await deps.repo.getTeacherAssignmentCounts(periodId, user.schoolId);
+      return c.json({ data: list, error: null, meta: null }, 200);
+    }
+  );
+
   // GET /munaqosah/my-schedule — jadwal & riwayat munaqosah untuk santri & orang tua
   app.get(
     "/my-schedule",
@@ -268,11 +298,13 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     async (c) => {
       const user = c.get("user");
       const id = c.req.param("id") ?? "";
+      const body = await c.req.json().catch(() => ({}));
 
       await deps.updateStatusUseCase.execute({
         id,
         schoolId: user.schoolId,
         status: "ditolak",
+        rejectionNote: body?.rejectionNote,
       });
 
       return c.json({ data: { message: "Pengajuan ditolak" }, error: null, meta: null }, 200);

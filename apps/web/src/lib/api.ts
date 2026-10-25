@@ -643,8 +643,8 @@ class ApiClient {
     return this.request("PATCH", `/munaqosah/requests/${id}/approve`);
   }
 
-  async rejectMunaqosah(id: string) {
-    return this.request("PATCH", `/munaqosah/requests/${id}/reject`);
+  async rejectMunaqosah(id: string, rejectionNote?: string) {
+    return this.request("PATCH", `/munaqosah/requests/${id}/reject`, { rejectionNote });
   }
 
   async scheduleMunaqosah(id: string, input: {
@@ -696,6 +696,18 @@ class ApiClient {
   }>> {
     const qs = studentId ? `?studentId=${studentId}` : "";
     return this.request("GET", `/munaqosah/my-schedule${qs}`);
+  }
+
+  async getStudentEligibility(studentId: string): Promise<{
+    passedJuz: number[];
+    pendingJuz: number[];
+    memorizedJuz: number[];
+  }> {
+    return this.request("GET", `/munaqosah/student-eligibility?studentId=${studentId}`);
+  }
+
+  async getTeacherLoads(periodId: string): Promise<Array<{ teacherId: string; assignedCount: number }>> {
+    return this.request("GET", `/munaqosah/teacher-loads?periodId=${periodId}`);
   }
 
   async getMunaqosahPeriods(): Promise<Array<{

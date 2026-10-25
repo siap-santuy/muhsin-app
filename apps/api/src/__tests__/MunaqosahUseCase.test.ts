@@ -35,6 +35,8 @@ function baseMockRepo(): IMunaqosahRepository {
     findPeriods: vi.fn().mockResolvedValue([]),
     createPeriod: vi.fn().mockResolvedValue("period-1"),
     updatePeriod: vi.fn().mockResolvedValue(undefined),
+    getStudentEligibility: vi.fn().mockResolvedValue({ passedJuz: [], pendingJuz: [], memorizedJuz: [] }),
+    getTeacherAssignmentCounts: vi.fn().mockResolvedValue([]),
   };
 }
 
@@ -183,23 +185,23 @@ describe("Munaqosah Module UseCases", () => {
     expect(mockRepo.updateRequestStatus).toHaveBeenCalledWith("req-1", "school-1", "dijadwalkan");
   });
 
-  it("ScheduleMunaqosahUseCase rejects examiner not in pool", async () => {
+  it("ScheduleMunaqosahUseCase allows examiner directly without prior pool setup", async () => {
     const mockRepo = baseMockRepo();
     (mockRepo.checkExaminerCapacity as any).mockResolvedValue(null);
+    (mockRepo.createAssignment as any).mockResolvedValue("assign-1");
     const mockNotif = { createNotification: vi.fn() } as any;
 
     const useCase = new ScheduleMunaqosahUseCase(mockRepo, mockNotif);
-    await expect(
-      useCase.execute({
-        requestId: "req-1",
-        periodId: "period-1",
-        examinerTeacherId: "teacher-x",
-        jadwalTanggal: "2026-09-20",
-        assignedBy: "koor-1",
-        schoolId: "school-1",
-      })
-    ).rejects.toBeInstanceOf(ExaminerNotInPoolError);
-    expect(mockRepo.createAssignment).not.toHaveBeenCalled();
+    const result = await useCase.execute({
+      requestId: "req-1",
+      periodId: "period-1",
+      examinerTeacherId: "teacher-x",
+      jadwalTanggal: "2026-09-20",
+      assignedBy: "koor-1",
+      schoolId: "school-1",
+    });
+    expect(result).toBe("assign-1");
+    expect(mockRepo.createAssignment).toHaveBeenCalled();
   });
 
   it("ScheduleMunaqosahUseCase rejects examiner at full capacity", async () => {

@@ -572,7 +572,7 @@ export function buildContainer() {
   const getMunaqosahRequestsUseCase = new GetMunaqosahRequestsUseCase(munaqosahRepo);
   const getMyMunaqosahExamsUseCase = new GetMyMunaqosahExamsUseCase(munaqosahRepo);
   const createMunaqosahRequestUseCase = new CreateMunaqosahRequestUseCase(munaqosahRepo);
-  const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo);
+  const updateMunaqosahStatusUseCase = new UpdateMunaqosahStatusUseCase(munaqosahRepo, notificationRepo);
   const scheduleMunaqosahUseCase = new ScheduleMunaqosahUseCase(munaqosahRepo, notificationRepo);
   const manageMunaqosahExaminersUseCase = new ManageMunaqosahExaminersUseCase(munaqosahRepo);
   const submitMunaqosahResultUseCase = new SubmitMunaqosahResultUseCase(munaqosahRepo, addExpUseCase);

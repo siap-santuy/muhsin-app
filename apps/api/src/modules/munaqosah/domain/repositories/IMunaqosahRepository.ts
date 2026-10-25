@@ -2,6 +2,8 @@ import type {
   MunaqosahRequestItem,
   MunaqosahExaminerItem,
   MunaqosahPeriodItem,
+  StudentEligibility,
+  TeacherAssignmentCount,
 } from "../entities/Munaqosah";
 
 export interface IMunaqosahRepository {
@@ -23,8 +25,11 @@ export interface IMunaqosahRepository {
   updateRequestStatus(
     id: string,
     schoolId: string,
-    status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "tidak_lulus" | "ditolak"
-  ): Promise<void>;
+    status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "tidak_lulus" | "ditolak",
+    rejectionNote?: string
+  ): Promise<{ teacherId: string; studentName: string; juzText: string }>;
+  getStudentEligibility(studentId: string, schoolId: string): Promise<StudentEligibility>;
+  getTeacherAssignmentCounts(periodId: string, schoolId: string): Promise<TeacherAssignmentCount[]>;
   createAssignment(params: {
     requestId: string;
     periodId: string;

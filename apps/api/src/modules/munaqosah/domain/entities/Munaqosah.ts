@@ -21,7 +21,19 @@ export interface MunaqosahRequestItem {
   nilaiAkhir?: number | null;
   grade?: string | null;
   catatanPenguji?: string | null;
+  rejectionNote?: string | null;
   isResultPublished?: boolean;
+}
+
+export interface StudentEligibility {
+  passedJuz: number[];
+  pendingJuz: number[];
+  memorizedJuz: number[];
+}
+
+export interface TeacherAssignmentCount {
+  teacherId: string;
+  assignedCount: number;
 }
 
 export interface MunaqosahExaminerItem {

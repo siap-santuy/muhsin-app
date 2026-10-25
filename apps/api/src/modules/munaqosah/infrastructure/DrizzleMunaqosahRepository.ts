@@ -40,6 +40,7 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
         juzKe: munaqosahRequests.juzKe,
         juzList: munaqosahRequests.juzList,
         status: munaqosahRequests.status,
+        rejectionNote: munaqosahRequests.rejectionNote,
         createdAt: munaqosahRequests.createdAt,
       })
       .from(munaqosahRequests)
@@ -128,6 +129,7 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
         nilaiAkhir: rawScores?.nilaiAkhir ?? null,
         grade: rawScores?.grade ?? null,
         catatanPenguji: assignment[0]?.catatanPenguji ?? null,
+        rejectionNote: r.rejectionNote ?? null,
         isResultPublished,
       });
     }
@@ -231,17 +233,42 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
   async updateRequestStatus(
     id: string,
     schoolId: string,
-    status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "tidak_lulus" | "ditolak"
-  ): Promise<void> {
+    status: "diajukan" | "disetujui" | "dijadwalkan" | "lulus" | "tidak_lulus" | "ditolak",
+    rejectionNote?: string
+  ): Promise<{ teacherId: string; studentName: string; juzText: string }> {
+    const detail = await this.db
+      .select({
+        teacherId: munaqosahRequests.teacherId,
+        studentName: users.name,
+        juzKe: munaqosahRequests.juzKe,
+        juzList: munaqosahRequests.juzList,
+      })
+      .from(munaqosahRequests)
+      .innerJoin(users, eq(users.id, munaqosahRequests.studentId))
+      .where(and(eq(munaqosahRequests.id, id), eq(munaqosahRequests.schoolId, schoolId)))
+      .limit(1);
+
+    const updateData: any = { status, updatedAt: new Date() };
+    if (rejectionNote !== undefined) {
+      updateData.rejectionNote = rejectionNote;
+    }
+
     await this.db
       .update(munaqosahRequests)
-      .set({ status, updatedAt: new Date() })
+      .set(updateData)
       .where(
         and(
           eq(munaqosahRequests.id, id),
           eq(munaqosahRequests.schoolId, schoolId)
         )
       );
+
+    const juzArray = detail[0]?.juzList && detail[0].juzList.length > 0 ? detail[0].juzList : [detail[0]?.juzKe ?? 1];
+    return {
+      teacherId: detail[0]?.teacherId ?? "",
+      studentName: detail[0]?.studentName ?? "Santri",
+      juzText: juzArray.join(", "),
+    };
   }
 
   async createAssignment(params: {
@@ -804,5 +831,85 @@ export class DrizzleMunaqosahRepository implements IMunaqosahRepository {
           eq(munaqosahPeriods.schoolId, schoolId)
         )
       );
+  }
+
+  async getStudentEligibility(
+    studentId: string,
+    schoolId: string
+  ): Promise<{ passedJuz: number[]; pendingJuz: number[]; memorizedJuz: number[] }> {
+    // 1. Passed juz
+    const passedJuz = await this.findPassedJuzByStudent(studentId, schoolId);
+
+    // 2. Pending / active request juz
+    const activeRows = await this.db
+      .select({
+        juzKe: munaqosahRequests.juzKe,
+        juzList: munaqosahRequests.juzList,
+      })
+      .from(munaqosahRequests)
+      .where(
+        and(
+          eq(munaqosahRequests.schoolId, schoolId),
+          eq(munaqosahRequests.studentId, studentId),
+          inArray(munaqosahRequests.status, ["diajukan", "disetujui", "dijadwalkan"])
+        )
+      );
+
+    const pendingSet = new Set<number>();
+    for (const r of activeRows) {
+      if (r.juzList && Array.isArray(r.juzList)) {
+        r.juzList.forEach((j) => pendingSet.add(j));
+      } else if (r.juzKe) {
+        pendingSet.add(r.juzKe);
+      }
+    }
+
+    // 3. Memorized juz from achievements
+    const achRows = await this.db
+      .select({ juzKe: studentAchievements.juzKe })
+      .from(studentAchievements)
+      .where(
+        and(
+          eq(studentAchievements.schoolId, schoolId),
+          eq(studentAchievements.studentId, studentId),
+          eq(studentAchievements.achievementType, "munaqosah_juz")
+        )
+      );
+
+    const memorizedSet = new Set<number>(passedJuz);
+    achRows.forEach((a) => {
+      if (a.juzKe) memorizedSet.add(a.juzKe);
+    });
+
+    return {
+      passedJuz,
+      pendingJuz: Array.from(pendingSet),
+      memorizedJuz: Array.from(memorizedSet),
+    };
+  }
+
+  async getTeacherAssignmentCounts(
+    periodId: string,
+    schoolId: string
+  ): Promise<Array<{ teacherId: string; assignedCount: number }>> {
+    const rows = await this.db
+      .select({
+        teacherId: munaqosahAssignments.examinerTeacherId,
+        countVal: count(),
+      })
+      .from(munaqosahAssignments)
+      .innerJoin(munaqosahPeriods, eq(munaqosahPeriods.id, munaqosahAssignments.periodId))
+      .where(
+        and(
+          eq(munaqosahAssignments.periodId, periodId),
+          eq(munaqosahPeriods.schoolId, schoolId)
+        )
+      )
+      .groupBy(munaqosahAssignments.examinerTeacherId);
+
+    return rows.map((r) => ({
+      teacherId: r.teacherId,
+      assignedCount: r.countVal,
+    }));
   }
 }
