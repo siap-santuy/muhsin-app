@@ -10,7 +10,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { KoorShell } from "@/components/layout/KoorShell";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { formatNotificationTime } from "@/utils/date";
@@ -119,15 +118,8 @@ export function NotificationPage() {
   );
 
   if (role === "koordinator_ttq") {
-    return (
-      <KoorShell
-        activePath="notifications"
-        title="Pusat Notifikasi"
-        subtitle="Notifikasi & Informasi Sistem"
-      >
-        {content}
-      </KoorShell>
-    );
+    window.location.hash = "#/dashboard";
+    return null;
   }
 
   return (

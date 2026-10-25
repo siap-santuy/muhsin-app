@@ -355,7 +355,8 @@ function App() {
       case "izin-susulan":
         return <TeacherYaumiyahApprovalPage />;
       case "notifications":
-        return <NotificationPage />;
+        window.location.hash = "#/dashboard";
+        return <KoorDashboardPage />;
       case "edit-profile":
         return <EditProfilePage />;
       case "change-password":
