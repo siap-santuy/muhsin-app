@@ -1,29 +1,60 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
-  Award,
-  BookOpen,
-  GraduationCap,
   Users,
+  GraduationCap,
+  BookOpen,
+  Award,
+  Clock,
+  Check,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
 import { KoorShell } from "@/components/layout/KoorShell";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
 export function KoorDashboardPage() {
   const [summary, setSummary] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [activePeriod, setActivePeriod] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Pending Yaumiyah Requests
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [reqPage, setReqPage] = useState(1);
+  const [reqTotalPages, setReqTotalPages] = useState(1);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  async function loadPending(page = 1) {
+    try {
+      const res = await api.getYaumiyahAccessRequests({ status: "pending", page, limit: 5 });
+      setPendingRequests(res.data || []);
+      setPendingTotal(res.meta?.total || 0);
+      setReqTotalPages(res.meta?.totalPages || 1);
+      setReqPage(res.meta?.page || 1);
+    } catch {
+      setPendingRequests([]);
+      setPendingTotal(0);
+    }
+  }
 
   useEffect(() => {
-    Promise.all([api.getDashboardSummary(), api.getActivePeriod().catch(() => null)])
+    Promise.all([
+      api.getDashboardSummary(),
+      api.getActivePeriod().catch(() => null),
+      loadPending(1),
+    ])
       .then(([sum, period]) => {
         setSummary(sum);
         setActivePeriod(period);
@@ -31,6 +62,26 @@ export function KoorDashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleApprove(id: string) {
+    setActionLoading(id);
+    try {
+      await api.approveYaumiyahAccess(id);
+      await loadPending(reqPage);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleReject(id: string) {
+    setActionLoading(id);
+    try {
+      await api.rejectYaumiyahAccess(id, "Ditolak dari Dashboard Koordinator");
+      await loadPending(reqPage);
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   const totalStudents = summary?.totalStudents ?? 0;
   const totalTeachers = summary?.totalTeachers ?? 0;
@@ -118,6 +169,110 @@ export function KoorDashboardPage() {
             );
           })}
         </div>
+
+        {/* Tabel Request Susulan Yaumiyah Pending (Hanya muncul jika ada request) */}
+        {pendingRequests.length > 0 && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-amber-200/60">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                  <Clock className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-brand-navy">
+                    Permohonan Izin Susulan Yaumiyah ({pendingTotal} Menunggu)
+                  </h2>
+                  <p className="text-xs text-brand-text-muted">
+                    Santri meminta dispensasi pembukaan akses pengisian ibadah lampau
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.hash = "#/yaumiyah-approval")}
+                className="h-8 rounded-lg border-brand-cyan text-xs font-bold text-brand-cyan hover:bg-brand-cyan/10"
+              >
+                Lihat Semua <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-left text-xs text-brand-navy">
+                <thead>
+                  <tr className="border-b border-amber-200/60 text-[11px] font-bold text-brand-text-muted">
+                    <th className="py-2">SANTRI</th>
+                    <th className="py-2">KELAS</th>
+                    <th className="py-2">RENTANG TANGGAL</th>
+                    <th className="py-2">ALASAN</th>
+                    <th className="py-2 text-right">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  {pendingRequests.map((req) => (
+                    <tr key={req.id} className="hover:bg-amber-100/30">
+                      <td className="py-2.5 font-bold">{req.studentName}</td>
+                      <td className="py-2.5 text-brand-text-muted">{req.className || "-"}</td>
+                      <td className="py-2.5 font-semibold text-brand-cyan">
+                        {req.startDate === req.endDate ? req.startDate : `${req.startDate} s.d ${req.endDate}`}
+                      </td>
+                      <td className="py-2.5 italic text-gray-600 max-w-xs truncate">
+                        &ldquo;{req.reason}&rdquo;
+                      </td>
+                      <td className="py-2.5 text-right space-x-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReject(req.id)}
+                          disabled={actionLoading === req.id}
+                          className="h-7 px-2 border-red-300 text-[11px] font-bold text-red-600 hover:bg-red-50"
+                        >
+                          <X className="mr-1 h-3 w-3" /> Tolak
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleApprove(req.id)}
+                          disabled={actionLoading === req.id}
+                          className="h-7 px-2.5 bg-emerald-600 text-[11px] font-bold text-white hover:bg-emerald-700"
+                        >
+                          <Check className="mr-1 h-3 w-3" /> Setujui
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {reqTotalPages > 1 && (
+              <div className="mt-3 flex items-center justify-between border-t border-amber-200/60 pt-2 text-xs text-brand-text-muted">
+                <span>Halaman {reqPage} dari {reqTotalPages}</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => loadPending(reqPage - 1)}
+                    disabled={reqPage <= 1}
+                    className="rounded p-1 text-brand-navy hover:bg-amber-100 disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadPending(reqPage + 1)}
+                    disabled={reqPage >= reqTotalPages}
+                    className="rounded p-1 text-brand-navy hover:bg-amber-100 disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Chart Setoran */}
         <div className="rounded-2xl border border-brand-line bg-white p-5 shadow-sm">

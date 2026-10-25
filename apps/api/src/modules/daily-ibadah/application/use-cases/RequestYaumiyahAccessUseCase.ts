@@ -1,6 +1,10 @@
-import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
+﻿import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
 import type { YaumiyahAccessRequestEntity } from "../../domain/entities/YaumiyahAccessRequest";
 import { getDaysDiffFromToday } from "../../domain/services/YaumiyahWindowService";
+import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
+import type { Db } from "../../../../db/client";
+import { studentTeacherMapping, users } from "../../../../db/schema";
+import { eq, and } from "drizzle-orm";
 
 export interface RequestYaumiyahAccessInput {
   schoolId: string;
@@ -12,7 +16,11 @@ export interface RequestYaumiyahAccessInput {
 }
 
 export class RequestYaumiyahAccessUseCase {
-  constructor(private readonly repo: IYaumiyahAccessRequestRepository) {}
+  constructor(
+    private readonly repo: IYaumiyahAccessRequestRepository,
+    private readonly notificationRepo?: INotificationRepository,
+    private readonly db?: Db
+  ) {}
 
   async execute(input: RequestYaumiyahAccessInput): Promise<YaumiyahAccessRequestEntity> {
     if (input.startDate > input.endDate) {
@@ -63,6 +71,59 @@ export class RequestYaumiyahAccessUseCase {
       updatedAt: now,
     };
 
-    return this.repo.create(entity);
+    const created = await this.repo.create(entity);
+
+    // Kirim notifikasi best-effort ke guru pembina dan koordinator sekolah
+    if (this.notificationRepo && this.db) {
+      try {
+        const student = await this.db
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, input.studentId))
+          .limit(1);
+        const studentName = student[0]?.name || "Siswa";
+
+        const teacherRows = await this.db
+          .select({ teacherId: studentTeacherMapping.teacherId })
+          .from(studentTeacherMapping)
+          .where(
+            and(
+              eq(studentTeacherMapping.studentId, input.studentId),
+              eq(studentTeacherMapping.schoolId, input.schoolId)
+            )
+          );
+
+        const koorRows = await this.db
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.schoolId, input.schoolId), eq(users.role, "koordinator_ttq")));
+
+        const recipientIds = new Set<string>();
+        teacherRows.forEach((t) => recipientIds.add(t.teacherId));
+        koorRows.forEach((k) => recipientIds.add(k.id));
+
+        const rentangStr =
+          input.startDate === input.endDate
+            ? input.startDate
+            : `${input.startDate} s.d ${input.endDate}`;
+
+        await Promise.all(
+          Array.from(recipientIds).map((userId) =>
+            this.notificationRepo!.createNotification({
+              schoolId: input.schoolId,
+              userId,
+              title: "Permohonan Izin Susulan Yaumiyah",
+              message: `${studentName} mengajukan izin susulan yaumiyah tanggal ${rentangStr}: "${input.reason.trim()}"`,
+              type: "yaumiyah",
+              isRead: false,
+            })
+          )
+        );
+      } catch {
+        // Notif best-effort
+      }
+    }
+
+    return created;
   }
 }

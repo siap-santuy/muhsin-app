@@ -1,4 +1,4 @@
-import type { Db } from "../../../db/client";
+﻿import type { Db } from "../../../db/client";
 import {
   yaumiyahAccessRequests,
   users,
@@ -6,10 +6,12 @@ import {
   studentClassEnrollment,
   studentTeacherMapping,
 } from "../../../db/schema";
-import { eq, and, lte, gte, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, lte, gte, desc, inArray, sql, count } from "drizzle-orm";
 import type {
   IYaumiyahAccessRequestRepository,
   YaumiyahAccessRequestWithStudent,
+  ListAccessRequestsFilter,
+  PaginatedResult,
 } from "../domain/repositories/IYaumiyahAccessRequestRepository";
 import type { YaumiyahAccessRequestEntity } from "../domain/entities/YaumiyahAccessRequest";
 
@@ -122,8 +124,20 @@ export class DrizzleYaumiyahAccessRequestRepository implements IYaumiyahAccessRe
     schoolId: string,
     teacherId?: string
   ): Promise<YaumiyahAccessRequestWithStudent[]> {
-    let allowedStudentIds: string[] | null = null;
+    const res = await this.listPaginated(schoolId, { status: "pending", page: 1, limit: 100 }, teacherId);
+    return res.data;
+  }
 
+  async listPaginated(
+    schoolId: string,
+    filter: ListAccessRequestsFilter,
+    teacherId?: string
+  ): Promise<PaginatedResult<YaumiyahAccessRequestWithStudent>> {
+    const page = Math.max(1, filter.page ?? 1);
+    const limit = Math.max(1, Math.min(100, filter.limit ?? 10));
+    const offset = (page - 1) * limit;
+
+    let allowedStudentIds: string[] | null = null;
     if (teacherId) {
       const teacherMappings = await this.db
         .select({ studentId: studentTeacherMapping.studentId })
@@ -137,18 +151,27 @@ export class DrizzleYaumiyahAccessRequestRepository implements IYaumiyahAccessRe
 
       allowedStudentIds = teacherMappings.map((m) => m.studentId);
       if (allowedStudentIds.length === 0) {
-        return [];
+        return { data: [], total: 0, page, limit, totalPages: 0 };
       }
     }
 
-    const conditions = [
-      eq(yaumiyahAccessRequests.schoolId, schoolId),
-      eq(yaumiyahAccessRequests.status, "pending"),
-    ];
+    const conditions = [eq(yaumiyahAccessRequests.schoolId, schoolId)];
+
+    if (filter.status && filter.status !== "all") {
+      conditions.push(eq(yaumiyahAccessRequests.status, filter.status));
+    }
 
     if (allowedStudentIds && allowedStudentIds.length > 0) {
       conditions.push(inArray(yaumiyahAccessRequests.studentId, allowedStudentIds));
     }
+
+    // Total count
+    const countRes = await this.db
+      .select({ val: count() })
+      .from(yaumiyahAccessRequests)
+      .where(and(...conditions));
+    const total = Number(countRes[0]?.val ?? 0);
+    const totalPages = Math.ceil(total / limit);
 
     const rows = await this.db
       .select({
@@ -167,13 +190,17 @@ export class DrizzleYaumiyahAccessRequestRepository implements IYaumiyahAccessRe
       )
       .leftJoin(classes, eq(classes.id, studentClassEnrollment.classId))
       .where(and(...conditions))
-      .orderBy(desc(yaumiyahAccessRequests.createdAt));
+      .orderBy(desc(yaumiyahAccessRequests.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return rows.map((r) => ({
+    const data = rows.map((r) => ({
       ...this.toDomain(r.request),
       studentName: r.studentName,
       className: r.className ?? null,
     }));
+
+    return { data, total, page, limit, totalPages };
   }
 
   async update(entity: YaumiyahAccessRequestEntity): Promise<YaumiyahAccessRequestEntity> {

@@ -148,7 +148,7 @@ async function tryRefreshToken(): Promise<string | null> {
   return refreshPromise;
 }
 
-async function handleResponse<T = any>(res: Response, retryFn?: (newToken: string) => Promise<Response>): Promise<T> {
+async function handleResponse<T = any>(res: Response, retryFn?: (newToken: string) => Promise<Response>, withMeta = false): Promise<any> {
   if (res.status === 401) {
     if (retryFn) {
       const newToken = await tryRefreshToken();
@@ -168,7 +168,7 @@ async function handleResponse<T = any>(res: Response, retryFn?: (newToken: strin
     throw new Error(GENERIC_ERROR);
   }
 
-  if (res.ok) return json.data;
+  if (res.ok) return withMeta ? { data: json.data, meta: json.meta } : json.data;
 
   // Expose backend error message for all 4xx client errors (400, 401, 403, 404, 422, etc.)
   if (res.status >= 400 && res.status < 500) {
@@ -190,7 +190,8 @@ class ApiClient {
   private async request<T = any>(
     method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
     endpoint: string,
-    body?: any
+    body?: any,
+    withMeta = false
   ): Promise<T> {
     const isGet = method === "GET";
     const token = localStorage.getItem("access_token");
@@ -206,7 +207,7 @@ class ApiClient {
 
     try {
       const res = await doFetch(token);
-      const data = await handleResponse<T>(res, (newToken) => doFetch(newToken));
+      const data = await handleResponse<T>(res, (newToken) => doFetch(newToken), withMeta);
       if (isGet && data !== undefined) {
         saveToOfflineCache(endpoint, data);
       }
@@ -363,8 +364,14 @@ class ApiClient {
     return this.request("POST", `/daily-ibadah/access-requests`, data);
   }
 
-  async getYaumiyahAccessRequests() {
-    return this.request<any[]>("GET", `/daily-ibadah/access-requests`);
+  async getYaumiyahAccessRequests(params: { status?: "pending" | "approved" | "rejected" | "all"; page?: number; limit?: number } = {}): Promise<{ data: any[]; meta: any }> {
+    const q = new URLSearchParams();
+    if (params.status) q.set("status", params.status);
+    if (params.page) q.set("page", String(params.page));
+    if (params.limit) q.set("limit", String(params.limit));
+    const qs = q.toString();
+    const url = qs ? `/daily-ibadah/access-requests?${qs}` : "/daily-ibadah/access-requests";
+    return this.request<{ data: any[]; meta: any }>("GET", url, undefined, true);
   }
 
   async approveYaumiyahAccess(id: string) {

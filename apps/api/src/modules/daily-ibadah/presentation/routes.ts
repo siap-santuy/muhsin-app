@@ -286,8 +286,30 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
 
     // Teacher or Koordinator
     const teacherId = user.role === "teacher" ? user.userId : undefined;
-    const requests = await deps.accessRequestRepo.listPendingBySchool(user.schoolId, teacherId);
-    return c.json({ data: requests, error: null, meta: null }, 200);
+    const statusParam = c.req.query("status") as any;
+    const status = statusParam === "all" || statusParam === "approved" || statusParam === "rejected" || statusParam === "pending" ? statusParam : "pending";
+    const page = Number(c.req.query("page")) || 1;
+    const limit = Number(c.req.query("limit")) || 10;
+
+    const res = await deps.accessRequestRepo.listPaginated(
+      user.schoolId,
+      { status, page, limit },
+      teacherId
+    );
+
+    return c.json(
+      {
+        data: res.data,
+        error: null,
+        meta: {
+          total: res.total,
+          page: res.page,
+          limit: res.limit,
+          totalPages: res.totalPages,
+        },
+      },
+      200
+    );
   });
 
   // PATCH /api/daily-ibadah/access-requests/:id/approve (Teacher/Koor)

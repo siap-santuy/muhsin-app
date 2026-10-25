@@ -1,8 +1,22 @@
-import type { YaumiyahAccessRequestEntity } from "../entities/YaumiyahAccessRequest";
+﻿import type { YaumiyahAccessRequestEntity } from "../entities/YaumiyahAccessRequest";
 
 export interface YaumiyahAccessRequestWithStudent extends YaumiyahAccessRequestEntity {
   studentName: string;
   className?: string | null;
+}
+
+export interface ListAccessRequestsFilter {
+  status?: "pending" | "approved" | "rejected" | "all";
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface IYaumiyahAccessRequestRepository {
@@ -12,5 +26,10 @@ export interface IYaumiyahAccessRequestRepository {
   findPendingOverlap(studentId: string, startDate: string, endDate: string, schoolId: string): Promise<YaumiyahAccessRequestEntity | null>;
   listByStudent(studentId: string, schoolId: string): Promise<YaumiyahAccessRequestEntity[]>;
   listPendingBySchool(schoolId: string, teacherId?: string): Promise<YaumiyahAccessRequestWithStudent[]>;
+  listPaginated(
+    schoolId: string,
+    filter: ListAccessRequestsFilter,
+    teacherId?: string
+  ): Promise<PaginatedResult<YaumiyahAccessRequestWithStudent>>;
   update(entity: YaumiyahAccessRequestEntity): Promise<YaumiyahAccessRequestEntity>;
 }

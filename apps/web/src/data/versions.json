@@ -1,9 +1,44 @@
 [
   {
-    "version": "v1.3.1",
-    "releaseDate": "23 Oktober 2026",
+    "version": "v1.4.0",
+    "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Aturan Window Input Yaumiyah & Izin Susulan Rentang Tanggal",
+    "summary": "Pembatasan pengisian ibadah harian ke jendela H & H-1 dengan alur pengajuan izin susulan rentang tanggal bagi santri, notifikasi in-app otomatis, dashboard monitoring approval & dispensasi langsung bagi Guru dan Koordinator.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Penguncian tanggal yaumiyah H-2 ke belakang dengan tombol permohonan izin susulan satu atau rentang tanggal sekaligus bagi santri."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Notifikasi in-app real-time ke Guru Pembina dan Koordinator saat ada santri mengajukan izin susulan ibadah yaumiyah."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel antrean permohonan susulan yaumiyah interaktif di Dashboard Koordinator (otomatis tersembunyi saat kosong) dan menu Riwayat Susulan Yaumiyah dengan paginasi."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Fitur 'Buka Akses Manual' bagi Guru & Koordinator untuk membuka dispensasi input tanggal lampau tanpa menunggu pengajuan santri."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Integritas gamifikasi: pengisian susulan tanggal lampau tetap memberikan EXP penuh namun melewati perhitungan streak untuk menjaga kedisiplinan harian."
+      }
+    ]
+  },
+  {
+    "version": "v1.3.1",
+    "releaseDate": "23 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Pembaruan Patch Keamanan & Paginasi Tab Wali Murid",
     "summary": "Peningkatan kenyamanan koordinator dengan paginasi pada tab Data Wali Murid, penataan modal relasi santri teratas, serta pembaruan patch keamanan DOMPurify 3.4.17.",
     "changes": [
@@ -283,7 +318,7 @@
     "version": "v1.0.3",
     "releaseDate": "11 September 2026",
     "isLatest": false,
-    "badge": "Terbaru",
+    "badge": "Stabil",
     "title": "Integrasi Penuh Halaman Koordinator: Dashboard Live, CRUD, Substitusi & Penjadwalan",
     "summary": "Seluruh halaman koordinator kini terhubung API tanpa data dummy: dashboard agregat live 7 hari, CRUD siswa/guru/kelas, penugasan guru pengganti, penjadwalan munaqosah dengan penguji dan tanggal, serta kurikulum dengan field penilaian dinamis.",
     "changes": [

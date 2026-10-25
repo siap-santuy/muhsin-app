@@ -509,7 +509,7 @@ export function buildContainer() {
     yaumiyahAccessRequestRepo
   );
   const getDailyIbadahStatsUseCase = new GetDailyIbadahStatsUseCase(dailyIbadahRepo);
-  const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
+  const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, db);
   const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
   const rejectYaumiyahAccessUseCase = new RejectYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
   const grantYaumiyahAccessUseCase = new GrantYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);

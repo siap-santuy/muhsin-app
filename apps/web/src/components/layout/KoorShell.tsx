@@ -57,9 +57,10 @@ const NAV_ITEMS = [
   },
   {
     path: "yaumiyah-approval",
-    label: "Izin Susulan Yaumiyah",
+    label: "Riwayat Susulan Yaumiyah",
     icon: BookOpen,
     href: "#/yaumiyah-approval",
+    badgeKey: "yaumiyahPending",
   },
 ];
 
@@ -87,6 +88,7 @@ export function KoorShell({
     "koordinator"
   );
   const [munaqosahPending, setMunaqosahPending] = useState<number | null>(null);
+  const [yaumiyahPending, setYaumiyahPending] = useState<number | null>(null);
 
   useState(() => {
     (async () => {
@@ -95,8 +97,12 @@ export function KoorShell({
         const reqs = await api.getMunaqosahRequests("diajukan").catch(() => api.getMunaqosahRequests());
         const pending = Array.isArray(reqs) ? reqs.filter((r: any) => r.status === "diajukan").length : 0;
         setMunaqosahPending(pending);
+
+        const yRes = await api.getYaumiyahAccessRequests({ status: "pending", limit: 1 }).catch(() => null);
+        setYaumiyahPending(yRes?.meta?.total ?? null);
       } catch {
         setMunaqosahPending(null);
+        setYaumiyahPending(null);
       }
     })();
   });
@@ -106,6 +112,10 @@ export function KoorShell({
     if (item.badgeKey === "munaqosahPending") {
       if (munaqosahPending === null || munaqosahPending === 0) return null;
       return String(munaqosahPending);
+    }
+    if (item.badgeKey === "yaumiyahPending") {
+      if (yaumiyahPending === null || yaumiyahPending === 0) return null;
+      return String(yaumiyahPending);
     }
     return null;
   }

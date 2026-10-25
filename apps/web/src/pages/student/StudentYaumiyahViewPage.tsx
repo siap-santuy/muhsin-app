@@ -78,6 +78,8 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
   const [showSholatInfo, setShowSholatInfo] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [reqStartDate, setReqStartDate] = useState(selectedDate);
+  const [reqEndDate, setReqEndDate] = useState(selectedDate);
   const [reqReason, setReqReason] = useState("");
   const [submittingReq, setSubmittingReq] = useState(false);
 
@@ -181,6 +183,14 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
   }
 
   async function handleSendRequest() {
+    if (!reqStartDate || !reqEndDate) {
+      setToast({ message: "Tentukan rentang tanggal permohonan", variant: "warning" });
+      return;
+    }
+    if (reqStartDate > reqEndDate) {
+      setToast({ message: "Tanggal awal tidak boleh melebihi tanggal akhir", variant: "warning" });
+      return;
+    }
     if (!reqReason.trim() || reqReason.trim().length < 5) {
       setToast({ message: "Alasan permohonan minimal 5 karakter", variant: "warning" });
       return;
@@ -188,8 +198,8 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
     setSubmittingReq(true);
     try {
       await api.requestYaumiyahAccess({
-        startDate: selectedDate,
-        endDate: selectedDate,
+        startDate: reqStartDate,
+        endDate: reqEndDate,
         reason: reqReason.trim(),
       });
       setToast({ message: "Permohonan buka akses berhasil dikirim", variant: "success" });
@@ -314,7 +324,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowRequestModal(true)}
+                    onClick={() => { setReqStartDate(selectedDate); setReqEndDate(selectedDate); setShowRequestModal(true); }}
                     className="h-9 w-full rounded-lg border-brand-cyan font-bold text-brand-cyan hover:bg-brand-cyan/10"
                   >
                     Ajukan Buka Akses
@@ -534,10 +544,33 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-in fade-in zoom-in-95">
             <h3 className="text-base font-bold text-brand-navy">Permohonan Izin Susulan</h3>
             <p className="mt-1 text-xs text-brand-text-muted">
-              Ajukan buka akses pengisian ibadah untuk tanggal <strong>{selectedDate}</strong> ke Guru/Koordinator.
+              Ajukan izin pengisian susulan (satu atau rentang tanggal) ke Guru/Koordinator.
             </p>
-            <div className="mt-3">
-              <label className="text-[11px] font-bold text-brand-navy">Alasan Terlambat / Lupa</label>
+            <div className="mt-3 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-brand-navy">Dari Tanggal</label>
+                  <input
+                    type="date"
+                    value={reqStartDate}
+                    max={reqEndDate}
+                    onChange={(e) => setReqStartDate(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-brand-navy">Sampai Tanggal</label>
+                  <input
+                    type="date"
+                    value={reqEndDate}
+                    min={reqStartDate}
+                    onChange={(e) => setReqEndDate(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-brand-navy">Alasan Terlambat / Lupa</label>
               <textarea
                 value={reqReason}
                 onChange={(e) => setReqReason(e.target.value)}
@@ -545,6 +578,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                 rows={3}
                 className="mt-1 w-full rounded-xl border border-brand-line p-2.5 text-xs text-brand-navy placeholder:text-gray-400 focus:border-brand-cyan focus:outline-none"
               />
+              </div>
             </div>
             <div className="mt-4 flex gap-2">
               <Button
