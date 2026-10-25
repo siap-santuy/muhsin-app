@@ -1,9 +1,34 @@
 [
   {
-    "version": "v1.4.0",
+    "version": "v1.4.1",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Pemisahan Tab Pengajuan Ditolak & Notifikasi Popover Koordinator",
+    "summary": "Perbaikan alur antrean munaqosah dengan memisahkan permohonan yang ditolak ke tab khusus (tidak lagi bercampur dengan riwayat kelulusan ujian), serta integrasi modal notifikasi interaktif model chat pada header Koordinator.",
+    "changes": [
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Pemisahan daftar pengajuan munaqosah yang ditolak ke tab mandiri 'Pengajuan Ditolak' lengkap dengan tabel dan catatan alasan penolakan."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Tab 'Riwayat Ujian' murni hanya menampilkan santri yang telah melaksanakan ujian (Lulus / Tidak Lulus) dan tombol cetak SK Hasil."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Modal notifikasi interaktif model chat/inbox popover pada ikon lonceng header Koordinator menggantikan menu sidebar lama."
+      }
+    ]
+  },
+  {
+    "version": "v1.4.0",
+    "releaseDate": "25 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Pembaruan Mutaba'ah Yaumiyah, Alur Munaqosah Terpadu, & Manajemen Akun",
     "summary": "Pembaruan besar sistem operasional dan akademik: aturan window pengisian yaumiyah (H & H-1) dengan permohonan izin susulan rentang tanggal, penyempurnaan alur ujian munaqosah multi-juz dengan kontrol rilis nilai raport resmi & integrasi jadwal di 3 dashboard, serta antrean reset password akun mandiri di Dashboard Koordinator disertai proteksi rate limiting.",
     "changes": [

@@ -67,9 +67,10 @@ export function KoorMunaqosahPage() {
   const [pendingPage, setPendingPage] = useState(1);
   const [scheduledPage, setScheduledPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
+  const [rejectedPage, setRejectedPage] = useState(1);
 
   // Tab
-  const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "scheduled" | "history" | "rejected">("pending");
 
   // Selection states
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
@@ -149,9 +150,12 @@ export function KoorMunaqosahPage() {
   const scheduledList = requests.filter(
     (r) => r.status === "dijadwalkan" || r.status === "disetujui"
   );
+  // Riwayat ujian HANYA untuk santri yang sudah melaksanakan ujian (Lulus / Tidak Lulus)
   const historyList = requests.filter(
-    (r) => r.status === "lulus" || r.status === "tidak_lulus" || r.status === "ditolak"
+    (r) => r.status === "lulus" || r.status === "tidak_lulus"
   );
+  // Tab terpisah khusus pengajuan yang ditolak
+  const rejectedList = requests.filter((r) => r.status === "ditolak");
 
   const PAGE_SIZE = 8;
   const pendingTotalPages = Math.max(1, Math.ceil(pendingList.length / PAGE_SIZE));
@@ -162,6 +166,9 @@ export function KoorMunaqosahPage() {
 
   const historyTotalPages = Math.max(1, Math.ceil(historyList.length / PAGE_SIZE));
   const historyPaginated = historyList.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
+
+  const rejectedTotalPages = Math.max(1, Math.ceil(rejectedList.length / PAGE_SIZE));
+  const rejectedPaginated = rejectedList.slice((rejectedPage - 1) * PAGE_SIZE, rejectedPage * PAGE_SIZE);
 
   // Hitung rentang waktu akumulatif per hari pada ujian yang telah dijadwalkan
   const dailyTimeRanges = useMemo(() => {
@@ -448,11 +455,12 @@ export function KoorMunaqosahPage() {
         )}
 
         {/* Tabs Navigasi */}
-        <div className="flex gap-2 border-b border-brand-line/60 pb-2">
+        <div className="flex gap-2 border-b border-brand-line/60 pb-2 overflow-x-auto">
           {[
             { key: "pending", label: `Perlu Review (${pendingList.length})` },
             { key: "scheduled", label: `Dijadwalkan (${scheduledList.length})` },
             { key: "history", label: `Riwayat Ujian (${historyList.length})` },
+            { key: "rejected", label: `Pengajuan Ditolak (${rejectedList.length})` },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -679,7 +687,7 @@ export function KoorMunaqosahPage() {
                                         : "bg-red-100 text-red-800"
                                     }`}
                                   >
-                                    {isLulus ? "LULUS" : req.status === "ditolak" ? "DITOLAK" : "TIDAK LULUS"}
+                                    {isLulus ? "LULUS" : "TIDAK LULUS"}
                                   </span>
                                   {finalScore && (
                                     <span className="ml-2 font-bold text-brand-cyan-dark">
@@ -688,7 +696,7 @@ export function KoorMunaqosahPage() {
                                   )}
                                 </td>
                                 <td className="py-3 px-3 text-gray-600 italic max-w-xs truncate">
-                                  {req.catatanPenguji ? `"${req.catatanPenguji}"` : req.rejectionNote ? `Alasan tolak: "${req.rejectionNote}"` : "-"}
+                                  {req.catatanPenguji ? `"${req.catatanPenguji}"` : "-"}
                                 </td>
                                 <td className="py-3 px-4 text-right">
                                   {(req.status === "lulus" || req.status === "tidak_lulus") && (
@@ -729,6 +737,61 @@ export function KoorMunaqosahPage() {
                     {historyTotalPages > 1 && (
                       <div className="p-3 border-t border-brand-line bg-gray-50/40">
                         <Pagination page={historyPage} totalPages={historyTotalPages} onPageChange={setHistoryPage} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 4: Pengajuan Ditolak (TAB BARU KHUSUS PENOLAKAN) */}
+            {activeTab === "rejected" && (
+              <div className="space-y-3">
+                {rejectedList.length === 0 ? (
+                  <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
+                    Tidak ada pengajuan munaqosah yang ditolak.
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-brand-line bg-white shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-brand-navy">
+                        <thead>
+                          <tr className="border-b border-brand-line bg-gray-50/70 text-[11px] font-bold text-brand-text-muted uppercase">
+                            <th className="py-3 px-4">Santri</th>
+                            <th className="py-3 px-3">Kelas</th>
+                            <th className="py-3 px-3">Juz Diajukan</th>
+                            <th className="py-3 px-3">Guru Pengaju</th>
+                            <th className="py-3 px-3">Tanggal Pengajuan</th>
+                            <th className="py-3 px-4">Alasan Penolakan Koordinator</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-brand-line/60">
+                          {rejectedPaginated.map((req) => {
+                            const juzText = req.juzList && req.juzList.length > 0 ? req.juzList.join(", ") : req.juzKe;
+                            return (
+                              <tr key={req.id} className="hover:bg-red-50/20 transition-colors">
+                                <td className="py-3 px-4 font-bold text-brand-navy">{req.studentName}</td>
+                                <td className="py-3 px-3 text-brand-text-muted">{req.className}</td>
+                                <td className="py-3 px-3 font-bold text-brand-navy">Juz {juzText}</td>
+                                <td className="py-3 px-3 font-semibold text-brand-navy">{req.teacherName}</td>
+                                <td className="py-3 px-3 text-brand-text-muted">{req.submissionDate}</td>
+                                <td className="py-3 px-4 text-red-600 font-medium">
+                                  {req.rejectionNote ? (
+                                    <span>&ldquo;{req.rejectionNote}&rdquo;</span>
+                                  ) : (
+                                    <span className="text-gray-400 italic">Tidak ada catatan penolakan</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {rejectedTotalPages > 1 && (
+                      <div className="p-3 border-t border-brand-line bg-gray-50/40">
+                        <Pagination page={rejectedPage} totalPages={rejectedTotalPages} onPageChange={setRejectedPage} />
                       </div>
                     )}
                   </div>
