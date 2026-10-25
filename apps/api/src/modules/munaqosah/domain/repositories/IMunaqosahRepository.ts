@@ -1,4 +1,8 @@
-import type { MunaqosahRequestItem, MunaqosahExaminerItem } from "../entities/Munaqosah";
+import type {
+  MunaqosahRequestItem,
+  MunaqosahExaminerItem,
+  MunaqosahPeriodItem,
+} from "../entities/Munaqosah";
 
 export interface IMunaqosahRepository {
   findRequests(schoolId: string, status?: string): Promise<MunaqosahRequestItem[]>;
@@ -7,7 +11,15 @@ export interface IMunaqosahRepository {
     studentId: string;
     teacherId: string;
     juzKe: number;
+    juzList?: number[];
+    periodId?: string;
   }): Promise<string>;
+  findActiveRequestByStudent(
+    studentId: string,
+    schoolId: string,
+    periodId?: string
+  ): Promise<MunaqosahRequestItem | null>;
+  findPassedJuzByStudent(studentId: string, schoolId: string): Promise<number[]>;
   updateRequestStatus(
     id: string,
     schoolId: string,
@@ -24,9 +36,10 @@ export interface IMunaqosahRepository {
   getRequestDetail(
     requestId: string,
     schoolId: string
-  ): Promise<{ studentId: string; studentName: string; juzKe: number; schoolId: string } | null>;
+  ): Promise<{ studentId: string; studentName: string; juzKe: number; juzList?: number[]; schoolId: string } | null>;
   findParentIdsByStudent(studentId: string, schoolId: string): Promise<string[]>;
   findMyExams(examinerTeacherId: string, schoolId: string): Promise<MunaqosahRequestItem[]>;
+  findStudentSchedule(studentId: string, schoolId: string): Promise<MunaqosahRequestItem[]>;
   getAssignmentOwner(
     assignmentId: string,
     schoolId: string
@@ -47,14 +60,34 @@ export interface IMunaqosahRepository {
   ): Promise<{ kapasitas: number; terpakai: number; penuh: boolean } | null>;
   submitResult(params: {
     assignmentId: string;
-    scores: Record<string, number>;
+    scores: Record<string, any>;
     hasil: "lulus" | "tidak_lulus";
     catatanPenguji?: string;
-  }): Promise<{ studentId: string; juzKe: number; schoolId: string }>;
+  }): Promise<{ studentId: string; juzKe: number; juzList?: number[]; schoolId: string }>;
   grantAchievement(params: {
     schoolId: string;
     studentId: string;
     juzKe: number;
     sourceId: string;
   }): Promise<void>;
+  findPeriods(schoolId: string): Promise<MunaqosahPeriodItem[]>;
+  createPeriod(params: {
+    schoolId: string;
+    academicPeriodId: string;
+    nama: string;
+    tanggalMulai: string;
+    tanggalSelesai: string;
+    status?: "draft" | "buka" | "tutup";
+  }): Promise<string>;
+  updatePeriod(
+    periodId: string,
+    schoolId: string,
+    params: {
+      nama?: string;
+      tanggalMulai?: string;
+      tanggalSelesai?: string;
+      status?: "draft" | "buka" | "tutup";
+      isResultPublished?: boolean;
+    }
+  ): Promise<void>;
 }

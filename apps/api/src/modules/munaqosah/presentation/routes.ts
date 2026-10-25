@@ -9,10 +9,13 @@ import type { UpdateMunaqosahStatusUseCase } from "../application/use-cases/Upda
 import type { ScheduleMunaqosahUseCase } from "../application/use-cases/ScheduleMunaqosahUseCase";
 import type { ManageMunaqosahExaminersUseCase } from "../application/use-cases/ManageMunaqosahExaminersUseCase";
 import type { SubmitMunaqosahResultUseCase } from "../application/use-cases/SubmitMunaqosahResultUseCase";
+import type { IMunaqosahRepository } from "../domain/repositories/IMunaqosahRepository";
 
 const createRequestBodySchema = z.object({
   studentId: z.string().uuid(),
-  juzKe: z.number().int().min(1).max(30),
+  juzKe: z.number().int().min(1).max(30).optional(),
+  juzList: z.array(z.number().int().min(1).max(30)).optional(),
+  periodId: z.string().uuid().optional(),
 });
 
 const scheduleBodySchema = z.object({
@@ -28,12 +31,38 @@ const examinerBodySchema = z.object({
 });
 
 const resultBodySchema = z.object({
-  scores: z.record(z.number().min(0).max(100)),
+  scores: z
+    .object({
+      tajwid: z.number().min(0).max(100),
+      kelancaran: z.number().min(0).max(100),
+    })
+    .passthrough(),
   hasil: z.enum(["lulus", "tidak_lulus"]),
   catatanPenguji: z.string().optional(),
 });
 
+const createPeriodBodySchema = z.object({
+  academicPeriodId: z.string().uuid(),
+  nama: z.string().min(3),
+  tanggalMulai: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  tanggalSelesai: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(["draft", "buka", "tutup"]).optional(),
+});
+
+const updatePeriodBodySchema = z.object({
+  nama: z.string().min(3).optional(),
+  tanggalMulai: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  tanggalSelesai: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.enum(["draft", "buka", "tutup"]).optional(),
+  isResultPublished: z.boolean().optional(),
+});
+
+const publishPeriodBodySchema = z.object({
+  isResultPublished: z.boolean(),
+});
+
 export interface MunaqosahRoutesDeps {
+  repo: IMunaqosahRepository;
   getRequestsUseCase: GetMunaqosahRequestsUseCase;
   getMyExamsUseCase: GetMyMunaqosahExamsUseCase;
   createRequestUseCase: CreateMunaqosahRequestUseCase;
@@ -41,10 +70,98 @@ export interface MunaqosahRoutesDeps {
   scheduleUseCase: ScheduleMunaqosahUseCase;
   examinersUseCase: ManageMunaqosahExaminersUseCase;
   submitResultUseCase: SubmitMunaqosahResultUseCase;
+  resolveStudentId?: (user: any, requestedId?: string) => Promise<string>;
 }
 
 export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
   const app = new Hono<{ Variables: AuthVariables }>();
+
+  // GET /munaqosah/periods — list periode munaqosah
+  app.get(
+    "/periods",
+    requireRole("koordinator_ttq", "teacher", "student", "parent"),
+    async (c) => {
+      const user = c.get("user");
+      const list = await deps.repo.findPeriods(user.schoolId);
+      return c.json({ data: list, error: null, meta: null }, 200);
+    }
+  );
+
+  // POST /munaqosah/periods — buat periode munaqosah baru (Koordinator)
+  app.post(
+    "/periods",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const body = await c.req.json();
+      const parsed = createPeriodBodySchema.safeParse(body);
+
+      if (!parsed.success) {
+        return c.json(
+          { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+          400
+        );
+      }
+
+      const id = await deps.repo.createPeriod({
+        schoolId: user.schoolId,
+        academicPeriodId: parsed.data.academicPeriodId,
+        nama: parsed.data.nama,
+        tanggalMulai: parsed.data.tanggalMulai,
+        tanggalSelesai: parsed.data.tanggalSelesai,
+        status: parsed.data.status ?? "buka",
+      });
+
+      return c.json({ data: { id, message: "Periode munaqosah berhasil dibuat" }, error: null, meta: null }, 201);
+    }
+  );
+
+  // PATCH /munaqosah/periods/:id — update periode
+  app.patch(
+    "/periods/:id",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const id = c.req.param("id");
+      const body = await c.req.json();
+      const parsed = updatePeriodBodySchema.safeParse(body);
+
+      if (!parsed.success) {
+        return c.json(
+          { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+          400
+        );
+      }
+
+      await deps.repo.updatePeriod(id, user.schoolId, parsed.data);
+      return c.json({ data: { message: "Periode munaqosah berhasil diperbarui" }, error: null, meta: null }, 200);
+    }
+  );
+
+  // POST /munaqosah/periods/:id/publish — rilis / sembunyikan nilai ke siswa & ortu
+  app.post(
+    "/periods/:id/publish",
+    requireRole("koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const id = c.req.param("id");
+      const body = await c.req.json();
+      const parsed = publishPeriodBodySchema.safeParse(body);
+
+      if (!parsed.success) {
+        return c.json(
+          { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+          400
+        );
+      }
+
+      await deps.repo.updatePeriod(id, user.schoolId, { isResultPublished: parsed.data.isResultPublished });
+      const msg = parsed.data.isResultPublished
+        ? "Nilai munaqosah resmi dirilis ke siswa dan orang tua"
+        : "Publikasi nilai munaqosah ditarik kembali";
+      return c.json({ data: { message: msg }, error: null, meta: null }, 200);
+    }
+  );
 
   // GET /munaqosah/requests
   app.get(
@@ -72,7 +189,25 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     }
   );
 
-  // POST /munaqosah/requests — pengajuan dari guru
+  // GET /munaqosah/my-schedule — jadwal & riwayat munaqosah untuk santri & orang tua
+  app.get(
+    "/my-schedule",
+    requireRole("student", "parent", "teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      let studentId = user.userId;
+      if (deps.resolveStudentId) {
+        studentId = await deps.resolveStudentId(user, c.req.query("studentId"));
+      } else if (c.req.query("studentId")) {
+        studentId = c.req.query("studentId")!;
+      }
+
+      const schedule = await deps.repo.findStudentSchedule(studentId, user.schoolId);
+      return c.json({ data: schedule, error: null, meta: null }, 200);
+    }
+  );
+
+  // POST /munaqosah/requests — pengajuan dari guru (bisa multi-juz)
   app.post(
     "/requests",
     requireRole("teacher"),
@@ -88,14 +223,23 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
         );
       }
 
-      const id = await deps.createRequestUseCase.execute({
-        schoolId: user.schoolId,
-        studentId: parsed.data.studentId,
-        teacherId: user.userId,
-        juzKe: parsed.data.juzKe,
-      });
+      try {
+        const id = await deps.createRequestUseCase.execute({
+          schoolId: user.schoolId,
+          studentId: parsed.data.studentId,
+          teacherId: user.userId,
+          juzKe: parsed.data.juzKe,
+          juzList: parsed.data.juzList,
+          periodId: parsed.data.periodId,
+        });
 
-      return c.json({ data: { id, message: "Pengajuan berhasil dibuat" }, error: null, meta: null }, 201);
+        return c.json({ data: { id, message: "Pengajuan berhasil dibuat" }, error: null, meta: null }, 201);
+      } catch (err: any) {
+        return c.json(
+          { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },
+          422
+        );
+      }
     }
   );
 
@@ -152,17 +296,24 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
         );
       }
 
-      const assignmentId = await deps.scheduleUseCase.execute({
-        requestId,
-        periodId: parsed.data.periodId,
-        examinerTeacherId: parsed.data.examinerTeacherId,
-        jadwalTanggal: parsed.data.jadwalTanggal,
-        jadwalWaktu: parsed.data.jadwalWaktu,
-        assignedBy: user.userId,
-        schoolId: user.schoolId,
-      });
+      try {
+        const assignmentId = await deps.scheduleUseCase.execute({
+          requestId,
+          periodId: parsed.data.periodId,
+          examinerTeacherId: parsed.data.examinerTeacherId,
+          jadwalTanggal: parsed.data.jadwalTanggal,
+          jadwalWaktu: parsed.data.jadwalWaktu,
+          assignedBy: user.userId,
+          schoolId: user.schoolId,
+        });
 
-      return c.json({ data: { assignmentId, message: "Jadwal dan penguji berhasil ditetapkan" }, error: null, meta: null }, 200);
+        return c.json({ data: { assignmentId, message: "Jadwal dan penguji berhasil ditetapkan" }, error: null, meta: null }, 200);
+      } catch (err: any) {
+        return c.json(
+          { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },
+          422
+        );
+      }
     }
   );
 
@@ -237,17 +388,24 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
         );
       }
 
-      await deps.submitResultUseCase.execute({
-        assignmentId,
-        scores: parsed.data.scores,
-        hasil: parsed.data.hasil,
-        catatanPenguji: parsed.data.catatanPenguji,
-        actorUserId: user.userId,
-        actorRole: user.role,
-        schoolId: user.schoolId,
-      });
+      try {
+        const res = await deps.submitResultUseCase.execute({
+          assignmentId,
+          scores: parsed.data.scores,
+          hasil: parsed.data.hasil,
+          catatanPenguji: parsed.data.catatanPenguji,
+          actorUserId: user.userId,
+          actorRole: user.role,
+          schoolId: user.schoolId,
+        });
 
-      return c.json({ data: { message: "Hasil munaqosah berhasil disimpan" }, error: null, meta: null }, 200);
+        return c.json({ data: { message: "Hasil munaqosah berhasil disimpan", result: res }, error: null, meta: null }, 200);
+      } catch (err: any) {
+        return c.json(
+          { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },
+          422
+        );
+      }
     }
   );
 

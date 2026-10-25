@@ -635,7 +635,7 @@ class ApiClient {
     return this.request("GET", url);
   }
 
-  async createMunaqosahRequest(input: { studentId: string; juzKe: number }) {
+  async createMunaqosahRequest(input: { studentId: string; juzKe?: number; juzList?: number[]; periodId?: string }) {
     return this.request("POST", `/munaqosah/requests`, input);
   }
 
@@ -659,15 +659,78 @@ class ApiClient {
   async getMyMunaqosahExams(): Promise<Array<{
     id: string;
     assignmentId: string | null;
+    periodId?: string | null;
     studentName: string;
     className: string;
     juzKe: number;
+    juzList?: number[] | null;
     status: string;
     examDate: string | null;
     examTime: string | null;
     hasil: string | null;
+    scores?: any;
+    nilaiAkhir?: number | null;
+    grade?: string | null;
+    catatanPenguji?: string | null;
   }>> {
     return this.request("GET", `/munaqosah/my-exams`);
+  }
+
+  async getStudentMunaqosahSchedule(studentId?: string): Promise<Array<{
+    id: string;
+    assignmentId: string | null;
+    periodId?: string | null;
+    periodName?: string | null;
+    juzKe: number;
+    juzList?: number[] | null;
+    status: string;
+    examDate: string | null;
+    examTime: string | null;
+    assignedExaminerName?: string | null;
+    hasil: string | null;
+    scores?: any;
+    nilaiAkhir?: number | null;
+    grade?: string | null;
+    catatanPenguji?: string | null;
+    isResultPublished?: boolean;
+  }>> {
+    const qs = studentId ? `?studentId=${studentId}` : "";
+    return this.request("GET", `/munaqosah/my-schedule${qs}`);
+  }
+
+  async getMunaqosahPeriods(): Promise<Array<{
+    id: string;
+    nama: string;
+    tanggalMulai: string;
+    tanggalSelesai: string;
+    status: string;
+    isResultPublished: boolean;
+  }>> {
+    return this.request("GET", `/munaqosah/periods`);
+  }
+
+  async createMunaqosahPeriod(input: {
+    academicPeriodId: string;
+    nama: string;
+    tanggalMulai: string;
+    tanggalSelesai: string;
+    status?: "draft" | "buka" | "tutup";
+  }) {
+    return this.request("POST", `/munaqosah/periods`, input);
+  }
+
+  async updateMunaqosahPeriod(id: string, input: {
+    nama?: string;
+    tanggalMulai?: string;
+    tanggalSelesai?: string;
+    status?: "draft" | "buka" | "tutup";
+    isResultPublished?: boolean;
+  }) {
+    return this.request("PATCH", `/munaqosah/periods/${id}`, input);
+  }
+
+  async publishMunaqosahResults(periodId: string, isResultPublished: boolean) {
+    return this.request("POST", `/munaqosah/periods/${periodId}/publish`, { isResultPublished });
   }
 
   async getMunaqosahExaminers(periodId: string): Promise<Array<{
@@ -690,7 +753,11 @@ class ApiClient {
   }
 
   async submitMunaqosahResult(assignmentId: string, input: {
-    scores: Record<string, number>;
+    scores: {
+      tajwid: number;
+      kelancaran: number;
+      [key: string]: any;
+    };
     hasil: "lulus" | "tidak_lulus";
     catatanPenguji?: string;
   }) {
@@ -921,10 +988,6 @@ class ApiClient {
 
   async getActivePeriod(): Promise<{ id: string; tahunAjaran: string; semester: string; isLocked: boolean } | null> {
     return this.request("GET", `/school-admin/active-period`);
-  }
-
-  async getMunaqosahPeriods(): Promise<Array<{ id: string; nama: string; tanggalMulai: string; tanggalSelesai: string; status: string }>> {
-    return this.request("GET", `/school-admin/munaqosah-periods`);
   }
 
   async getSubstitutions(): Promise<Array<{

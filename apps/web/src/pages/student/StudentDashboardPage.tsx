@@ -61,15 +61,14 @@ export function StudentDashboardPage() {
   const firstName = user?.name ? user.name.split(" ")[0] : "Siswa";
   const [dialog, setDialog] = useState<DialogType>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [munaqosahList, setMunaqosahList] = useState<any[]>([]);
   const todayStr = formatLocalDate(new Date());
   const [todayIbadahStatus, setTodayIbadahStatus] = useState<"submitted" | "draft" | "empty">("empty");
 
   useEffect(() => {
     api.getDashboardSummary()
       .then(setSummary)
-      .catch(() => {
-        // Fallback
-      });
+      .catch(() => {});
 
     api.getDailyIbadah(todayStr)
       .then((data) => {
@@ -78,6 +77,10 @@ export function StudentDashboardPage() {
         else setTodayIbadahStatus("empty");
       })
       .catch(() => setTodayIbadahStatus("empty"));
+
+    api.getStudentMunaqosahSchedule()
+      .then((data) => setMunaqosahList(Array.isArray(data) ? data : []))
+      .catch(() => setMunaqosahList([]));
   }, [todayStr]);
 
   const currentExp = summary?.totalExp ?? 0;
@@ -163,6 +166,112 @@ export function StudentDashboardPage() {
               Lihat →
             </span>
           </div>
+
+          {/* Kartu Status / Jadwal Ujian Munaqosah */}
+          {(() => {
+            const activeMunaqosah =
+              munaqosahList.find(
+                (m) => m.status === "dijadwalkan" || m.status === "disetujui" || m.status === "diajukan"
+              ) || munaqosahList[0];
+
+            if (!activeMunaqosah) return null;
+
+            const juzText =
+              activeMunaqosah.juzList && activeMunaqosah.juzList.length > 0
+                ? activeMunaqosah.juzList.join(", ")
+                : activeMunaqosah.juzKe;
+
+            if (activeMunaqosah.status === "dijadwalkan") {
+              return (
+                <div className="rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50/50 p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white shadow-xs">
+                        <Award className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-700">
+                          JADWAL MUNAQOSAH
+                        </span>
+                        <h3 className="text-sm font-bold text-brand-navy mt-0.5">
+                          Ujian Kenaikan Juz {juzText}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl bg-white/90 p-3 text-xs text-brand-navy space-y-1 border border-purple-100">
+                    <p className="flex items-center gap-2">
+                      <span className="text-gray-500">📅 Tanggal:</span>
+                      <strong>{activeMunaqosah.examDate ?? "Menunggu Penjadwalan"}</strong>
+                      {activeMunaqosah.examTime && <span>({activeMunaqosah.examTime})</span>}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="text-gray-500">👤 Penguji:</span>
+                      <strong>{activeMunaqosah.assignedExaminerName ?? "Ustadz Penguji"}</strong>
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
+            if (activeMunaqosah.isResultPublished && activeMunaqosah.scores) {
+              const isLulus = activeMunaqosah.hasil === "lulus";
+              const scoreVal = activeMunaqosah.nilaiAkhir ?? activeMunaqosah.scores?.nilaiAkhir;
+              const gradeVal = activeMunaqosah.grade ?? activeMunaqosah.scores?.grade;
+              return (
+                <div
+                  className={`rounded-2xl border p-4 shadow-sm ${
+                    isLulus ? "border-emerald-300 bg-emerald-50/60" : "border-red-300 bg-red-50/60"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-xs ${
+                          isLulus ? "bg-emerald-600" : "bg-red-600"
+                        }`}
+                      >
+                        <Award className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                            isLulus ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          HASIL MUNAQOSAH: {isLulus ? "LULUS" : "BELUM LULUS"}
+                        </span>
+                        <h3 className="text-sm font-bold text-brand-navy mt-0.5">
+                          Juz {juzText} • Nilai: <strong>{scoreVal ?? "-"}</strong> ({gradeVal ?? "-"})
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                  {activeMunaqosah.catatanPenguji && (
+                    <p className="mt-2.5 text-xs italic text-gray-700 bg-white/80 p-2.5 rounded-xl border border-gray-100">
+                      &ldquo;{activeMunaqosah.catatanPenguji}&rdquo;
+                    </p>
+                  )}
+                </div>
+              );
+            }
+
+            if (activeMunaqosah.status === "lulus" || activeMunaqosah.status === "tidak_lulus") {
+              return (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 shadow-sm text-xs">
+                  <div className="flex items-center gap-2 font-bold text-amber-900">
+                    <Award className="h-4 w-4 text-amber-600" />
+                    <span>Ujian Munaqosah Telah Selesai</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-amber-700">
+                    Ujian Juz {juzText} telah dilaksanakan. Pengumuman nilai dan raport resmi akan dirilis oleh pihak sekolah.
+                  </p>
+                </div>
+              );
+            }
+
+            return null;
+          })()}
           {/* Target Ziyadah Bulan Ini */}
           <div className="flex items-center gap-3 rounded-2xl border border-brand-cyan/30 bg-brand-cyan/5 px-4 py-3">
             <BookOpenCheck className="h-6 w-6 shrink-0 text-brand-cyan" />

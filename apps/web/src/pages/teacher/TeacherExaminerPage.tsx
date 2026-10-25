@@ -12,10 +12,15 @@ interface ExamItem {
   studentName: string;
   className: string;
   juzKe: number;
+  juzList?: number[] | null;
   status: string;
   examDate: string | null;
   examTime: string | null;
   hasil: string | null;
+  scores?: any;
+  nilaiAkhir?: number | null;
+  grade?: string | null;
+  catatanPenguji?: string | null;
 }
 
 export function TeacherExaminerPage() {
@@ -23,8 +28,8 @@ export function TeacherExaminerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<ExamItem | null>(null);
-  const [tajwid, setTajwid] = useState(80);
-  const [kelancaran, setKelancaran] = useState(80);
+  const [tajwid, setTajwid] = useState(85);
+  const [kelancaran, setKelancaran] = useState(85);
   const [catatan, setCatatan] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -47,9 +52,15 @@ export function TeacherExaminerPage() {
   const pending = exams.filter((e) => e.hasil === "belum" || !e.hasil);
   const done = exams.filter((e) => e.hasil === "lulus" || e.hasil === "tidak_lulus");
 
+  const avgScore = Math.round((tajwid + kelancaran) / 2);
+  const letterGrade =
+    avgScore >= 90 ? "A (Mumtaz)" : avgScore >= 80 ? "B (Jayyid Jiddan)" : avgScore >= 70 ? "C (Jayyid)" : "D (Maqbul)";
+
   async function handleSubmit(hasil: "lulus" | "tidak_lulus") {
     if (!active?.assignmentId) return;
-    if (hasil === "tidak_lulus" && !confirm(`Nyatakan ${active.studentName} TIDAK LULUS Juz ${active.juzKe}?`)) return;
+    const juzText = active.juzList && active.juzList.length > 0 ? active.juzList.join(", ") : active.juzKe;
+    if (hasil === "tidak_lulus" && !confirm(`Nyatakan ${active.studentName} TIDAK LULUS Juz ${juzText}?`)) return;
+
     setSaving(true);
     try {
       await api.submitMunaqosahResult(active.assignmentId, {
@@ -57,7 +68,7 @@ export function TeacherExaminerPage() {
         hasil,
         catatanPenguji: catatan || undefined,
       });
-      toast.success(`Hasil ${hasil === "lulus" ? "kelulusan" : "ketidaklulusan"} tersimpan`);
+      toast.success(`Hasil ujian ${hasil === "lulus" ? "LULUS" : "TIDAK LULUS"} tersimpan`);
       setActive(null);
       setCatatan("");
       await load();
@@ -105,77 +116,103 @@ export function TeacherExaminerPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {pending.map((e) => (
-                <div
-                  key={e.assignmentId ?? e.id}
-                  className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
-                      <Award className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-brand-navy">{e.studentName}</h3>
-                        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                          Juz {e.juzKe}
-                        </span>
-                      </div>
-                      <p className="text-xs text-brand-text-muted">
-                        {e.className}
-                        {e.examDate ? ` • ${e.examDate}${e.examTime ? ` ${e.examTime}` : ""}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={() => setActive(e)}
-                    disabled={!e.assignmentId}
-                    className="mt-3 h-10 w-full rounded-xl bg-purple-600 text-xs font-bold text-white hover:bg-purple-700"
+              {pending.map((e) => {
+                const juzText = e.juzList && e.juzList.length > 0 ? e.juzList.join(", ") : e.juzKe;
+                return (
+                  <div
+                    key={e.assignmentId ?? e.id}
+                    className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm"
                   >
-                    Nilai Ujian
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-brand-navy">{e.studentName}</h3>
+                          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                            Juz {juzText}
+                          </span>
+                        </div>
+                        <p className="text-xs text-brand-text-muted">
+                          {e.className} • Tanggal: {e.examDate ?? "-"}{e.examTime ? ` (${e.examTime})` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setActive(e);
+                        setTajwid(85);
+                        setKelancaran(85);
+                        setCatatan("");
+                      }}
+                      disabled={!e.assignmentId}
+                      className="mt-3 h-10 w-full rounded-xl bg-purple-600 text-xs font-bold text-white hover:bg-purple-700"
+                    >
+                      Buka Form Penilaian
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {done.length > 0 && (
-            <section>
+            <section className="mt-4">
               <h2 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-brand-navy/60">
-                Riwayat Dinilai ({done.length})
+                Riwayat Selesai Dinilai ({done.length})
               </h2>
               <div className="space-y-2">
-                {done.map((e) => (
-                  <div
-                    key={e.assignmentId ?? e.id}
-                    className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-3"
-                  >
-                    <p className="text-xs font-bold text-brand-navy">
-                      {e.studentName} (Juz {e.juzKe})
-                    </p>
-                    <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${
-                        e.hasil === "lulus" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-                      }`}
+                {done.map((e) => {
+                  const juzText = e.juzList && e.juzList.length > 0 ? e.juzList.join(", ") : e.juzKe;
+                  const finalScore = e.scores?.nilaiAkhir ?? e.nilaiAkhir;
+                  const gradeLetter = e.scores?.grade ?? e.grade;
+                  return (
+                    <div
+                      key={e.assignmentId ?? e.id}
+                      className="flex items-center justify-between rounded-2xl border border-brand-line bg-white p-3 shadow-xs"
                     >
-                      {e.hasil === "lulus" ? "LULUS" : "TIDAK LULUS"}
-                    </span>
-                  </div>
-                ))}
+                      <div>
+                        <p className="text-xs font-bold text-brand-navy">
+                          {e.studentName} (Juz {juzText})
+                        </p>
+                        {finalScore && (
+                          <p className="text-[11px] text-brand-text-muted">
+                            Nilai: <strong className="text-brand-navy">{finalScore}</strong> ({gradeLetter ?? "-"})
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${
+                          e.hasil === "lulus" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {e.hasil === "lulus" ? "LULUS" : "TIDAK LULUS"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
         </div>
       </main>
 
+      {/* Modal Input Nilai */}
       {active && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-brand-line pb-3">
-              <h2 className="text-sm font-bold text-brand-navy">
-                Nilai: {active.studentName} (Juz {active.juzKe})
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-brand-navy">
+                  Penilaian: {active.studentName}
+                </h2>
+                <p className="text-[11px] font-semibold text-purple-700">
+                  Ujian Juz {active.juzList && active.juzList.length > 0 ? active.juzList.join(", ") : active.juzKe}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setActive(null)}
@@ -185,9 +222,12 @@ export function TeacherExaminerPage() {
               </button>
             </div>
 
-            <div className="my-4 space-y-3 text-xs">
+            <div className="my-4 space-y-3.5 text-xs">
               <div>
-                <label className="font-bold text-brand-navy">Tajwid (0-100): {tajwid}</label>
+                <div className="flex justify-between font-bold text-brand-navy">
+                  <span>1. Nilai Tajwid (0-100)</span>
+                  <span className="text-brand-cyan text-sm">{tajwid}</span>
+                </div>
                 <input
                   type="range"
                   min={0}
@@ -197,8 +237,12 @@ export function TeacherExaminerPage() {
                   className="mt-1 w-full"
                 />
               </div>
+
               <div>
-                <label className="font-bold text-brand-navy">Kelancaran (0-100): {kelancaran}</label>
+                <div className="flex justify-between font-bold text-brand-navy">
+                  <span>2. Nilai Kelancaran (0-100)</span>
+                  <span className="text-brand-cyan text-sm">{kelancaran}</span>
+                </div>
                 <input
                   type="range"
                   min={0}
@@ -208,13 +252,27 @@ export function TeacherExaminerPage() {
                   className="mt-1 w-full"
                 />
               </div>
+
+              {/* Rangkuman Nilai & Konversi Huruf */}
+              <div className="rounded-2xl border border-brand-line bg-gray-50/70 p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-brand-text-muted">Rata-rata Nilai</p>
+                  <p className="text-xl font-extrabold text-brand-navy">{avgScore} / 100</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold uppercase text-brand-text-muted">Konversi Predikat</p>
+                  <p className="text-xs font-bold text-emerald-700">{letterGrade}</p>
+                </div>
+              </div>
+
               <div>
-                <label className="font-bold text-brand-navy">Catatan penguji (opsional)</label>
+                <label className="font-bold text-brand-navy">Catatan Penguji (opsional)</label>
                 <textarea
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-medium text-brand-navy outline-none focus:border-brand-cyan"
+                  placeholder="Catatan makhraj, waqaf, atau pesan penguji..."
+                  rows={2}
+                  className="mt-1 w-full rounded-xl border border-brand-line p-2.5 font-medium text-brand-navy outline-none focus:border-brand-cyan text-xs"
                 />
               </div>
             </div>
@@ -227,7 +285,7 @@ export function TeacherExaminerPage() {
                 disabled={saving}
                 className="h-10 flex-1 rounded-xl border-red-200 text-xs font-bold text-red-600 hover:bg-red-50"
               >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tidak Lulus"}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Nyatakan Tidak Lulus"}
               </Button>
               <Button
                 type="button"
@@ -235,7 +293,13 @@ export function TeacherExaminerPage() {
                 disabled={saving}
                 className="h-10 flex-1 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700"
               >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="mr-1 h-4 w-4" /> Lulus</>}
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Check className="mr-1 h-4 w-4" /> Nyatakan Lulus
+                  </>
+                )}
               </Button>
             </div>
           </div>

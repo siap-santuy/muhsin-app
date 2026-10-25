@@ -17,11 +17,14 @@ function baseMockRepo(): IMunaqosahRepository {
   return {
     findRequests: vi.fn(),
     createRequest: vi.fn(),
+    findActiveRequestByStudent: vi.fn().mockResolvedValue(null),
+    findPassedJuzByStudent: vi.fn().mockResolvedValue([]),
     updateRequestStatus: vi.fn(),
     createAssignment: vi.fn(),
     getRequestDetail: vi.fn(),
     findParentIdsByStudent: vi.fn(),
     findMyExams: vi.fn(),
+    findStudentSchedule: vi.fn().mockResolvedValue([]),
     getAssignmentOwner: vi.fn(),
     findExaminers: vi.fn(),
     upsertExaminer: vi.fn(),
@@ -29,6 +32,9 @@ function baseMockRepo(): IMunaqosahRepository {
     checkExaminerCapacity: vi.fn(),
     submitResult: vi.fn(),
     grantAchievement: vi.fn(),
+    findPeriods: vi.fn().mockResolvedValue([]),
+    createPeriod: vi.fn().mockResolvedValue("period-1"),
+    updatePeriod: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -51,7 +57,64 @@ describe("Munaqosah Module UseCases", () => {
       studentId: "student-1",
       teacherId: "teacher-1",
       juzKe: 30,
+      juzList: [30],
+      periodId: undefined,
     });
+  });
+
+  it("supports multi-juz request and rejects duplicates in period", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.createRequest as any).mockResolvedValue("req-multi");
+
+    const useCase = new CreateMunaqosahRequestUseCase(mockRepo);
+    const result = await useCase.execute({
+      schoolId: "school-1",
+      studentId: "student-1",
+      teacherId: "teacher-1",
+      juzList: [29, 30],
+      periodId: "period-1",
+    });
+
+    expect(result).toBe("req-multi");
+    expect(mockRepo.createRequest).toHaveBeenCalledWith({
+      schoolId: "school-1",
+      studentId: "student-1",
+      teacherId: "teacher-1",
+      juzKe: 29,
+      juzList: [29, 30],
+      periodId: "period-1",
+    });
+
+    // Tolak jika sudah ada active request
+    (mockRepo.findActiveRequestByStudent as any).mockResolvedValue({
+      id: "req-existing",
+      status: "dijadwalkan",
+    });
+
+    await expect(
+      useCase.execute({
+        schoolId: "school-1",
+        studentId: "student-1",
+        teacherId: "teacher-1",
+        juzKe: 28,
+        periodId: "period-1",
+      })
+    ).rejects.toThrow("Siswa hanya dapat mengikuti 1 kali ujian per periode");
+  });
+
+  it("rejects request if any juz has already passed munaqosah", async () => {
+    const mockRepo = baseMockRepo();
+    (mockRepo.findPassedJuzByStudent as any).mockResolvedValue([30]);
+
+    const useCase = new CreateMunaqosahRequestUseCase(mockRepo);
+    await expect(
+      useCase.execute({
+        schoolId: "school-1",
+        studentId: "student-1",
+        teacherId: "teacher-1",
+        juzList: [29, 30],
+      })
+    ).rejects.toThrow("Siswa telah dinyatakan LULUS munaqosah untuk Juz 30");
   });
 
   it("throws error for invalid juz (<1 or >30)", async () => {

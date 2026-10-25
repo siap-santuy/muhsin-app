@@ -41,6 +41,9 @@ export function KoorDashboardPage() {
   const [resetActionLoading, setResetActionLoading] = useState<string | null>(null);
   const [resetSuccessModal, setResetSuccessModal] = useState<{ defaultPassword: string; userName?: string } | null>(null);
 
+  // Pending Munaqosah Requests
+  const [pendingMunaqosahCount, setPendingMunaqosahCount] = useState<number>(0);
+
   async function loadPending(page = 1) {
     try {
       const res = await api.getYaumiyahAccessRequests({ status: "pending", page, limit: 5 });
@@ -63,12 +66,22 @@ export function KoorDashboardPage() {
     }
   }
 
+  async function loadMunaqosahPending() {
+    try {
+      const list = await api.getMunaqosahRequests("diajukan");
+      setPendingMunaqosahCount(Array.isArray(list) ? list.length : 0);
+    } catch {
+      setPendingMunaqosahCount(0);
+    }
+  }
+
   useEffect(() => {
     Promise.all([
       api.getDashboardSummary(),
       api.getActivePeriod().catch(() => null),
       loadPending(1),
       loadPasswordResets(),
+      loadMunaqosahPending(),
     ])
       .then(([sum, period]) => {
         setSummary(sum);
@@ -208,6 +221,32 @@ export function KoorDashboardPage() {
             );
           })}
         </div>
+
+        {/* Banner Antrean Pengajuan Munaqosah (Muncul jika ada pengajuan) */}
+        {pendingMunaqosahCount > 0 && (
+          <div className="flex items-center justify-between rounded-2xl border-2 border-purple-200 bg-purple-50/70 p-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white shadow-xs">
+                <Award className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-brand-navy">
+                  {pendingMunaqosahCount} Pengajuan Munaqosah Menunggu Review
+                </h3>
+                <p className="text-xs text-brand-text-muted">
+                  Guru pembimbing telah mengajukan santri siap ujian kenaikan juz
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => (window.location.hash = "#/munaqosah")}
+              className="h-8 rounded-lg bg-purple-600 text-xs font-bold text-white shadow-xs hover:bg-purple-700"
+            >
+              Review &amp; Plot Jadwal →
+            </Button>
+          </div>
+        )}
 
         {/* Tabel Request Susulan Yaumiyah Pending (Hanya muncul jika ada request) */}
         {pendingRequests.length > 0 && (

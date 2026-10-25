@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   date,
   time,
   jsonb,
@@ -29,6 +30,7 @@ export const munaqosahPeriods = pgTable("munaqosah_periods", {
   status: text("status", { enum: munaqosahPeriodStatus })
     .notNull()
     .default("draft"),
+  isResultPublished: boolean("is_result_published").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -65,13 +67,15 @@ export const munaqosahRequests = pgTable("munaqosah_requests", {
   schoolId: uuid("school_id")
     .notNull()
     .references(() => schools.id),
+  periodId: uuid("period_id").references(() => munaqosahPeriods.id),
   studentId: uuid("student_id")
     .notNull()
     .references(() => users.id),
   teacherId: uuid("teacher_id")
     .notNull()
     .references(() => users.id),
-  juzKe: integer("juz_ke").notNull(), // 1-30
+  juzKe: integer("juz_ke").notNull(), // 1-30 (primary/first juz)
+  juzList: jsonb("juz_list").$type<number[]>(), // multi-juz array e.g. [29, 30]
   status: text("status", { enum: munaqosahRequestStatus })
     .notNull()
     .default("diajukan"),

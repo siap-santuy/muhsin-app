@@ -37,15 +37,14 @@ const DEFAULT_ATTENTION_STUDENTS: AttentionStudent[] = [];
 export function TeacherDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<any>(null);
+  const [myExams, setMyExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getDashboardSummary()
-      .then((data) => {
-        setSummary(data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.getDashboardSummary().then(setSummary).catch(() => {}),
+      api.getMyMunaqosahExams().then((data) => setMyExams(Array.isArray(data) ? data : [])).catch(() => setMyExams([])),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const displayName = getDisplayName(
@@ -58,6 +57,7 @@ export function TeacherDashboardPage() {
 
   const classProgressList: ClassProgress[] = summary?.classProgress ?? DEFAULT_CLASS_PROGRESS;
   const attentionStudents: AttentionStudent[] = summary?.attentionStudents ?? DEFAULT_ATTENTION_STUDENTS;
+  const pendingExams = myExams.filter((e) => e.hasil === "belum" || !e.hasil);
 
   return (
     <div className="flex h-screen flex-col bg-brand-page">
@@ -126,10 +126,17 @@ export function TeacherDashboardPage() {
               <button
                 type="button"
                 onClick={() => (window.location.hash = "#/examiner")}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-purple-300 bg-purple-50 py-3 text-xs font-bold tracking-wider text-purple-700 shadow-sm transition-all hover:bg-purple-100 active:scale-[0.99]"
+                className="flex w-full items-center justify-between rounded-lg border-2 border-purple-300 bg-purple-50 py-3 px-4 text-xs font-bold tracking-wider text-purple-700 shadow-sm transition-all hover:bg-purple-100 active:scale-[0.99]"
               >
-                <Award className="h-4 w-4" />
-                <span>TUGAS PENGUJI MUNAQOSAH</span>
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4" />
+                  <span>TUGAS PENGUJI MUNAQOSAH</span>
+                </div>
+                {pendingExams.length > 0 && (
+                  <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                    {pendingExams.length} Santri
+                  </span>
+                )}
               </button>
 
               {/* Action Button: Izin Susulan Yaumiyah */}

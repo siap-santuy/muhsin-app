@@ -1,9 +1,44 @@
 [
   {
-    "version": "v1.4.1",
+    "version": "v1.5.0",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Penyempurnaan Fitur Munaqosah: Multi-Juz, Rilis Nilai Raport, & Jadwal Terpadu",
+    "summary": "Pembaruan komprehensif alur ujian munaqosah: dukungan pengajuan multi-juz (minimal 1 juz atau lebih), pembatasan 1 ujian per periode, pembuatan periode dinamis oleh Koordinator, form penilaian penguji Tajwid & Kelancaran dengan konversi predikat, kontrol rilis nilai raport resmi sebelum dibuka ke siswa & orang tua, serta sinkronisasi jadwal di ketiga dashboard.",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Pengajuan munaqosah multi-juz (bisa lebih dari 1 juz sekaligus, misal Juz 29 & 30) dengan validasi 1 siswa maksimal 1 kali ujian per periode."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Modal pembuatan periode munaqosah mandiri (~3 hari pelaksanaan) oleh Koordinator TTQ tanpa ketergantungan seed database."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Kendali 'Rilis Nilai Munaqosah' oleh Koordinator: nilai dan status kelulusan disembunyikan sampai raport fisik selesai dikirimkan ke orang tua."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Sinkronisasi kartu jadwal dan hasil munaqosah di Dashboard Santri, Dashboard Orang Tua, serta counter tugas di Dashboard Guru Penguji."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Lembar penilaian penguji dengan parameter Tajwid dan Kelancaran (angka 0-100) yang otomatis dikonversikan ke nilai akhir, predikat huruf (A-D), dan status kelulusan."
+      }
+    ]
+  },
+  {
+    "version": "v1.4.1",
+    "releaseDate": "25 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Tabel Antrean Reset Password Koordinator, Validasi Akun, & Rate Limiting",
     "summary": "Peningkatan manajemen akun dan keamanan: tabel permohonan reset password di Dashboard Koordinator dengan aksi cepat reset/tolak, validasi keberadaan username/email saat permohonan, serta proteksi rate limiting pada alur login dan reset password.",
     "changes": [

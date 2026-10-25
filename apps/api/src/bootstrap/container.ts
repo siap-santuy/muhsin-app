@@ -179,6 +179,7 @@ export interface ContainerDeps {
   remindParentUseCase: RemindParentUseCase;
   remindStudentUseCase: RemindStudentUseCase;
   // Munaqosah
+  munaqosahRepo: DrizzleMunaqosahRepository;
   getMunaqosahRequestsUseCase: GetMunaqosahRequestsUseCase;
   getMyMunaqosahExamsUseCase: GetMyMunaqosahExamsUseCase;
   createMunaqosahRequestUseCase: CreateMunaqosahRequestUseCase;
@@ -399,6 +400,7 @@ export function createApp(deps: ContainerDeps): Hono {
 
   // Munaqosah
   const munaqosahRoutes = createMunaqosahRoutes({
+    repo: deps.munaqosahRepo,
     getRequestsUseCase: deps.getMunaqosahRequestsUseCase,
     getMyExamsUseCase: deps.getMyMunaqosahExamsUseCase,
     createRequestUseCase: deps.createMunaqosahRequestUseCase,
@@ -406,6 +408,7 @@ export function createApp(deps: ContainerDeps): Hono {
     scheduleUseCase: deps.scheduleMunaqosahUseCase,
     examinersUseCase: deps.manageMunaqosahExaminersUseCase,
     submitResultUseCase: deps.submitMunaqosahResultUseCase,
+    resolveStudentId: resolveStudent,
   });
   app.use("/munaqosah/*", protectedAuth, tenantScopeMiddleware);
   app.use("/munaqosah", protectedAuth, tenantScopeMiddleware);
@@ -630,6 +633,7 @@ export function buildContainer() {
       recordParentViewUseCase,
       remindParentUseCase,
       remindStudentUseCase,
+      munaqosahRepo,
       getMunaqosahRequestsUseCase,
       getMyMunaqosahExamsUseCase,
       createMunaqosahRequestUseCase,
