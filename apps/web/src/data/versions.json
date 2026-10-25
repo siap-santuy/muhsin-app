@@ -1,126 +1,56 @@
 [
   {
-    "version": "v1.5.1",
+    "version": "v1.4.0",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
-    "title": "Validasi Status Juz Munaqosah, Tabel Antrean Berpaginasi, & Plot Jadwal Efisien",
-    "summary": "Peningkatan alur munaqosah: penonaktifan otomatis tombol juz yang sudah lulus atau sedang dalam proses ujian saat guru mengajukan santri, tabel antrean terstruktur berpaginasi di Koordinator, modal penolakan dengan catatan alasan dan notifikasi in-app ke guru, serta plot jadwal langsung dengan sesi ~1 jam dan counter beban penguji live.",
+    "title": "Pembaruan Mutaba'ah Yaumiyah, Alur Munaqosah Terpadu, & Manajemen Akun",
+    "summary": "Pembaruan besar sistem operasional dan akademik: aturan window pengisian yaumiyah (H & H-1) dengan permohonan izin susulan rentang tanggal, penyempurnaan alur ujian munaqosah multi-juz dengan kontrol rilis nilai raport resmi & integrasi jadwal di 3 dashboard, serta antrean reset password akun mandiri di Dashboard Koordinator disertai proteksi rate limiting.",
     "changes": [
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Deteksi eligibility otomatis: tombol pemilihan juz otomatis di-disable untuk juz yang sudah lulus (badge hijau) atau sedang dalam antrean/ujian (badge kuning)."
+        "description": "Aturan window input yaumiyah: hanya tanggal H dan H-1 yang dapat diisi langsung, tanggal H-2 ke belakang terkunci dengan tombol permohonan izin susulan satu atau rentang tanggal sekaligus bagi santri."
       },
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Modal konfirmasi penolakan munaqosah dengan input catatan alasan (rejection note) yang otomatis dikirimkan sebagai notifikasi ke guru pengaju."
+        "description": "Notifikasi in-app real-time: pemberitahuan otomatis ke guru pembimbing/koordinator saat ada pengajuan izin susulan, serta ke santri saat permohonan disetujui (akses 24 jam) atau ditolak (beserta alasan)."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Ujian munaqosah multi-juz: guru dapat mengajukan santri untuk 1 atau lebih juz sekaligus dengan validasi batas 1 ujian per periode dan penonaktifan otomatis tombol juz yang sudah pernah lulus."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Manajemen periode munaqosah mandiri (~3 hari pelaksanaan) dan kontrol 'Rilis Nilai Raport' oleh Koordinator TTQ: nilai angka dan predikat dirahasiakan sampai pengumuman/raport fisik resmi diserahkan."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Sinkronisasi kartu jadwal dan hasil munaqosah di Dashboard Santri dan Dashboard Orang Tua, serta counter tugas menguji langsung di Dashboard Guru."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan validasi akun informatif dan tombol Reset Default/Tolak."
       },
       {
         "category": "enhancement",
         "categoryLabel": "Peningkatan",
-        "description": "Penyederhanaan approval koordinator menjadi tabel rapi dengan pagination untuk antrean pending, jadwal ujian, dan riwayat."
+        "description": "Lembar penilaian penguji munaqosah Tajwid & Kelancaran (angka 0-100) dengan kalkulasi live nilai rata-rata, konversi predikat huruf (Mumtaz - Maqbul), dan status kelulusan."
       },
       {
         "category": "enhancement",
         "categoryLabel": "Peningkatan",
-        "description": "Plot jadwal fleksibel langsung memilih semua guru disertai counter live jumlah santri yang di-assign, input waktu sesi (~1 jam), dan ringkasan rentang waktu harian."
-      }
-    ]
-  },
-  {
-    "version": "v1.5.0",
-    "releaseDate": "25 Oktober 2026",
-    "isLatest": false,
-    "badge": "Stabil",
-    "title": "Penyempurnaan Fitur Munaqosah: Multi-Juz, Rilis Nilai Raport, & Jadwal Terpadu",
-    "summary": "Pembaruan komprehensif alur ujian munaqosah: dukungan pengajuan multi-juz (minimal 1 juz atau lebih), pembatasan 1 ujian per periode, pembuatan periode dinamis oleh Koordinator, form penilaian penguji Tajwid & Kelancaran dengan konversi predikat, kontrol rilis nilai raport resmi sebelum dibuka ke siswa & orang tua, serta sinkronisasi jadwal di ketiga dashboard.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Pengajuan munaqosah multi-juz (bisa lebih dari 1 juz sekaligus, misal Juz 29 & 30) dengan validasi 1 siswa maksimal 1 kali ujian per periode."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Modal pembuatan periode munaqosah mandiri (~3 hari pelaksanaan) oleh Koordinator TTQ tanpa ketergantungan seed database."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Kendali 'Rilis Nilai Munaqosah' oleh Koordinator: nilai dan status kelulusan disembunyikan sampai raport fisik selesai dikirimkan ke orang tua."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Sinkronisasi kartu jadwal dan hasil munaqosah di Dashboard Santri, Dashboard Orang Tua, serta counter tugas di Dashboard Guru Penguji."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Lembar penilaian penguji dengan parameter Tajwid dan Kelancaran (angka 0-100) yang otomatis dikonversikan ke nilai akhir, predikat huruf (A-D), dan status kelulusan."
-      }
-    ]
-  },
-  {
-    "version": "v1.4.1",
-    "releaseDate": "25 Oktober 2026",
-    "isLatest": false,
-    "badge": "Stabil",
-    "title": "Tabel Antrean Reset Password Koordinator, Validasi Akun, & Rate Limiting",
-    "summary": "Peningkatan manajemen akun dan keamanan: tabel permohonan reset password di Dashboard Koordinator dengan aksi cepat reset/tolak, validasi keberadaan username/email saat permohonan, serta proteksi rate limiting pada alur login dan reset password.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan tombol Reset Default dan Tolak."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Validasi keberadaan username/email saat permohonan reset password: pesan error informatif jika akun belum terdaftar atau salah ketik."
+        "description": "Paginasi data dan tabel terstruktur pada antrean approval munaqosah, riwayat susulan yaumiyah, serta modal tolak pengajuan munaqosah dengan input catatan alasan."
       },
       {
         "category": "security",
         "categoryLabel": "Keamanan",
         "description": "Rate limiting berbasis IP dan Redis untuk mitigasi brute-force pada endpoint login (maks. 5x/menit) dan request reset password (maks. 3x/5 menit)."
-      }
-    ]
-  },
-  {
-    "version": "v1.4.0",
-    "releaseDate": "25 Oktober 2026",
-    "isLatest": false,
-    "badge": "Stabil",
-    "title": "Aturan Window Input Yaumiyah & Izin Susulan Rentang Tanggal",
-    "summary": "Pembatasan pengisian ibadah harian ke jendela H & H-1 dengan alur pengajuan izin susulan rentang tanggal bagi santri, notifikasi in-app otomatis, dashboard monitoring approval & dispensasi langsung bagi Guru dan Koordinator.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Penguncian tanggal yaumiyah H-2 ke belakang dengan tombol permohonan izin susulan satu atau rentang tanggal sekaligus bagi santri."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Notifikasi in-app real-time ke Guru Pembina dan Koordinator saat ada santri mengajukan izin susulan ibadah yaumiyah."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Tabel antrean permohonan susulan yaumiyah interaktif di Dashboard Koordinator (otomatis tersembunyi saat kosong) dan menu Riwayat Susulan Yaumiyah dengan paginasi."
-      },
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Fitur 'Buka Akses Manual' bagi Guru & Koordinator untuk membuka dispensasi input tanggal lampau tanpa menunggu pengajuan santri."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Integritas gamifikasi: pengisian susulan tanggal lampau tetap memberikan EXP penuh namun melewati perhitungan streak untuk menjaga kedisiplinan harian."
       }
     ]
   },
