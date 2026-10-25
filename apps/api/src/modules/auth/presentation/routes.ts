@@ -13,17 +13,38 @@ import {
   changePasswordValidator,
 } from "./validators";
 import { requestPasswordResetSchema } from "@muhsin/shared";
+import { rateLimiter } from "../../../middleware/rate-limiter.middleware";
+import type Redis from "ioredis";
 
 export interface AuthRoutesDeps {
   loginUseCase: LoginUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
   requestPasswordResetUseCase?: RequestPasswordResetUseCase;
+  redis?: Redis;
 }
 
 export function buildAuthRoutes(deps: AuthRoutesDeps): Hono {
   const app = new Hono();
 
-  app.post("/login", loginValidator, async (c) => {
+  // Rate limit login: max 5 requests per 60 seconds per IP
+  const loginLimiter = rateLimiter({
+    windowSeconds: 60,
+    maxRequests: 5,
+    keyPrefix: "rl:login",
+    errorMessage: "Terlalu banyak percobaan login gagal. Silakan tunggu 1 menit sebelum mencoba lagi.",
+    redis: deps.redis,
+  });
+
+  // Rate limit password reset request: max 3 requests per 300 seconds per IP
+  const resetLimiter = rateLimiter({
+    windowSeconds: 300,
+    maxRequests: 3,
+    keyPrefix: "rl:pwd_reset",
+    errorMessage: "Terlalu banyak permohonan reset password. Silakan tunggu 5 menit sebelum mencoba lagi.",
+    redis: deps.redis,
+  });
+
+  app.post("/login", loginLimiter, loginValidator, async (c) => {
     const input = c.req.valid("json");
     const result = await deps.loginUseCase.execute(input);
     return c.json({ data: result, error: null, meta: null }, 200);
@@ -35,7 +56,7 @@ export function buildAuthRoutes(deps: AuthRoutesDeps): Hono {
     return c.json({ data: result, error: null, meta: null }, 200);
   });
 
-  app.post("/request-password-reset", async (c) => {
+  app.post("/request-password-reset", resetLimiter, async (c) => {
     if (!deps.requestPasswordResetUseCase) {
       return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
     }
@@ -44,8 +65,12 @@ export function buildAuthRoutes(deps: AuthRoutesDeps): Hono {
     if (!parsed.success) {
       return c.json({ data: null, error: { message: "Username atau email wajib diisi" }, meta: null }, 400);
     }
-    const result = await deps.requestPasswordResetUseCase.execute(parsed.data);
-    return c.json({ data: result, error: null, meta: null }, 200);
+    try {
+      const result = await deps.requestPasswordResetUseCase.execute(parsed.data);
+      return c.json({ data: result, error: null, meta: null }, 200);
+    } catch (err: any) {
+      return c.json({ data: null, error: { message: err?.message || "Permintaan reset gagal" }, meta: null }, 400);
+    }
   });
 
   return app;

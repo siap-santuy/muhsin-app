@@ -151,15 +151,14 @@ describe("RequestPasswordResetUseCase", () => {
     expect(pushedUsers[0].userId).toBe("koor-1");
   });
 
-  it("mengembalikan pesan aman tanpa membocorkan error jika identifier tidak ditemukan", async () => {
+  it("menolak permohonan dengan pesan error jika username atau email tidak ditemukan", async () => {
     const mockUserRepo: IUserRepository = {
       findByIdentifierAnySchool: vi.fn(async () => null),
     } as any;
 
     const uc = new RequestPasswordResetUseCase(mockUserRepo, {} as any);
-    const res = await uc.execute({ identifier: "nonexistent@test.com" });
-
-    expect(res.success).toBe(true);
-    expect(res.message).toContain("diteruskan ke koordinator");
+    await expect(uc.execute({ identifier: "nonexistent@test.com" })).rejects.toThrow(
+      "Username atau email tidak valid atau tidak ditemukan. Silakan hubungi admin sekolah."
+    );
   });
 });

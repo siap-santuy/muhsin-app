@@ -36,6 +36,11 @@ export function KoorDashboardPage() {
   const [reqTotalPages, setReqTotalPages] = useState(1);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Pending Password Reset Requests
+  const [pendingResets, setPendingResets] = useState<any[]>([]);
+  const [resetActionLoading, setResetActionLoading] = useState<string | null>(null);
+  const [resetSuccessModal, setResetSuccessModal] = useState<{ defaultPassword: string; userName?: string } | null>(null);
+
   async function loadPending(page = 1) {
     try {
       const res = await api.getYaumiyahAccessRequests({ status: "pending", page, limit: 5 });
@@ -49,11 +54,21 @@ export function KoorDashboardPage() {
     }
   }
 
+  async function loadPasswordResets() {
+    try {
+      const list = await api.getPasswordResetRequests();
+      setPendingResets(list || []);
+    } catch {
+      setPendingResets([]);
+    }
+  }
+
   useEffect(() => {
     Promise.all([
       api.getDashboardSummary(),
       api.getActivePeriod().catch(() => null),
       loadPending(1),
+      loadPasswordResets(),
     ])
       .then(([sum, period]) => {
         setSummary(sum);
@@ -80,6 +95,30 @@ export function KoorDashboardPage() {
       await loadPending(reqPage);
     } finally {
       setActionLoading(null);
+    }
+  }
+
+  async function handleResolvePasswordReset(id: string) {
+    setResetActionLoading(id);
+    try {
+      const res = await api.resolvePasswordResetRequest(id);
+      setResetSuccessModal({
+        defaultPassword: res.defaultPassword,
+        userName: res.userName,
+      });
+      await loadPasswordResets();
+    } finally {
+      setResetActionLoading(null);
+    }
+  }
+
+  async function handleRejectPasswordReset(id: string) {
+    setResetActionLoading(id);
+    try {
+      await api.rejectPasswordResetRequest(id, "Ditolak oleh Koordinator");
+      await loadPasswordResets();
+    } finally {
+      setResetActionLoading(null);
     }
   }
 
@@ -271,6 +310,126 @@ export function KoorDashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tabel Permohonan Reset Password Akun Pending (Hanya muncul jika ada request) */}
+        {pendingResets.length > 0 && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-blue-200/60">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                  <Clock className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-brand-navy">
+                    Permohonan Reset Password Akun ({pendingResets.length} Menunggu)
+                  </h2>
+                  <p className="text-xs text-brand-text-muted">
+                    Pengguna (Santri, Orang Tua, atau Guru) lupa kata sandi dan meminta reset ke default
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-left text-xs text-brand-navy">
+                <thead>
+                  <tr className="border-b border-blue-200/60 text-[11px] font-bold text-brand-text-muted">
+                    <th className="py-2">NAMA PENGGUNA</th>
+                    <th className="py-2">PERAN (ROLE)</th>
+                    <th className="py-2">USERNAME / EMAIL</th>
+                    <th className="py-2">WAKTU DIAJUKAN</th>
+                    <th className="py-2 text-right">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-blue-100">
+                  {pendingResets.map((req) => {
+                    const roleLabel =
+                      req.userRole === "teacher"
+                        ? "Guru"
+                        : req.userRole === "parent"
+                        ? "Orang Tua"
+                        : "Santri";
+                    const roleBadge =
+                      req.userRole === "teacher"
+                        ? "bg-purple-100 text-purple-700"
+                        : req.userRole === "parent"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-cyan-100 text-cyan-800";
+                    return (
+                      <tr key={req.id} className="hover:bg-blue-100/30">
+                        <td className="py-2.5 font-bold">{req.userName}</td>
+                        <td className="py-2.5">
+                          <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${roleBadge}`}>
+                            {roleLabel}
+                          </span>
+                        </td>
+                        <td className="py-2.5 font-semibold text-brand-navy">
+                          {req.identifier}
+                        </td>
+                        <td className="py-2.5 text-brand-text-muted">
+                          {new Date(req.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-2.5 text-right space-x-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRejectPasswordReset(req.id)}
+                            disabled={resetActionLoading === req.id}
+                            className="h-7 px-2 border-red-300 text-[11px] font-bold text-red-600 hover:bg-red-50"
+                          >
+                            <X className="mr-1 h-3 w-3" /> Tolak
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleResolvePasswordReset(req.id)}
+                            disabled={resetActionLoading === req.id}
+                            className="h-7 px-2.5 bg-blue-600 text-[11px] font-bold text-white hover:bg-blue-700"
+                          >
+                            <Check className="mr-1 h-3 w-3" /> Reset Default
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Hasil Reset Password */}
+        {resetSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-in fade-in zoom-in-95">
+              <h3 className="text-base font-bold text-brand-navy">Password Berhasil Direset</h3>
+              <p className="mt-1 text-xs text-brand-text-muted">
+                Kata sandi untuk {resetSuccessModal.userName ? <strong>{resetSuccessModal.userName}</strong> : "pengguna"} telah dikembalikan ke format default:
+              </p>
+              <div className="mt-3 rounded-xl bg-gray-100 p-3 text-center">
+                <span className="font-mono text-lg font-bold tracking-wider text-brand-cyan-dark">
+                  {resetSuccessModal.defaultPassword}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] text-brand-text-muted">
+                Silakan sampaikan password default ini kepada yang bersangkutan.
+              </p>
+              <Button
+                type="button"
+                onClick={() => setResetSuccessModal(null)}
+                className="mt-4 w-full rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
+              >
+                Tutup
+              </Button>
+            </div>
           </div>
         )}
 

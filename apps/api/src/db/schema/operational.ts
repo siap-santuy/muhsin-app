@@ -237,6 +237,35 @@ export const yaumiyahAccessRequests = pgTable(
   })
 );
 
+// --- Password Reset Requests (Permohonan Reset Password Pengguna) ---
+
+export const passwordResetStatus = ["pending", "resolved", "rejected"] as const;
+export type PasswordResetStatus = (typeof passwordResetStatus)[number];
+
+export const passwordResetRequests = pgTable(
+  "password_reset_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    identifier: text("identifier").notNull(),
+    status: text("status", { enum: passwordResetStatus }).notNull().default("pending"),
+    resolvedBy: uuid("resolved_by").references(() => users.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    rejectionNote: text("rejection_note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    idxSchoolStatus: index("password_reset_req_school_status_idx").on(t.schoolId, t.status),
+    idxSchoolUser: index("password_reset_req_school_user_idx").on(t.schoolId, t.userId),
+  })
+);
+
 // --- Types ---
 
 export type DailyIbadah = typeof dailyIbadah.$inferSelect;
@@ -253,3 +282,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 export type YaumiyahAccessRequest = typeof yaumiyahAccessRequests.$inferSelect;
 export type NewYaumiyahAccessRequest = typeof yaumiyahAccessRequests.$inferInsert;
+export type PasswordResetRequest = typeof passwordResetRequests.$inferSelect;
+export type NewPasswordResetRequest = typeof passwordResetRequests.$inferInsert;

@@ -9,6 +9,7 @@ import type { ManageStudentUseCase, ManageTeacherUseCase } from "../application/
 import type { ManageParentUseCase } from "../application/use-cases/ManageParentUseCase";
 import type { ResetDefaultPasswordUseCase } from "../application/use-cases/ResetDefaultPasswordUseCase";
 import type { ISchoolAdminRepository } from "../domain/repositories/ISchoolAdminRepository";
+import type { IPasswordResetRequestRepository } from "../../../modules/auth/domain/repositories/IPasswordResetRequestRepository";
 
 export function createPublicSchoolRoutes(db: Db) {
   const app = new Hono();
@@ -130,6 +131,7 @@ export interface SchoolAdminRoutesDeps {
   manageTeacherUseCase: ManageTeacherUseCase;
   manageParentUseCase?: ManageParentUseCase;
   resetDefaultPasswordUseCase?: ResetDefaultPasswordUseCase;
+  passwordResetRequestRepo?: IPasswordResetRequestRepository;
 }
 
 export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
@@ -310,6 +312,111 @@ export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
     } catch (err: any) {
       return handleError(err, c);
     }
+  });
+
+  // GET /schools/password-reset-requests — List antrean permintaan reset password
+  app.get("/password-reset-requests", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.passwordResetRequestRepo) {
+      return c.json({ data: [], error: null, meta: null }, 200);
+    }
+    const user = c.get("user");
+    const list = await deps.passwordResetRequestRepo.listPendingBySchool(user.schoolId);
+    return c.json({ data: list, error: null, meta: null }, 200);
+  });
+
+  // POST /schools/password-reset-requests/:id/resolve — Eksekusi reset password sesuai role user
+  app.post("/password-reset-requests/:id/resolve", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.passwordResetRequestRepo || !deps.resetDefaultPasswordUseCase) {
+      return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const requestId = c.req.param("id");
+    const reqItem = await deps.passwordResetRequestRepo.findById(requestId, user.schoolId);
+    if (!reqItem) {
+      return c.json({ data: null, error: { code: "NOT_FOUND", message: "Permohonan tidak ditemukan" }, meta: null }, 404);
+    }
+    if (reqItem.status !== "pending") {
+      return c.json({ data: null, error: { code: "ALREADY_RESOLVED", message: "Permohonan sudah diproses sebelumnya" }, meta: null }, 400);
+    }
+
+    try {
+      // Dapatkan data user target
+      const targetUser = await deps.adminRepo.findStudentWithParents(reqItem.userId, user.schoolId).catch(() => null);
+      let defaultPassword = "muhsin123";
+      let studentName = "";
+
+      if (targetUser) {
+        // Santri
+        const res = await deps.resetDefaultPasswordUseCase.resetStudentAndParent(reqItem.userId, user.schoolId);
+        defaultPassword = res.defaultPassword;
+        studentName = res.studentName;
+      } else {
+        const teacher = await deps.adminRepo.findTeacher(reqItem.userId, user.schoolId).catch(() => null);
+        if (teacher) {
+          // Guru
+          const res = await deps.resetDefaultPasswordUseCase.resetTeacher(reqItem.userId, user.schoolId);
+          defaultPassword = res.defaultPassword;
+          studentName = res.teacherName;
+        } else {
+          // Orang tua
+          const res = await deps.resetDefaultPasswordUseCase.resetParentDirect(reqItem.userId, user.schoolId);
+          defaultPassword = res.defaultPassword;
+        }
+      }
+
+      const now = new Date();
+      await deps.passwordResetRequestRepo.update({
+        ...reqItem,
+        status: "resolved",
+        resolvedBy: user.userId,
+        resolvedAt: now,
+        updatedAt: now,
+      });
+
+      return c.json(
+        {
+          data: {
+            success: true,
+            defaultPassword,
+            userName: studentName,
+          },
+          error: null,
+          meta: null,
+        },
+        200
+      );
+    } catch (err: any) {
+      return handleError(err, c);
+    }
+  });
+
+  // POST /schools/password-reset-requests/:id/reject — Tolak permohonan reset password
+  app.post("/password-reset-requests/:id/reject", requireRole("koordinator_ttq"), async (c) => {
+    if (!deps.passwordResetRequestRepo) {
+      return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
+    }
+    const user = c.get("user");
+    const requestId = c.req.param("id");
+    const body = await c.req.json().catch(() => ({}));
+    const reqItem = await deps.passwordResetRequestRepo.findById(requestId, user.schoolId);
+    if (!reqItem) {
+      return c.json({ data: null, error: { code: "NOT_FOUND", message: "Permohonan tidak ditemukan" }, meta: null }, 404);
+    }
+    if (reqItem.status !== "pending") {
+      return c.json({ data: null, error: { code: "ALREADY_RESOLVED", message: "Permohonan sudah diproses sebelumnya" }, meta: null }, 400);
+    }
+
+    const now = new Date();
+    await deps.passwordResetRequestRepo.update({
+      ...reqItem,
+      status: "rejected",
+      resolvedBy: user.userId,
+      resolvedAt: now,
+      rejectionNote: body?.rejectionNote || "Permohonan ditolak oleh Koordinator",
+      updatedAt: now,
+    });
+
+    return c.json({ data: { success: true }, error: null, meta: null }, 200);
   });
 
   return app;

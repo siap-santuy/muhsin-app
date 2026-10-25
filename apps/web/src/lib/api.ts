@@ -538,6 +538,29 @@ class ApiClient {
     return this.request("POST", `/school-admin/parents/${parentId}/reset-password`);
   }
 
+  async getPasswordResetRequests(): Promise<Array<{
+    id: string;
+    schoolId: string;
+    userId: string;
+    identifier: string;
+    status: string;
+    createdAt: string;
+    userName: string;
+    userRole: string;
+    userEmail: string;
+    userPhone: string | null;
+  }>> {
+    return this.request("GET", `/school-admin/password-reset-requests`);
+  }
+
+  async resolvePasswordResetRequest(id: string): Promise<{ success: boolean; defaultPassword: string; userName?: string }> {
+    return this.request("POST", `/school-admin/password-reset-requests/${id}/resolve`);
+  }
+
+  async rejectPasswordResetRequest(id: string, rejectionNote?: string): Promise<{ success: boolean }> {
+    return this.request("POST", `/school-admin/password-reset-requests/${id}/reject`, { rejectionNote });
+  }
+
   async getKoorStudentActivity(params: { date?: string; classId?: string } = {}): Promise<Array<{
     studentId: string;
     studentName: string;

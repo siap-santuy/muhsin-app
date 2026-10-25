@@ -14,6 +14,7 @@ import { GetProfileUseCase } from "../modules/auth/application/use-cases/GetProf
 import { UpdateProfileUseCase } from "../modules/auth/application/use-cases/UpdateProfileUseCase";
 import { ChangePasswordUseCase } from "../modules/auth/application/use-cases/ChangePasswordUseCase";
 import { RequestPasswordResetUseCase } from "../modules/auth/application/use-cases/RequestPasswordResetUseCase";
+import { DrizzlePasswordResetRequestRepository } from "../modules/auth/infrastructure/DrizzlePasswordResetRequestRepository";
 import { buildAuthRoutes, buildAuthProtectedRoutes } from "../modules/auth/presentation/routes";
 
 // Daily Ibadah module
@@ -131,6 +132,8 @@ export interface ContainerDeps {
   loginUseCase: LoginUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
+  passwordResetRequestRepo?: DrizzlePasswordResetRequestRepository;
+  redis?: Redis;
   getProfileUseCase: GetProfileUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
@@ -297,6 +300,7 @@ export function createApp(deps: ContainerDeps): Hono {
     manageTeacherUseCase: deps.manageTeacherUseCase,
     manageParentUseCase: deps.manageParentUseCase,
     resetDefaultPasswordUseCase: deps.resetDefaultPasswordUseCase,
+    passwordResetRequestRepo: deps.passwordResetRequestRepo,
   });
   app.use("/school-admin/*", protectedAuth, tenantScopeMiddleware);
   app.use("/school-admin", protectedAuth, tenantScopeMiddleware);
@@ -466,6 +470,7 @@ export function buildContainer() {
   const kurikulumRepo = new DrizzleKurikulumRepository(db);
   const notificationRepo = new DrizzleCachedNotificationRepository(db, redis);
   const schoolAdminRepo = new DrizzleSchoolAdminRepository(db);
+  const passwordResetRequestRepo = new DrizzlePasswordResetRequestRepository(db);
 
   // Services
   const passwordHasher = new PasswordHasher();
@@ -544,7 +549,12 @@ export function buildContainer() {
   const savePushSubscriptionUseCase = new SavePushSubscriptionUseCase(pushSubscriptionRepo);
   const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
   const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
-  const requestPasswordResetUseCase = new RequestPasswordResetUseCase(userRepository, notificationRepo, sendPushToUserUseCase);
+  const requestPasswordResetUseCase = new RequestPasswordResetUseCase(
+    userRepository,
+    notificationRepo,
+    sendPushToUserUseCase,
+    passwordResetRequestRepo
+  );
 
   // UseCases — Dashboard
   const getDashboardSummaryUseCase = new GetDashboardSummaryUseCase(dashboardRepo);
@@ -581,6 +591,8 @@ export function buildContainer() {
       loginUseCase,
       refreshTokenUseCase,
       requestPasswordResetUseCase,
+      passwordResetRequestRepo,
+      redis,
       getProfileUseCase,
       updateProfileUseCase,
       changePasswordUseCase,

@@ -1,4 +1,5 @@
 import type { IUserRepository } from "../../domain/repositories/IUserRepository";
+import type { IPasswordResetRequestRepository } from "../../domain/repositories/IPasswordResetRequestRepository";
 import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
 import type { SendPushToUserUseCase } from "../../../notifications/application/use-cases/SendPushToUserUseCase";
 
@@ -11,7 +12,8 @@ export class RequestPasswordResetUseCase {
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly notificationRepo: INotificationRepository,
-    private readonly pushToUser?: SendPushToUserUseCase
+    private readonly pushToUser?: SendPushToUserUseCase,
+    private readonly resetRequestRepo?: IPasswordResetRequestRepository
   ) {}
 
   async execute(params: RequestPasswordResetParams): Promise<{ success: boolean; message: string }> {
@@ -25,11 +27,24 @@ export class RequestPasswordResetUseCase {
       : await this.userRepo.findByIdentifierAnySchool(trimmed);
 
     if (!user) {
-      // Return safe message without leaking user existence
-      return {
-        success: true,
-        message: "Jika akun terdaftar, permintaan reset password telah diteruskan ke koordinator sekolah.",
-      };
+      throw new Error("Username atau email tidak valid atau tidak ditemukan. Silakan hubungi admin sekolah.");
+    }
+
+    // Catat request ke database jika repository tersedia
+    if (this.resetRequestRepo) {
+      const existing = await this.resetRequestRepo.findPendingByUserId(user.id, user.schoolId);
+      if (!existing) {
+        const now = new Date();
+        await this.resetRequestRepo.create({
+          id: crypto.randomUUID(),
+          schoolId: user.schoolId,
+          userId: user.id,
+          identifier: trimmed,
+          status: "pending",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     }
 
     const koors = await this.userRepo.findKoordinatorBySchool(user.schoolId);
@@ -69,7 +84,7 @@ export class RequestPasswordResetUseCase {
               payload: {
                 title,
                 body: message,
-                url: user.role === "teacher" ? "#/teachers" : "#/students",
+                url: "#/dashboard",
               },
             }).catch(() => {});
           }
