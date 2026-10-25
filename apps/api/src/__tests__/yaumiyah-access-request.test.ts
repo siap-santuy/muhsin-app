@@ -107,7 +107,8 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
       update: vi.fn().mockImplementation(async (e) => e),
     };
 
-    const uc = new ApproveYaumiyahAccessUseCase(repo);
+    const mockNotif = { createNotification: vi.fn().mockResolvedValue({}) } as any;
+    const uc = new ApproveYaumiyahAccessUseCase(repo, mockNotif);
     const res = await uc.execute({
       requestId: "req-1",
       schoolId: "sch-1",
@@ -118,6 +119,12 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
     expect(res.status).toBe("approved");
     expect(res.reviewedBy).toBe("teacher-1");
     expect(res.expiresAt).toBeDefined();
+    expect(mockNotif.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "stu-1",
+        title: "Izin Susulan Yaumiyah Disetujui",
+      })
+    );
   });
 
   it("RejectYaumiyahAccessUseCase: menolak permohonan dengan catatan", async () => {
@@ -140,7 +147,8 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
       update: vi.fn().mockImplementation(async (e) => e),
     };
 
-    const uc = new RejectYaumiyahAccessUseCase(repo);
+    const mockNotif = { createNotification: vi.fn().mockResolvedValue({}) } as any;
+    const uc = new RejectYaumiyahAccessUseCase(repo, mockNotif);
     const res = await uc.execute({
       requestId: "req-1",
       schoolId: "sch-1",
@@ -151,6 +159,12 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
 
     expect(res.status).toBe("rejected");
     expect(res.rejectionNote).toBe("Alasan tidak valid");
+    expect(mockNotif.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "stu-1",
+        title: "Izin Susulan Yaumiyah Ditolak",
+      })
+    );
   });
 
   it("GrantYaumiyahAccessUseCase: inisiatif guru/koor buka akses langsung tanpa request siswa", async () => {

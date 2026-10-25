@@ -1,5 +1,6 @@
 import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
 import type { YaumiyahAccessRequestEntity } from "../../domain/entities/YaumiyahAccessRequest";
+import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
 
 export interface ApproveYaumiyahAccessInput {
   requestId: string;
@@ -10,7 +11,10 @@ export interface ApproveYaumiyahAccessInput {
 }
 
 export class ApproveYaumiyahAccessUseCase {
-  constructor(private readonly repo: IYaumiyahAccessRequestRepository) {}
+  constructor(
+    private readonly repo: IYaumiyahAccessRequestRepository,
+    private readonly notificationRepo?: INotificationRepository
+  ) {}
 
   async execute(input: ApproveYaumiyahAccessInput): Promise<YaumiyahAccessRequestEntity> {
     if (input.reviewerRole !== "teacher" && input.reviewerRole !== "koordinator_ttq") {
@@ -39,6 +43,27 @@ export class ApproveYaumiyahAccessUseCase {
       updatedAt: now,
     };
 
-    return this.repo.update(updated);
+    const saved = await this.repo.update(updated);
+
+    if (this.notificationRepo) {
+      try {
+        const dateRange =
+          request.startDate === request.endDate
+            ? request.startDate
+            : `${request.startDate} s.d ${request.endDate}`;
+        await this.notificationRepo.createNotification({
+          schoolId: input.schoolId,
+          userId: request.studentId,
+          title: "Izin Susulan Yaumiyah Disetujui",
+          message: `Permohonan izin susulan tanggal ${dateRange} telah DISETUJUI. Akses pengisian terbuka selama ${durationHours} jam ke depan. Segera isi ibadahmu!`,
+          type: "yaumiyah",
+          isRead: false,
+        });
+      } catch {
+        // Notif best-effort
+      }
+    }
+
+    return saved;
   }
 }
