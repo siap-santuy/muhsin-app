@@ -1,36 +1,11 @@
 [
   {
-    "version": "v1.4.1",
+    "version": "v1.4.0",
     "releaseDate": "25 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
-    "title": "Pemisahan Tab Pengajuan Ditolak & Notifikasi Popover Koordinator",
-    "summary": "Perbaikan alur antrean munaqosah dengan memisahkan permohonan yang ditolak ke tab khusus (tidak lagi bercampur dengan riwayat kelulusan ujian), serta integrasi modal notifikasi interaktif model chat pada header Koordinator.",
-    "changes": [
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Pemisahan daftar pengajuan munaqosah yang ditolak ke tab mandiri 'Pengajuan Ditolak' lengkap dengan tabel dan catatan alasan penolakan."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Tab 'Riwayat Ujian' murni hanya menampilkan santri yang telah melaksanakan ujian (Lulus / Tidak Lulus) dan tombol cetak SK Hasil."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan",
-        "description": "Modal notifikasi interaktif model chat/inbox popover pada ikon lonceng header Koordinator menggantikan menu sidebar lama."
-      }
-    ]
-  },
-  {
-    "version": "v1.4.0",
-    "releaseDate": "25 Oktober 2026",
-    "isLatest": false,
-    "badge": "Stabil",
-    "title": "Pembaruan Mutaba'ah Yaumiyah, Alur Munaqosah Terpadu, & Manajemen Akun",
-    "summary": "Pembaruan besar sistem operasional dan akademik: aturan window pengisian yaumiyah (H & H-1) dengan permohonan izin susulan rentang tanggal, penyempurnaan alur ujian munaqosah multi-juz dengan kontrol rilis nilai raport resmi & integrasi jadwal di 3 dashboard, serta antrean reset password akun mandiri di Dashboard Koordinator disertai proteksi rate limiting.",
+    "title": "Pembaruan Mutaba'ah Yaumiyah, Alur Munaqosah Terpadu, Ekspor Dokumen Resmi, & Manajemen Akun",
+    "summary": "Pembaruan besar sistem operasional dan akademik: aturan window pengisian yaumiyah (H & H-1) dengan permohonan izin susulan rentang tanggal, penyempurnaan alur ujian munaqosah multi-juz dengan kontrol rilis nilai raport resmi & integrasi jadwal di 3 dashboard, ekspor dokumen PDF resmi (Surat Jadwal & SK Hasil), pemisahan tab antrean munaqosah ditolak, modal notifikasi model chat di header Koordinator, serta antrean reset password akun mandiri disertai proteksi rate limiting.",
     "changes": [
       {
         "category": "feature",
@@ -45,7 +20,7 @@
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Ujian munaqosah multi-juz: guru dapat mengajukan santri untuk 1 atau lebih juz sekaligus dengan validasi batas 1 ujian per periode dan penonaktifan otomatis tombol juz yang sudah pernah lulus."
+        "description": "Ujian munaqosah multi-juz: guru dapat mengajukan santri untuk 1 atau lebih juz sekaligus dengan validasi batas 1 ujian per periode dan penonaktifan otomatis tombol juz yang sudah pernah lulus atau sedang diuji."
       },
       {
         "category": "feature",
@@ -60,12 +35,22 @@
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan validasi akun informatif dan tombol Reset Default/Tolak."
+        "description": "Ekspor PDF resmi ber-KOP ganda (Pemkot Bandung & SMPIT Al Fitrah): Cetak Surat Pemberitahuan Pelaksanaan & Lampiran Jadwal Munaqosah oleh Koordinator, serta cetak/unduh Surat Keterangan (SK) Hasil Ujian Munaqosah per santri di Dashboard Koordinator, Siswa, dan Orang Tua."
       },
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
-        "description": "Ekspor PDF resmi ber-KOP ganda (Pemkot Bandung & SMPIT Al Fitrah): Cetak Surat Pemberitahuan Pelaksanaan & Lampiran Jadwal Munaqosah oleh Koordinator, serta cetak/unduh Surat Keterangan (SK) Hasil Ujian Munaqosah per santri di Dashboard Koordinator, Siswa, dan Orang Tua."
+        "description": "Modal notifikasi interaktif model chat/inbox popover pada ikon lonceng header Koordinator menggantikan menu sidebar lama, dengan navigasi cerdas sekali klik."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Tabel interaktif permohonan reset password akun di Dashboard Koordinator (otomatis tersembunyi saat kosong) dengan validasi akun informatif dan tombol Reset Default/Tolak."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Pemisahan antrean munaqosah: tab 'Riwayat Ujian' murni hanya menampilkan santri yang telah melaksanakan ujian (Lulus / Tidak Lulus), sedangkan permohonan yang ditolak dipisahkan ke tab mandiri 'Pengajuan Ditolak' lengkap dengan catatan alasan penolakan."
       },
       {
         "category": "enhancement",
@@ -75,7 +60,7 @@
       {
         "category": "enhancement",
         "categoryLabel": "Peningkatan",
-        "description": "Paginasi data dan tabel terstruktur pada antrean approval munaqosah, riwayat susulan yaumiyah, serta modal tolak pengajuan munaqosah dengan input catatan alasan."
+        "description": "Plot jadwal munaqosah fleksibel langsung memilih semua guru disertai counter live jumlah santri yang di-assign, input waktu sesi (~1 jam), dan ringkasan rentang waktu sesi harian."
       },
       {
         "category": "security",
