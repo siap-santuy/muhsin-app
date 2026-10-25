@@ -55,6 +55,12 @@ const NAV_ITEMS = [
     href: "#/munaqosah",
     badgeKey: "munaqosahPending",
   },
+  {
+    path: "yaumiyah-approval",
+    label: "Izin Susulan Yaumiyah",
+    icon: BookOpen,
+    href: "#/yaumiyah-approval",
+  },
 ];
 
 export function KoorShell({

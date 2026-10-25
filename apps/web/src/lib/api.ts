@@ -348,6 +348,43 @@ class ApiClient {
     }
   }
 
+  async getDailyIbadahWindowStatus(date: string) {
+    return this.request<{
+      date: string;
+      diffDays: number;
+      isDirectWindow: boolean;
+      isOpen: boolean;
+      activeGrant: { id: string; expiresAt: string } | null;
+      pendingRequest: { id: string; startDate: string; endDate: string } | null;
+    }>("GET", `/daily-ibadah/window-status?date=${date}`);
+  }
+
+  async requestYaumiyahAccess(data: { startDate: string; endDate: string; reason: string }) {
+    return this.request("POST", `/daily-ibadah/access-requests`, data);
+  }
+
+  async getYaumiyahAccessRequests() {
+    return this.request<any[]>("GET", `/daily-ibadah/access-requests`);
+  }
+
+  async approveYaumiyahAccess(id: string) {
+    return this.request("PATCH", `/daily-ibadah/access-requests/${id}/approve`, {});
+  }
+
+  async rejectYaumiyahAccess(id: string, rejectionNote?: string) {
+    return this.request("PATCH", `/daily-ibadah/access-requests/${id}/reject`, { rejectionNote });
+  }
+
+  async directGrantYaumiyahAccess(data: {
+    studentId: string;
+    startDate: string;
+    endDate: string;
+    reason?: string;
+    durationHours?: number;
+  }) {
+    return this.request("POST", `/daily-ibadah/direct-grant`, data);
+  }
+
   async createSetoran(input: CreateSetoranInput) {
     try {
       return await this.request("POST", `/setoran`, input);

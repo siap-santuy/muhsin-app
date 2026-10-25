@@ -18,9 +18,14 @@ import { buildAuthRoutes, buildAuthProtectedRoutes } from "../modules/auth/prese
 
 // Daily Ibadah module
 import { DrizzleDailyIbadahRepository } from "../modules/daily-ibadah/infrastructure/DrizzleDailyIbadahRepository";
+import { DrizzleYaumiyahAccessRequestRepository } from "../modules/daily-ibadah/infrastructure/DrizzleYaumiyahAccessRequestRepository";
 import { SaveDraftDailyIbadahUseCase } from "../modules/daily-ibadah/application/use-cases/SaveDraftDailyIbadahUseCase";
 import { SubmitDailyIbadahUseCase } from "../modules/daily-ibadah/application/use-cases/SubmitDailyIbadahUseCase";
 import { GetDailyIbadahStatsUseCase } from "../modules/daily-ibadah/application/use-cases/GetDailyIbadahStatsUseCase";
+import { RequestYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/RequestYaumiyahAccessUseCase";
+import { ApproveYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/ApproveYaumiyahAccessUseCase";
+import { RejectYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/RejectYaumiyahAccessUseCase";
+import { GrantYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/GrantYaumiyahAccessUseCase";
 import { createDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/routes";
 
 // Gamification module
@@ -132,9 +137,14 @@ export interface ContainerDeps {
   tokenService: TokenService;
   // Daily Ibadah
   dailyIbadahRepo: DrizzleDailyIbadahRepository;
+  yaumiyahAccessRequestRepo?: DrizzleYaumiyahAccessRequestRepository;
   submitDailyIbadahUseCase: SubmitDailyIbadahUseCase;
   saveDraftDailyIbadahUseCase: SaveDraftDailyIbadahUseCase;
   getDailyIbadahStatsUseCase: GetDailyIbadahStatsUseCase;
+  requestYaumiyahAccessUseCase?: RequestYaumiyahAccessUseCase;
+  approveYaumiyahAccessUseCase?: ApproveYaumiyahAccessUseCase;
+  rejectYaumiyahAccessUseCase?: RejectYaumiyahAccessUseCase;
+  grantYaumiyahAccessUseCase?: GrantYaumiyahAccessUseCase;
   // Gamification
   getGamificationSummaryUseCase: GetGamificationSummaryUseCase;
   getStudentAchievementsUseCase: GetStudentAchievementsUseCase;
@@ -300,9 +310,14 @@ export function createApp(deps: ContainerDeps): Hono {
   // Daily Ibadah
   const dailyIbadahRoutes = createDailyIbadahRoutes({
     repo: deps.dailyIbadahRepo,
+    accessRequestRepo: deps.yaumiyahAccessRequestRepo,
     submitUseCase: deps.submitDailyIbadahUseCase,
     saveDraftUseCase: deps.saveDraftDailyIbadahUseCase,
     getStatsUseCase: deps.getDailyIbadahStatsUseCase,
+    requestAccessUseCase: deps.requestYaumiyahAccessUseCase,
+    approveAccessUseCase: deps.approveYaumiyahAccessUseCase,
+    rejectAccessUseCase: deps.rejectYaumiyahAccessUseCase,
+    grantAccessUseCase: deps.grantYaumiyahAccessUseCase,
     resolveStudentId: resolveStudent,
   });
   app.use("/daily-ibadah/*", protectedAuth, tenantScopeMiddleware);
@@ -437,6 +452,7 @@ export function buildContainer() {
   const userRepository = new DrizzleUserRepository(db);
   const tokenRepository = new RedisTokenRepository(redis);
   const dailyIbadahRepo = new DrizzleDailyIbadahRepository(db);
+  const yaumiyahAccessRequestRepo = new DrizzleYaumiyahAccessRequestRepository(db);
   const gamificationRepo = new DrizzleGamificationRepository(db);
   const expTxRepo = new DrizzleExpTransactionRepository(db);
   const achievementRepo = new DrizzleAchievementRepository(db);
@@ -482,13 +498,21 @@ export function buildContainer() {
   const getStudentAchievementsUseCase = new GetStudentAchievementsUseCase(achievementRepo);
 
   // UseCases — Daily Ibadah
-  const saveDraftDailyIbadahUseCase = new SaveDraftDailyIbadahUseCase(dailyIbadahRepo);
+  const saveDraftDailyIbadahUseCase = new SaveDraftDailyIbadahUseCase(
+    dailyIbadahRepo,
+    yaumiyahAccessRequestRepo
+  );
   const submitDailyIbadahUseCase = new SubmitDailyIbadahUseCase(
     dailyIbadahRepo,
     addExpUseCase,
-    updateStreakUseCase
+    updateStreakUseCase,
+    yaumiyahAccessRequestRepo
   );
   const getDailyIbadahStatsUseCase = new GetDailyIbadahStatsUseCase(dailyIbadahRepo);
+  const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
+  const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
+  const rejectYaumiyahAccessUseCase = new RejectYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
+  const grantYaumiyahAccessUseCase = new GrantYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
 
   // UseCases — Setoran
   const createSetoranUseCase = new CreateSetoranUseCase(setoranRepo, addExpUseCase);
@@ -562,9 +586,14 @@ export function buildContainer() {
       changePasswordUseCase,
       tokenService,
       dailyIbadahRepo,
+      yaumiyahAccessRequestRepo,
       submitDailyIbadahUseCase,
       saveDraftDailyIbadahUseCase,
       getDailyIbadahStatsUseCase,
+      requestYaumiyahAccessUseCase,
+      approveYaumiyahAccessUseCase,
+      rejectYaumiyahAccessUseCase,
+      grantYaumiyahAccessUseCase,
       getGamificationSummaryUseCase,
       getStudentAchievementsUseCase,
       createSetoranUseCase,

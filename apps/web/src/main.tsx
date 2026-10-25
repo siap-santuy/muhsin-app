@@ -37,6 +37,7 @@ import { TeacherTalaqiInputPage } from "@/pages/teacher/TeacherTalaqiInputPage";
 import { TeacherTalaqiViewPage } from "@/pages/teacher/TeacherTalaqiViewPage";
 import { TeacherZiyadahInputPage } from "@/pages/teacher/TeacherZiyadahInputPage";
 import { TeacherZiyadahViewPage } from "@/pages/teacher/TeacherZiyadahViewPage";
+import { TeacherYaumiyahApprovalPage } from "@/pages/teacher/TeacherYaumiyahApprovalPage";
 import { KoorDashboardPage } from "@/pages/koordinator/KoorDashboardPage";
 import { KoorStudentPage } from "@/pages/koordinator/KoorStudentPage";
 import { KoorTeacherPage } from "@/pages/koordinator/KoorTeacherPage";
@@ -257,6 +258,9 @@ function renderContent(
       case "examiner":
       case "tugas-penguji":
         return <TeacherExaminerPage />;
+      case "yaumiyah-approval":
+      case "izin-susulan":
+        return <TeacherYaumiyahApprovalPage />;
       case "raport":
         return <TeacherRaportPage />;
       case "monthly-raport":
@@ -347,6 +351,9 @@ function App() {
         return <KoorKurikulumPage />;
       case "munaqosah":
         return <KoorMunaqosahPage />;
+      case "yaumiyah-approval":
+      case "izin-susulan":
+        return <TeacherYaumiyahApprovalPage />;
       case "notifications":
         return <NotificationPage />;
       case "edit-profile":

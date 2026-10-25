@@ -27,7 +27,12 @@ export function StudentYaumiyahPage() {
   const [stats, setStats] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const todayStr = formatLocalDate(new Date());
+  const todayDate = new Date();
+  const todayStr = formatLocalDate(todayDate);
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = formatLocalDate(yesterdayDate);
+
   const [selectedMonth, setSelectedMonth] = useState(() => todayStr.slice(0, 7));
 
   useEffect(() => {
@@ -65,9 +70,11 @@ export function StudentYaumiyahPage() {
   const todayEntry = history.find((h) => h.date === todayStr);
   const todayStatus = todayEntry?.status === "submitted" ? "submitted" : todayEntry?.status === "draft" ? "draft" : "empty";
 
-  function handleGoToInput() {
-    if (todayStatus === "submitted") return;
-    window.location.hash = `#/yaumiyah-input?date=${todayStr}`;
+  const yesterdayEntry = history.find((h) => h.date === yesterdayStr);
+  const yesterdayStatus = yesterdayEntry?.status === "submitted" ? "submitted" : yesterdayEntry?.status === "draft" ? "draft" : "empty";
+
+  function handleGoToInput(date: string = todayStr) {
+    window.location.hash = `#/yaumiyah-input?date=${date}`;
   }
 
   function handleGoToView(date?: string) {
@@ -135,7 +142,7 @@ export function StudentYaumiyahPage() {
           {todayStatus === "empty" && (
             <Button
               type="button"
-              onClick={handleGoToInput}
+              onClick={() => handleGoToInput(todayStr)}
               className="h-11 w-full rounded-xl bg-brand-cyan font-bold uppercase tracking-wider text-white shadow-[0_2px_4px_rgba(34,186,208,0.3)] hover:bg-brand-cyan-dark"
             >
               <PenLine className="h-5 w-5 mr-2" /> ISI IBADAH HARI INI
@@ -150,6 +157,31 @@ export function StudentYaumiyahPage() {
             >
               <PenLine className="h-5 w-5 mr-2" /> KIRIM IBADAH HARI INI
             </Button>
+          )}
+
+          {/* Akses Cepat Ibadah Kemarin (H-1) jika belum diisi / masih draft */}
+          {yesterdayStatus !== "submitted" && (
+            <div className="flex items-center justify-between rounded-xl border border-brand-line bg-amber-50/70 p-3">
+              <div>
+                <p className="text-xs font-bold text-brand-navy">Ibadah Kemarin Belum Lengkap</p>
+                <p className="text-[11px] text-brand-text-muted">
+                  {yesterdayStatus === "draft" ? "Masih tersimpan sebagai draft" : "Belum diisi"} (masih bisa diisi langsung)
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  yesterdayStatus === "draft"
+                    ? handleGoToView(yesterdayStr)
+                    : handleGoToInput(yesterdayStr)
+                }
+                className="h-8 rounded-lg border-amber-500 font-bold text-amber-600 hover:bg-amber-100/50"
+              >
+                {yesterdayStatus === "draft" ? "Lanjutkan" : "Isi Kemarin"}
+              </Button>
+            </div>
           )}
 
           {loading ? (

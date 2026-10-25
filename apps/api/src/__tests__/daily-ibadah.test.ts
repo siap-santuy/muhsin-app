@@ -74,6 +74,7 @@ describe("SubmitDailyIbadahUseCase", () => {
       schoolId: "school-1",
       studentId: "student-1",
       date: "2026-08-29",
+      todayStr: "2026-08-29",
       sholatFardhu: {
         subuh: "BA",
         dzuhur: "BA",

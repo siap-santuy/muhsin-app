@@ -204,6 +204,39 @@ export const pushSubscriptions = pgTable(
   })
 );
 
+// --- Yaumiyah Access Requests (Permohonan / Pemberian Akses Input Lampau H-2+) ---
+
+export const yaumiyahRequestStatus = ["pending", "approved", "rejected"] as const;
+export type YaumiyahRequestStatus = (typeof yaumiyahRequestStatus)[number];
+
+export const yaumiyahAccessRequests = pgTable(
+  "yaumiyah_access_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => users.id),
+    startDate: date("start_date").notNull(), // Format YYYY-MM-DD
+    endDate: date("end_date").notNull(),     // Format YYYY-MM-DD
+    reason: text("reason").notNull(),
+    status: text("status", { enum: yaumiyahRequestStatus }).notNull().default("pending"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectionNote: text("rejection_note"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    isDirectGrant: boolean("is_direct_grant").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    idxSchoolStudent: index("yaumiyah_access_req_school_student_idx").on(t.schoolId, t.studentId),
+    idxSchoolStatus: index("yaumiyah_access_req_school_status_idx").on(t.schoolId, t.status),
+  })
+);
+
 // --- Types ---
 
 export type DailyIbadah = typeof dailyIbadah.$inferSelect;
@@ -218,3 +251,5 @@ export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+export type YaumiyahAccessRequest = typeof yaumiyahAccessRequests.$inferSelect;
+export type NewYaumiyahAccessRequest = typeof yaumiyahAccessRequests.$inferInsert;

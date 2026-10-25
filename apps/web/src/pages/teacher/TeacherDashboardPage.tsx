@@ -132,6 +132,16 @@ export function TeacherDashboardPage() {
                 <span>TUGAS PENGUJI MUNAQOSAH</span>
               </button>
 
+              {/* Action Button: Izin Susulan Yaumiyah */}
+              <button
+                type="button"
+                onClick={() => (window.location.hash = "#/yaumiyah-approval")}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 py-2.5 text-xs font-bold tracking-wider text-amber-800 shadow-xs transition-all hover:bg-amber-100 active:scale-[0.99]"
+              >
+                <Calendar className="h-4 w-4 text-amber-600" />
+                <span>IZIN SUSULAN YAUMIYAH SISWA</span>
+              </button>
+
               {/* Section: Progres Bulan Ini */}
               <section className="mt-1">
                 <h2 className="text-base font-bold text-brand-navy">

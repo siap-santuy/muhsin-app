@@ -4,9 +4,12 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  Clock,
   Info,
   Loader2,
+  Lock,
   Moon,
+  PenLine,
   Sun,
   XCircle,
 } from "lucide-react";
@@ -69,10 +72,14 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
   const selectedDayIdx = 2; // Always index 2 (center item)
 
   const [ibadah, setIbadah] = useState<any>(null);
+  const [windowStatus, setWindowStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
   const [showSholatInfo, setShowSholatInfo] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [reqReason, setReqReason] = useState("");
+  const [submittingReq, setSubmittingReq] = useState(false);
 
   // Sync if propInitialDate changes from route
   useEffect(() => {
@@ -125,10 +132,15 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
     async function load() {
       setLoading(true);
       try {
-        const data = await api.getDailyIbadah(selectedDate);
+        const [data, win] = await Promise.all([
+          api.getDailyIbadah(selectedDate).catch(() => null),
+          api.getDailyIbadahWindowStatus(selectedDate).catch(() => null),
+        ]);
         setIbadah(data);
+        setWindowStatus(win);
       } catch {
         setIbadah(null);
+        setWindowStatus(null);
       } finally {
         setLoading(false);
       }
@@ -166,6 +178,30 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
 
   function handleEdit() {
     window.location.hash = `#/yaumiyah-input?date=${selectedDate}`;
+  }
+
+  async function handleSendRequest() {
+    if (!reqReason.trim() || reqReason.trim().length < 5) {
+      setToast({ message: "Alasan permohonan minimal 5 karakter", variant: "warning" });
+      return;
+    }
+    setSubmittingReq(true);
+    try {
+      await api.requestYaumiyahAccess({
+        startDate: selectedDate,
+        endDate: selectedDate,
+        reason: reqReason.trim(),
+      });
+      setToast({ message: "Permohonan buka akses berhasil dikirim", variant: "success" });
+      setShowRequestModal(false);
+      setReqReason("");
+      const win = await api.getDailyIbadahWindowStatus(selectedDate).catch(() => null);
+      setWindowStatus(win);
+    } catch (err: any) {
+      setToast({ message: err.message || "Gagal mengirim permohonan", variant: "warning" });
+    } finally {
+      setSubmittingReq(false);
+    }
   }
 
   async function handleSubmit() {
@@ -237,8 +273,54 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
               <Loader2 className="h-6 w-6 animate-spin text-brand-cyan" />
             </div>
           ) : !ibadah ? (
-            <div className="rounded-2xl border border-brand-line bg-white p-8 text-center text-xs text-brand-text-muted">
-              Belum ada catatan ibadah untuk tanggal {selectedDate}.
+            <div className="rounded-2xl border border-brand-line bg-white p-6 text-center space-y-3">
+              <p className="text-xs text-brand-text-muted">
+                Belum ada catatan ibadah untuk tanggal {selectedDate}.
+              </p>
+
+              {/* Status Akses & Tombol Aksi Tanggal Ini */}
+              {windowStatus?.isOpen ? (
+                <div className="space-y-2">
+                  {windowStatus?.activeGrant && (
+                    <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-semibold text-emerald-700">
+                      Izin susulan aktif s.d {new Date(windowStatus.activeGrant.expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={handleEdit}
+                    className="h-10 w-full rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
+                  >
+                    <PenLine className="h-4 w-4 mr-2" /> ISI IBADAH TANGGAL INI
+                  </Button>
+                </div>
+              ) : windowStatus?.pendingRequest ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                  <div className="flex items-center justify-center gap-1.5 font-bold">
+                    <Clock className="h-4 w-4" /> Menunggu Persetujuan
+                  </div>
+                  <p className="mt-1 text-[11px] text-amber-600">
+                    Permohonan buka akses sedang ditinjau oleh Guru/Koordinator
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2 text-xs text-brand-navy">
+                  <div className="flex items-center justify-center gap-1.5 font-bold text-brand-text-muted">
+                    <Lock className="h-4 w-4" /> Pengisian Terkunci
+                  </div>
+                  <p className="text-[11px] text-brand-text-muted">
+                    Tanggal ini sudah terlewat lebih dari 1 hari. Kamu bisa mengajukan izin pengisian susulan.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRequestModal(true)}
+                    className="h-9 w-full rounded-lg border-brand-cyan font-bold text-brand-cyan hover:bg-brand-cyan/10"
+                  >
+                    Ajukan Buka Akses
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -445,6 +527,50 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
         isOpen={showSholatInfo}
         onClose={() => setShowSholatInfo(false)}
       />
+
+      {/* Modal Permohonan Buka Akses */}
+      {showRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-in fade-in zoom-in-95">
+            <h3 className="text-base font-bold text-brand-navy">Permohonan Izin Susulan</h3>
+            <p className="mt-1 text-xs text-brand-text-muted">
+              Ajukan buka akses pengisian ibadah untuk tanggal <strong>{selectedDate}</strong> ke Guru/Koordinator.
+            </p>
+            <div className="mt-3">
+              <label className="text-[11px] font-bold text-brand-navy">Alasan Terlambat / Lupa</label>
+              <textarea
+                value={reqReason}
+                onChange={(e) => setReqReason(e.target.value)}
+                placeholder="Contoh: Sakit demam 2 hari / izin luar kota..."
+                rows={3}
+                className="mt-1 w-full rounded-xl border border-brand-line p-2.5 text-xs text-brand-navy placeholder:text-gray-400 focus:border-brand-cyan focus:outline-none"
+              />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowRequestModal(false);
+                  setReqReason("");
+                }}
+                disabled={submittingReq}
+                className="flex-1 rounded-xl"
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSendRequest}
+                disabled={submittingReq}
+                className="flex-1 rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
+              >
+                {submittingReq ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
