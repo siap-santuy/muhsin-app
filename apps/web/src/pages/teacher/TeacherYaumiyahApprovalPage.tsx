@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, Plus, Search, UserCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Toast } from "@/components/ui/Toast";
+import { toast } from "@/store/toastStore";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { KoorShell } from "@/components/layout/KoorShell";
@@ -19,7 +19,6 @@ export function TeacherYaumiyahApprovalPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -71,7 +70,7 @@ export function TeacherYaumiyahApprovalPage() {
         setStudents(studs);
       }
     } catch (err: any) {
-      setToast({ message: err.message || "Gagal memuat data", variant: "warning" });
+      toast.warning(err.message || "Gagal memuat data");
     } finally {
       setLoading(false);
     }
@@ -85,10 +84,10 @@ export function TeacherYaumiyahApprovalPage() {
     setActionLoading(id);
     try {
       await api.approveYaumiyahAccess(id);
-      setToast({ message: "Akses susulan disetujui (aktif 24 jam)", variant: "success" });
+      toast.success("Akses susulan disetujui (aktif 24 jam)");
       await loadData();
     } catch (err: any) {
-      setToast({ message: err.message || "Gagal menyetujui", variant: "warning" });
+      toast.warning(err.message || "Gagal menyetujui");
     } finally {
       setActionLoading(null);
     }
@@ -99,12 +98,12 @@ export function TeacherYaumiyahApprovalPage() {
     setActionLoading(rejectingId);
     try {
       await api.rejectYaumiyahAccess(rejectingId, rejectionNote);
-      setToast({ message: "Permohonan akses ditolak", variant: "success" });
+      toast.success("Permohonan akses ditolak");
       setRejectingId(null);
       setRejectionNote("");
       await loadData();
     } catch (err: any) {
-      setToast({ message: err.message || "Gagal menolak", variant: "warning" });
+      toast.warning(err.message || "Gagal menolak");
     } finally {
       setActionLoading(null);
     }
@@ -112,25 +111,19 @@ export function TeacherYaumiyahApprovalPage() {
 
   async function handleDirectGrant() {
     if (selectedStudentIds.length === 0 || !grantStartDate || !grantEndDate) {
-      setToast({ message: "Pilih minimal satu santri dan lengkapi tanggal", variant: "warning" });
+      toast.warning("Pilih minimal satu santri dan lengkapi tanggal");
       return;
     }
     if (grantStartDate > grantEndDate) {
-      setToast({ message: "Tanggal awal tidak boleh lebih besar dari tanggal akhir", variant: "warning" });
+      toast.warning("Tanggal awal tidak boleh lebih besar dari tanggal akhir");
       return;
     }
     if (grantStartDate > todayStr || grantEndDate > todayStr) {
-      setToast({
-        message: "Tidak dapat membuka akses susulan untuk tanggal masa depan (> hari ini)",
-        variant: "warning",
-      });
+      toast.warning("Tidak dapat membuka akses susulan untuk tanggal masa depan (> hari ini)");
       return;
     }
     if (!isKoor && grantStartDate.slice(0, 7) < currentMonthPrefix) {
-      setToast({
-        message: "Guru hanya dapat membuka akses untuk bulan berjalan. Untuk bulan lalu, hubungi Koordinator TTQ.",
-        variant: "warning",
-      });
+      toast.warning("Guru hanya dapat membuka akses untuk bulan berjalan. Untuk bulan lalu, hubungi Koordinator TTQ.");
       return;
     }
     setSubmittingGrant(true);
@@ -143,14 +136,14 @@ export function TeacherYaumiyahApprovalPage() {
         durationHours: Number(grantDurationHours) || 24,
       });
       const count = res?.count || selectedStudentIds.length;
-      setToast({ message: `Akses susulan untuk ${count} santri berhasil dibuka langsung`, variant: "success" });
+      toast.success(`Akses susulan untuk ${count} santri berhasil dibuka langsung`);
       setShowGrantModal(false);
       setGrantStartDate("");
       setGrantEndDate("");
       setGrantReason("");
       await loadData();
     } catch (err: any) {
-      setToast({ message: err.message || "Gagal membuka akses", variant: "warning" });
+      toast.warning(err.message || "Gagal membuka akses");
     } finally {
       setSubmittingGrant(false);
     }
@@ -633,14 +626,6 @@ export function TeacherYaumiyahApprovalPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          variant={toast.variant}
-          onClose={() => setToast(null)}
-        />
       )}
     </div>
   );

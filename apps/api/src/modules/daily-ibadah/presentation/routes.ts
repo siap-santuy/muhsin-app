@@ -66,7 +66,7 @@ const directGrantBodySchema = z.object({
 });
 
 const directGrantBulkBodySchema = z.object({
-  studentIds: z.array(z.string().uuid()).min(1).max(50),
+  studentIds: z.array(z.string().uuid()).min(1).max(500),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   reason: z.string().optional(),

@@ -36,8 +36,8 @@ export class GrantBulkYaumiyahAccessUseCase {
     }
 
     const uniqueStudentIds = Array.from(new Set(input.studentIds));
-    if (uniqueStudentIds.length > 50) {
-      throw new Error("Maksimal 50 santri dalam satu kali pembukaan akses");
+    if (uniqueStudentIds.length > 500) {
+      throw new Error("Maksimal 500 santri dalam satu kali pembukaan akses");
     }
 
     assertYaumiyahGrantDatePolicy(input.granterRole, input.startDate, input.endDate, input.todayDate);

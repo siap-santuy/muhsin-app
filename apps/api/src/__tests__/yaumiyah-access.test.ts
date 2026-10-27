@@ -165,6 +165,24 @@ describe("GrantYaumiyahAccessUseCase & GrantBulkYaumiyahAccessUseCase", () => {
 
     expect(res.count).toBe(2);
   });
+
+  it("GrantBulkYaumiyahAccessUseCase: menolak jika lebih dari 500 santri", async () => {
+    const repo = createMockRepo([]);
+    const uc = new GrantBulkYaumiyahAccessUseCase(repo, mockNotifRepo, mockPushUseCase);
+    const manyIds = Array.from({ length: 501 }, (_, i) => `stu-${i}`);
+
+    await expect(
+      uc.execute({
+        schoolId: "sch-1",
+        studentIds: manyIds,
+        startDate: "2026-10-01",
+        endDate: "2026-10-05",
+        granterId: "koor-1",
+        granterRole: "koordinator_ttq",
+        todayDate: refDate,
+      })
+    ).rejects.toThrow("Maksimal 500 santri dalam satu kali pembukaan akses");
+  });
 });
 
 describe("ApproveYaumiyahAccessUseCase & RejectYaumiyahAccessUseCase", () => {

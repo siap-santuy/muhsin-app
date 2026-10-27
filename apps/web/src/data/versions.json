@@ -1,16 +1,21 @@
 [
   {
-    "version": "v1.5.1",
+    "version": "v1.5.0",
     "releaseDate": "27 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
-    "title": "Perbaikan Proteksi Kunci Tanggal Yaumiyah Murid & Penyempurnaan UX Bulk Akses",
-    "summary": "Perbaikan bug form yaumiyah murid saat menggeser tanggal terkunci/terkirim (auto-redirect ke view mode), penguncian tanggal masa depan (> hari ini) di BE/FE, combobox collapsible santri dengan memory cache 3 menit, serta eager fetch jumlah total akun wali murid di tab Koordinator.",
+    "title": "Buka Akses Susulan Yaumiyah Massal (Bulk), Kebijakan Tanggal Guru vs Koordinator, & Web Push",
+    "summary": "Peningkatan kontrol izin susulan yaumiyah: pembukaan akses susulan massal hingga 500 santri dengan combobox collapsible dan filter kelas, penegakan batasan tanggal bulan berjalan khusus guru (bulan lalu hanya melalui koordinator), penguncian tanggal masa depan (> hari ini), proteksi auto-redirect tanggal terkunci/terkirim pada murid, eager fetch wali murid, serta integrasi Web Push Notification ke santri.",
     "changes": [
       {
-        "category": "bugfix",
-        "categoryLabel": "Perbaikan Bug",
-        "description": "Form input yaumiyah murid otomatis terkunci dan dialihkan ke yaumiyah-view jika murid menggeser tanggal ke tanggal lampau yang terkunci atau sudah terkirim."
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Pembukaan akses susulan massal (Bulk Direct-Grant) hingga 500 santri sekaligus dengan dukungan tombol 'Pilih Semua' satu sekolah, combobox collapsible, dan filter kelas."
+      },
+      {
+        "category": "security",
+        "categoryLabel": "Otorisasi & Kebijakan",
+        "description": "Kebijakan tanggal berbasis peran: guru hanya dapat membuka/menyetujui susulan untuk bulan berjalan pada santri binaan, sementara Koordinator TTQ memiliki wewenang penuh untuk tanggal kapan pun di masa lampau."
       },
       {
         "category": "security",
@@ -18,39 +23,24 @@
         "description": "Penguncian mutlak tanggal masa depan (> hari ini) pada pembukaan akses yaumiyah baik untuk Guru maupun Koordinator."
       },
       {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan UX",
-        "description": "Combobox pemilihan santri collapsible tertutup default tanpa auto-select santri pertama, dilengkapi filter kelas dan in-memory cache 3 menit."
-      },
-      {
-        "category": "enhancement",
-        "categoryLabel": "Peningkatan UX",
-        "description": "Tab Data Wali Murid di halaman Koordinator langsung menampilkan jumlah total riil sejak awal tanpa bernilai 0."
-      }
-    ]
-  },
-  {
-    "version": "v1.5.0",
-    "releaseDate": "27 Oktober 2026",
-    "isLatest": false,
-    "badge": "Stabil",
-    "title": "Buka Akses Susulan Yaumiyah Massal (Bulk), Kebijakan Tanggal Guru vs Koordinator, & Web Push",
-    "summary": "Peningkatan kontrol izin susulan yaumiyah: guru dan koordinator dapat membuka akses susulan untuk banyak santri sekaligus (bulk direct-grant) dengan pencarian dan filter kelas, penegakan batasan tanggal bulan berjalan khusus guru (bulan lalu hanya melalui koordinator), validasi otorisasi santri binaan, serta integrasi Web Push Notification saat izin disetujui, ditolak, atau dibuka langsung.",
-    "changes": [
-      {
-        "category": "feature",
-        "categoryLabel": "Fitur Baru",
-        "description": "Pembukaan akses susulan massal (Bulk Direct-Grant) hingga 50 santri sekaligus dengan dukungan pilih semua santri dan pencarian cepat."
-      },
-      {
-        "category": "security",
-        "categoryLabel": "Otorisasi & Keamanan",
-        "description": "Kebijakan tanggal berbasis peran: guru hanya dapat membuka/menyetujui susulan untuk bulan berjalan pada santri binaan, sementara Koordinator TTQ memiliki wewenang penuh untuk tanggal kapan pun di masa lampau."
+        "category": "bugfix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Form input yaumiyah murid otomatis terkunci dan dialihkan ke yaumiyah-view jika murid menggeser tanggal ke tanggal lampau yang terkunci atau sudah terkirim."
       },
       {
         "category": "feature",
         "categoryLabel": "Fitur Baru",
         "description": "Web Push Notification langsung ke HP santri saat permohonan izin disetujui, ditolak (beserta catatan alasan), maupun saat akses dibuka langsung."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan UX",
+        "description": "Notifikasi approval yaumiyah distandarisasi ke portal toast global di kanan atas layar (z-[9999]), selalu terlihat di atas modal."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan UX",
+        "description": "Tab Data Wali Murid di halaman Koordinator langsung menampilkan jumlah total riil sejak awal tanpa bernilai 0."
       }
     ]
   },
