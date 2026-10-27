@@ -308,7 +308,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                 <div className="space-y-2">
                   {windowStatus?.activeGrant && (
                     <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-semibold text-emerald-700">
-                      Izin susulan aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
+                      Akses aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
                     </div>
                   )}
                   <Button
@@ -352,7 +352,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
               {/* Alert jika draft berada pada tanggal yang aktif izin susulan */}
               {ibadah?.status === "draft" && windowStatus?.activeGrant && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-[11px] font-semibold text-emerald-700">
-                  Izin susulan aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
+                  Akses aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
                 </div>
               )}
 

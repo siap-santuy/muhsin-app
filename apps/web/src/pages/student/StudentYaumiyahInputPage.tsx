@@ -485,7 +485,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
                 ✓
               </span>
               <span>
-                Izin susulan aktif hingga {formatExpiryDateTime(activeGrant.expiresAt)}
+                Akses aktif hingga {formatExpiryDateTime(activeGrant.expiresAt)}
               </span>
             </div>
           )}
