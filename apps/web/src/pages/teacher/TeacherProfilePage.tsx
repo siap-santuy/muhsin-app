@@ -42,7 +42,6 @@ export function TeacherProfilePage({ onLogout }: TeacherProfilePageProps) {
       onLogout();
     } else {
       logout();
-      window.location.hash = "";
     }
   }
 

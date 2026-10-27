@@ -22,6 +22,21 @@ function parseLocalDate(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
+function formatExpiryDateTime(isoString: string): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const dateStr = d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dateStr} pukul ${timeStr}`;
+}
+
 function getCenteredDays(centerDateStr: string): DayItem[] {
   const target = parseLocalDate(centerDateStr);
   const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -86,6 +101,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
   const [ibadahState, setIbadahState] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [dateLoading, setDateLoading] = useState(false);
+  const [activeGrant, setActiveGrant] = useState<{ id: string; expiresAt: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
 
   // Sync if propInitialDate changes from route
@@ -155,6 +171,8 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
           window.location.hash = `#/yaumiyah-view?date=${selectedDate}`;
           return;
         }
+
+        setActiveGrant(winStatus?.activeGrant ?? null);
 
         if (existing) {
           if (existing.sholatFardhu) {
@@ -461,6 +479,17 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
             </div>
           ) : (
             <>
+          {activeGrant && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold shrink-0">
+                ✓
+              </span>
+              <span>
+                Izin susulan aktif hingga {formatExpiryDateTime(activeGrant.expiresAt)}
+              </span>
+            </div>
+          )}
+
           {/* Tilawah Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2">

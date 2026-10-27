@@ -42,7 +42,6 @@ export function ParentProfilePage({ onLogout }: ParentProfilePageProps) {
       onLogout();
     } else {
       logout();
-      window.location.hash = "";
     }
   }
 

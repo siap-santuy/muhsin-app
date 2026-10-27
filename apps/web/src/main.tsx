@@ -335,6 +335,12 @@ function App() {
   }
 
   if (!user) {
+    if (typeof window !== "undefined" && window.location.hash && window.location.hash !== "#/" && window.location.hash !== "") {
+      window.location.hash = "";
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, "", window.location.pathname + (window.location.search || ""));
+      }
+    }
     return <LoginPage />;
   }
 

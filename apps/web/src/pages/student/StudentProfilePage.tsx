@@ -43,7 +43,6 @@ export function StudentProfilePage({ onLogout }: StudentProfilePageProps) {
       onLogout();
     } else {
       logout();
-      window.location.hash = "";
     }
   }
 

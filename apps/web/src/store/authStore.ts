@@ -43,6 +43,12 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem("access_token");
         localStorage.removeItem("parent_active_child_id");
         set({ accessToken: null, refreshToken: null, user: null });
+        if (typeof window !== "undefined") {
+          window.location.hash = "";
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", window.location.pathname + (window.location.search || ""));
+          }
+        }
       },
     }),
     { name: "muhsin-auth" }

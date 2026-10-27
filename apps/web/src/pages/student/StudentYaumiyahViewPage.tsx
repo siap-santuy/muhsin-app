@@ -44,6 +44,21 @@ function parseLocalDate(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
+function formatExpiryDateTime(isoString: string): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const dateStr = d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dateStr} pukul ${timeStr}`;
+}
+
 function getCenteredDays(centerDateStr: string): DayItem[] {
   const target = parseLocalDate(centerDateStr);
   const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -293,7 +308,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                 <div className="space-y-2">
                   {windowStatus?.activeGrant && (
                     <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-semibold text-emerald-700">
-                      Izin susulan aktif s.d {new Date(windowStatus.activeGrant.expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      Izin susulan aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
                     </div>
                   )}
                   <Button
@@ -334,6 +349,13 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
             </div>
           ) : (
             <>
+              {/* Alert jika draft berada pada tanggal yang aktif izin susulan */}
+              {ibadah?.status === "draft" && windowStatus?.activeGrant && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-[11px] font-semibold text-emerald-700">
+                  Izin susulan aktif hingga {formatExpiryDateTime(windowStatus.activeGrant.expiresAt)}
+                </div>
+              )}
+
               {/* Alert jika draft berada pada tanggal terkunci */}
               {ibadah?.status === "draft" && !windowStatus?.isOpen && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
