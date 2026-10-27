@@ -3,7 +3,6 @@ import { CreateMunaqosahRequestUseCase } from "../modules/munaqosah/application/
 import { GetMyMunaqosahExamsUseCase } from "../modules/munaqosah/application/use-cases/GetMyMunaqosahExamsUseCase";
 import {
   ScheduleMunaqosahUseCase,
-  ExaminerNotInPoolError,
   ExaminerCapacityFullError,
 } from "../modules/munaqosah/application/use-cases/ScheduleMunaqosahUseCase";
 import { ManageMunaqosahExaminersUseCase } from "../modules/munaqosah/application/use-cases/ManageMunaqosahExaminersUseCase";

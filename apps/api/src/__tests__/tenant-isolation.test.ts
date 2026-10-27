@@ -56,6 +56,7 @@ const app = createApp({
   recordParentViewUseCase: {} as never,
   remindParentUseCase: {} as never,
   remindStudentUseCase: {} as never,
+  munaqosahRepo: {} as never,
   getMunaqosahRequestsUseCase: {} as never,
   getMyMunaqosahExamsUseCase: {} as never,
   createMunaqosahRequestUseCase: {} as never,

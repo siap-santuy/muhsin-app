@@ -27,6 +27,7 @@ import { RequestYaumiyahAccessUseCase } from "../modules/daily-ibadah/applicatio
 import { ApproveYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/ApproveYaumiyahAccessUseCase";
 import { RejectYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/RejectYaumiyahAccessUseCase";
 import { GrantYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/GrantYaumiyahAccessUseCase";
+import { GrantBulkYaumiyahAccessUseCase } from "../modules/daily-ibadah/application/use-cases/GrantBulkYaumiyahAccessUseCase";
 import { createDailyIbadahRoutes } from "../modules/daily-ibadah/presentation/routes";
 
 // Gamification module
@@ -148,6 +149,7 @@ export interface ContainerDeps {
   approveYaumiyahAccessUseCase?: ApproveYaumiyahAccessUseCase;
   rejectYaumiyahAccessUseCase?: RejectYaumiyahAccessUseCase;
   grantYaumiyahAccessUseCase?: GrantYaumiyahAccessUseCase;
+  grantBulkYaumiyahAccessUseCase?: GrantBulkYaumiyahAccessUseCase;
   // Gamification
   getGamificationSummaryUseCase: GetGamificationSummaryUseCase;
   getStudentAchievementsUseCase: GetStudentAchievementsUseCase;
@@ -323,6 +325,7 @@ export function createApp(deps: ContainerDeps): Hono {
     approveAccessUseCase: deps.approveYaumiyahAccessUseCase,
     rejectAccessUseCase: deps.rejectYaumiyahAccessUseCase,
     grantAccessUseCase: deps.grantYaumiyahAccessUseCase,
+    grantBulkAccessUseCase: deps.grantBulkYaumiyahAccessUseCase,
     resolveStudentId: resolveStudent,
   });
   app.use("/daily-ibadah/*", protectedAuth, tenantScopeMiddleware);
@@ -517,10 +520,18 @@ export function buildContainer() {
     yaumiyahAccessRequestRepo
   );
   const getDailyIbadahStatsUseCase = new GetDailyIbadahStatsUseCase(dailyIbadahRepo);
+  // UseCases — Notifications (diinisialisasi awal untuk push notification)
+  const pushSubscriptionRepo = new DrizzlePushSubscriptionRepository(db);
+  const pushSender = new WebPushSender();
+  const savePushSubscriptionUseCase = new SavePushSubscriptionUseCase(pushSubscriptionRepo);
+  const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
+  const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
+
   const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, db);
-  const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo);
-  const rejectYaumiyahAccessUseCase = new RejectYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo);
-  const grantYaumiyahAccessUseCase = new GrantYaumiyahAccessUseCase(yaumiyahAccessRequestRepo);
+  const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
+  const rejectYaumiyahAccessUseCase = new RejectYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
+  const grantYaumiyahAccessUseCase = new GrantYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
+  const grantBulkYaumiyahAccessUseCase = new GrantBulkYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
 
   // UseCases — Setoran
   const createSetoranUseCase = new CreateSetoranUseCase(setoranRepo, addExpUseCase);
@@ -543,15 +554,10 @@ export function buildContainer() {
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
   const getSemesterRaportUseCase = new GetSemesterRaportUseCase(raportRepo);
 
-  // UseCases — Notifications (sebelum Dashboard karena remind butuh push)
+  // UseCases — Notifications
   const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepo);
   const markNotificationReadUseCase = new MarkNotificationReadUseCase(notificationRepo);
   const markAllNotificationsReadUseCase = new MarkAllNotificationsReadUseCase(notificationRepo);
-  const pushSubscriptionRepo = new DrizzlePushSubscriptionRepository(db);
-  const pushSender = new WebPushSender();
-  const savePushSubscriptionUseCase = new SavePushSubscriptionUseCase(pushSubscriptionRepo);
-  const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
-  const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
   const requestPasswordResetUseCase = new RequestPasswordResetUseCase(
     userRepository,
     notificationRepo,
@@ -609,6 +615,7 @@ export function buildContainer() {
       approveYaumiyahAccessUseCase,
       rejectYaumiyahAccessUseCase,
       grantYaumiyahAccessUseCase,
+      grantBulkYaumiyahAccessUseCase,
       getGamificationSummaryUseCase,
       getStudentAchievementsUseCase,
       createSetoranUseCase,

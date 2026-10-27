@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from "react";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Loader2, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Loader2, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
@@ -21,15 +21,21 @@ export function TeacherYaumiyahApprovalPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Direct Grant Form State
+  // Direct Grant Form State (Mendukung Bulk Multi-Santri)
   const [showGrantModal, setShowGrantModal] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
   const [grantStartDate, setGrantStartDate] = useState("");
   const [grantEndDate, setGrantEndDate] = useState("");
   const [grantReason, setGrantReason] = useState("");
   const [grantDurationHours, setGrantDurationHours] = useState(24);
   const [submittingGrant, setSubmittingGrant] = useState(false);
+
+  // Batas tanggal bulan berjalan untuk Guru
+  const today = new Date();
+  const currentMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonthMinDate = `${currentMonthPrefix}-01`;
 
   // Reject Modal State
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -48,7 +54,7 @@ export function TeacherYaumiyahApprovalPage() {
       setPage(res.meta?.page || 1);
       if (studs.length > 0 && students.length === 0) {
         setStudents(studs);
-        if (!selectedStudentId) setSelectedStudentId(studs[0].id);
+        if (selectedStudentIds.length === 0) setSelectedStudentIds([studs[0].id]);
       }
     } catch (err: any) {
       setToast({ message: err.message || "Gagal memuat data", variant: "warning" });
@@ -91,20 +97,32 @@ export function TeacherYaumiyahApprovalPage() {
   }
 
   async function handleDirectGrant() {
-    if (!selectedStudentId || !grantStartDate || !grantEndDate) {
-      setToast({ message: "Lengkapi siswa dan tanggal", variant: "warning" });
+    if (selectedStudentIds.length === 0 || !grantStartDate || !grantEndDate) {
+      setToast({ message: "Pilih minimal satu santri dan lengkapi tanggal", variant: "warning" });
+      return;
+    }
+    if (grantStartDate > grantEndDate) {
+      setToast({ message: "Tanggal awal tidak boleh lebih besar dari tanggal akhir", variant: "warning" });
+      return;
+    }
+    if (!isKoor && grantStartDate.slice(0, 7) < currentMonthPrefix) {
+      setToast({
+        message: "Guru hanya dapat membuka akses untuk bulan berjalan. Untuk bulan lalu, hubungi Koordinator TTQ.",
+        variant: "warning",
+      });
       return;
     }
     setSubmittingGrant(true);
     try {
-      await api.directGrantYaumiyahAccess({
-        studentId: selectedStudentId,
+      const res = await api.directGrantYaumiyahAccessBulk({
+        studentIds: selectedStudentIds,
         startDate: grantStartDate,
         endDate: grantEndDate,
         reason: grantReason.trim() || undefined,
         durationHours: Number(grantDurationHours) || 24,
       });
-      setToast({ message: "Akses susulan berhasil dibuka langsung", variant: "success" });
+      const count = res?.count || selectedStudentIds.length;
+      setToast({ message: `Akses susulan untuk ${count} santri berhasil dibuka langsung`, variant: "success" });
       setShowGrantModal(false);
       setGrantStartDate("");
       setGrantEndDate("");
@@ -316,29 +334,135 @@ export function TeacherYaumiyahApprovalPage() {
         </div>
       )}
 
-      {/* Direct Grant Modal */}
+      {/* Direct Grant Modal (Bisa untuk satu maupun banyak santri sekaligus) */}
       {showGrantModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
-            <h3 className="text-base font-bold text-brand-navy">Buka Akses Susulan Langsung</h3>
-            <p className="mt-1 text-xs text-brand-text-muted">
-              Buka izin input yaumiyah tanpa menunggu permohonan siswa.
-            </p>
-
-            <div className="mt-3 space-y-3">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto space-y-3">
+            <div className="flex items-start justify-between">
               <div>
-                <label className="text-[11px] font-bold text-brand-navy">Siswa</label>
-                <select
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-brand-line bg-gray-50/50 p-2 text-xs font-semibold text-brand-navy outline-none"
-                >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.className || "Kelas TTQ"})
-                    </option>
-                  ))}
-                </select>
+                <h3 className="text-base font-bold text-brand-navy">Buka Akses Susulan Langsung</h3>
+                <p className="mt-0.5 text-xs text-brand-text-muted">
+                  Buka izin input yaumiyah tanpa menunggu permohonan siswa.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGrantModal(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-navy"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Callout Kebijakan Tanggal */}
+            {!isKoor ? (
+              <p className="text-[11px] text-amber-800 bg-amber-50 rounded-xl p-2.5 border border-amber-200">
+                <strong>Kebijakan Guru:</strong> Hanya dapat membuka akses susulan untuk <strong>bulan berjalan ({currentMonthPrefix})</strong> pada santri kelas binaan. Pembukaan bulan lalu hanya dapat melalui Koordinator TTQ.
+              </p>
+            ) : (
+              <p className="text-[11px] text-emerald-800 bg-emerald-50 rounded-xl p-2.5 border border-emerald-200">
+                <strong>Mode Koordinator:</strong> Anda memiliki kendali penuh membuka akses untuk tanggal kapan pun dan santri mana pun.
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {/* Pilihan Multi-Santri */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-brand-navy">Pilih Santri</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-brand-cyan bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                      {selectedStudentIds.length} Santri Terpilih
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedStudentIds.length === students.length) {
+                          setSelectedStudentIds([]);
+                        } else {
+                          setSelectedStudentIds(students.map((s) => s.id));
+                        }
+                      }}
+                      className="text-[10px] font-bold text-brand-cyan hover:underline"
+                    >
+                      {selectedStudentIds.length === students.length ? "Batal Semua" : "Pilih Semua"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pencarian Santri */}
+                <div className="relative mb-1.5">
+                  <input
+                    type="text"
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    placeholder="Cari nama santri atau kelas..."
+                    className="w-full rounded-xl border border-brand-line bg-gray-50/50 pl-8 pr-3 py-1.5 text-xs text-brand-navy outline-none focus:border-brand-cyan"
+                  />
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                </div>
+
+                {/* Daftar Checkbox Santri */}
+                <div className="max-h-36 overflow-y-auto rounded-xl border border-brand-line/70 bg-gray-50/30 p-2 space-y-1 divide-y divide-brand-line/30">
+                  {(() => {
+                    const q = studentSearch.toLowerCase();
+                    const filteredList = students.filter(
+                      (s) =>
+                        s.name.toLowerCase().includes(q) ||
+                        (s.className && s.className.toLowerCase().includes(q))
+                    );
+
+                    // Urutkan: yang tercentang di atas
+                    const sortedList = [...filteredList].sort((a, b) => {
+                      const aChecked = selectedStudentIds.includes(a.id);
+                      const bChecked = selectedStudentIds.includes(b.id);
+                      if (aChecked && !bChecked) return -1;
+                      if (!aChecked && bChecked) return 1;
+                      return a.name.localeCompare(b.name);
+                    });
+
+                    if (sortedList.length === 0) {
+                      return (
+                        <p className="py-2 text-center text-xs text-brand-text-muted">
+                          Tidak ada santri ditemukan
+                        </p>
+                      );
+                    }
+
+                    return sortedList.map((s) => {
+                      const isChecked = selectedStudentIds.includes(s.id);
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer transition-colors ${
+                            isChecked ? "bg-cyan-50/70 border border-cyan-200" : "hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedStudentIds([...selectedStudentIds, s.id]);
+                                } else {
+                                  setSelectedStudentIds(selectedStudentIds.filter((id) => id !== s.id));
+                                }
+                              }}
+                              className="h-3.5 w-3.5 rounded border-brand-line text-brand-cyan focus:ring-brand-cyan"
+                            />
+                            <div>
+                              <p className={`text-xs font-bold ${isChecked ? "text-cyan-900" : "text-brand-navy"}`}>
+                                {s.name}
+                              </p>
+                              <p className="text-[10px] text-brand-text-muted">{s.className || "Kelas TTQ"}</p>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -346,6 +470,7 @@ export function TeacherYaumiyahApprovalPage() {
                   <label className="text-[11px] font-bold text-brand-navy">Dari Tanggal</label>
                   <input
                     type="date"
+                    min={!isKoor ? currentMonthMinDate : undefined}
                     value={grantStartDate}
                     onChange={(e) => setGrantStartDate(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy"
@@ -355,6 +480,7 @@ export function TeacherYaumiyahApprovalPage() {
                   <label className="text-[11px] font-bold text-brand-navy">Sampai Tanggal</label>
                   <input
                     type="date"
+                    min={!isKoor ? currentMonthMinDate : undefined}
                     value={grantEndDate}
                     onChange={(e) => setGrantEndDate(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy"
@@ -379,14 +505,14 @@ export function TeacherYaumiyahApprovalPage() {
                 <textarea
                   value={grantReason}
                   onChange={(e) => setGrantReason(e.target.value)}
-                  placeholder="Contoh: Dispensasi rawat inap RS..."
+                  placeholder="Contoh: Dispensasi kegiatan mukhoyam/kemah atau sakit..."
                   rows={2}
                   className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy"
                 />
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2 pt-2 border-t border-brand-line/60">
               <Button
                 type="button"
                 variant="outline"
@@ -399,10 +525,14 @@ export function TeacherYaumiyahApprovalPage() {
               <Button
                 type="button"
                 onClick={handleDirectGrant}
-                disabled={submittingGrant}
+                disabled={submittingGrant || selectedStudentIds.length === 0}
                 className="flex-1 rounded-xl bg-brand-cyan font-bold text-white hover:bg-brand-cyan-dark"
               >
-                {submittingGrant ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buka Akses"}
+                {submittingGrant ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  `Buka Akses (${selectedStudentIds.length})`
+                )}
               </Button>
             </div>
           </div>

@@ -3,6 +3,8 @@ import type {
   PasswordResetRequestWithUser,
 } from "../entities/PasswordResetRequest";
 
+export type { PasswordResetRequestWithUser };
+
 export interface IPasswordResetRequestRepository {
   create(entity: PasswordResetRequestEntity): Promise<PasswordResetRequestEntity>;
   findById(id: string, schoolId: string): Promise<PasswordResetRequestEntity | null>;

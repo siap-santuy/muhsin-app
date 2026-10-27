@@ -10,6 +10,7 @@ import type { RequestYaumiyahAccessUseCase } from "../application/use-cases/Requ
 import type { ApproveYaumiyahAccessUseCase } from "../application/use-cases/ApproveYaumiyahAccessUseCase";
 import type { RejectYaumiyahAccessUseCase } from "../application/use-cases/RejectYaumiyahAccessUseCase";
 import type { GrantYaumiyahAccessUseCase } from "../application/use-cases/GrantYaumiyahAccessUseCase";
+import type { GrantBulkYaumiyahAccessUseCase } from "../application/use-cases/GrantBulkYaumiyahAccessUseCase";
 import type { IDailyIbadahRepository } from "../domain/repositories/IDailyIbadahRepository";
 import type { IYaumiyahAccessRequestRepository } from "../domain/repositories/IYaumiyahAccessRequestRepository";
 import { isWithinDirectWindow, getDaysDiffFromToday } from "../domain/services/YaumiyahWindowService";
@@ -64,6 +65,14 @@ const directGrantBodySchema = z.object({
   durationHours: z.number().int().min(1).max(168).optional(),
 });
 
+const directGrantBulkBodySchema = z.object({
+  studentIds: z.array(z.string().uuid()).min(1).max(50),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  reason: z.string().optional(),
+  durationHours: z.number().int().min(1).max(168).optional(),
+});
+
 const rejectAccessBodySchema = z.object({
   rejectionNote: z.string().optional(),
 });
@@ -78,6 +87,7 @@ export interface DailyIbadahRoutesDeps {
   approveAccessUseCase?: ApproveYaumiyahAccessUseCase;
   rejectAccessUseCase?: RejectYaumiyahAccessUseCase;
   grantAccessUseCase?: GrantYaumiyahAccessUseCase;
+  grantBulkAccessUseCase?: GrantBulkYaumiyahAccessUseCase;
   resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>;
 }
 
@@ -318,7 +328,7 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
       return c.json({ data: null, error: { code: "NOT_SUPPORTED", message: "Fitur tidak tersedia" }, meta: null }, 501);
     }
     const user = c.get("user");
-    const id = c.req.param("id");
+    const id = c.req.param("id") ?? "";
 
     try {
       const entity = await deps.approveAccessUseCase.execute({
@@ -342,7 +352,7 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
       return c.json({ data: null, error: { code: "NOT_SUPPORTED", message: "Fitur tidak tersedia" }, meta: null }, 501);
     }
     const user = c.get("user");
-    const id = c.req.param("id");
+    const id = c.req.param("id") ?? "";
     const body = await c.req.json().catch(() => ({}));
     const parsed = rejectAccessBodySchema.safeParse(body);
 
@@ -391,6 +401,42 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
         granterRole: user.role,
       });
       return c.json({ data: entity, error: null, meta: null }, 201);
+    } catch (err: any) {
+      return c.json(
+        { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },
+        422
+      );
+    }
+  });
+
+  // POST /api/daily-ibadah/direct-grant-bulk (Teacher/Koor bulk direct grant)
+  app.post("/direct-grant-bulk", requireRole("teacher", "koordinator_ttq"), async (c) => {
+    if (!deps.grantBulkAccessUseCase) {
+      return c.json({ data: null, error: { code: "NOT_SUPPORTED", message: "Fitur tidak tersedia" }, meta: null }, 501);
+    }
+    const user = c.get("user");
+    const body = await c.req.json();
+    const parsed = directGrantBulkBodySchema.safeParse(body);
+
+    if (!parsed.success) {
+      return c.json(
+        { data: null, error: { code: "VALIDATION_ERROR", details: parsed.error.format() }, meta: null },
+        400
+      );
+    }
+
+    try {
+      const result = await deps.grantBulkAccessUseCase.execute({
+        schoolId: user.schoolId,
+        studentIds: parsed.data.studentIds,
+        startDate: parsed.data.startDate,
+        endDate: parsed.data.endDate,
+        reason: parsed.data.reason,
+        durationHours: parsed.data.durationHours,
+        granterId: user.userId,
+        granterRole: user.role,
+      });
+      return c.json({ data: result, error: null, meta: null }, 201);
     } catch (err: any) {
       return c.json(
         { data: null, error: { code: "BUSINESS_ERROR", message: err.message }, meta: null },

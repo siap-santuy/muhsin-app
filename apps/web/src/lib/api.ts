@@ -392,6 +392,16 @@ class ApiClient {
     return this.request("POST", `/daily-ibadah/direct-grant`, data);
   }
 
+  async directGrantYaumiyahAccessBulk(data: {
+    studentIds: string[];
+    startDate: string;
+    endDate: string;
+    reason?: string;
+    durationHours?: number;
+  }) {
+    return this.request<{ count: number; entities: any[] }>("POST", `/daily-ibadah/direct-grant-bulk`, data);
+  }
+
   async createSetoran(input: CreateSetoranInput) {
     try {
       return await this.request("POST", `/setoran`, input);

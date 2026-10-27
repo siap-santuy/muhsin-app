@@ -122,7 +122,7 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     requireRole("koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const id = c.req.param("id");
+      const id = c.req.param("id") ?? "";
       const body = await c.req.json();
       const parsed = updatePeriodBodySchema.safeParse(body);
 
@@ -144,7 +144,7 @@ export function createMunaqosahRoutes(deps: MunaqosahRoutesDeps) {
     requireRole("koordinator_ttq"),
     async (c) => {
       const user = c.get("user");
-      const id = c.req.param("id");
+      const id = c.req.param("id") ?? "";
       const body = await c.req.json();
       const parsed = publishPeriodBodySchema.safeParse(body);
 

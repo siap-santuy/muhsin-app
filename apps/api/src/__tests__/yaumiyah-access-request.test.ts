@@ -17,6 +17,7 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
     findPendingOverlap: vi.fn().mockResolvedValue(null),
     listByStudent: vi.fn().mockResolvedValue([]),
     listPendingBySchool: vi.fn().mockResolvedValue([]),
+    listPaginated: vi.fn().mockResolvedValue({ data: [], total: 0, page: 1, limit: 10, totalPages: 0 }),
     update: vi.fn().mockImplementation(async (e) => e),
   };
 

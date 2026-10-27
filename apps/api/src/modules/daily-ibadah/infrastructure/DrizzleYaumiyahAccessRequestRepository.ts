@@ -6,7 +6,7 @@ import {
   studentClassEnrollment,
   studentTeacherMapping,
 } from "../../../db/schema";
-import { eq, and, lte, gte, desc, inArray, sql, count } from "drizzle-orm";
+import { eq, and, lte, gte, desc, inArray, count } from "drizzle-orm";
 import type {
   IYaumiyahAccessRequestRepository,
   YaumiyahAccessRequestWithStudent,
@@ -223,6 +223,65 @@ export class DrizzleYaumiyahAccessRequestRepository implements IYaumiyahAccessRe
       .returning();
 
     return this.toDomain(rows[0]);
+  }
+
+  async createBulk(entities: YaumiyahAccessRequestEntity[]): Promise<YaumiyahAccessRequestEntity[]> {
+    if (entities.length === 0) return [];
+    const values = entities.map((entity) => ({
+      id: entity.id,
+      schoolId: entity.schoolId,
+      studentId: entity.studentId,
+      startDate: entity.startDate,
+      endDate: entity.endDate,
+      reason: entity.reason,
+      status: entity.status,
+      reviewedBy: entity.reviewedBy,
+      reviewedAt: entity.reviewedAt,
+      rejectionNote: entity.rejectionNote,
+      expiresAt: entity.expiresAt,
+      isDirectGrant: entity.isDirectGrant,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+    }));
+
+    const rows = await this.db
+      .insert(yaumiyahAccessRequests)
+      .values(values)
+      .returning();
+
+    return rows.map((r) => this.toDomain(r));
+  }
+
+  async isStudentAssignedToTeacher(studentId: string, teacherId: string, schoolId: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ id: studentTeacherMapping.id })
+      .from(studentTeacherMapping)
+      .where(
+        and(
+          eq(studentTeacherMapping.schoolId, schoolId),
+          eq(studentTeacherMapping.teacherId, teacherId),
+          eq(studentTeacherMapping.studentId, studentId)
+        )
+      )
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  async filterStudentsAssignedToTeacher(studentIds: string[], teacherId: string, schoolId: string): Promise<string[]> {
+    if (studentIds.length === 0) return [];
+    const rows = await this.db
+      .select({ studentId: studentTeacherMapping.studentId })
+      .from(studentTeacherMapping)
+      .where(
+        and(
+          eq(studentTeacherMapping.schoolId, schoolId),
+          eq(studentTeacherMapping.teacherId, teacherId),
+          inArray(studentTeacherMapping.studentId, studentIds)
+        )
+      );
+
+    return rows.map((r) => r.studentId);
   }
 
   private toDomain(row: typeof yaumiyahAccessRequests.$inferSelect): YaumiyahAccessRequestEntity {

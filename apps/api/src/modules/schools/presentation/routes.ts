@@ -330,7 +330,7 @@ export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
       return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
     }
     const user = c.get("user");
-    const requestId = c.req.param("id");
+    const requestId = c.req.param("id") ?? "";
     const reqItem = await deps.passwordResetRequestRepo.findById(requestId, user.schoolId);
     if (!reqItem) {
       return c.json({ data: null, error: { code: "NOT_FOUND", message: "Permohonan tidak ditemukan" }, meta: null }, 404);
@@ -396,7 +396,7 @@ export function createSchoolAdminRoutes(deps: SchoolAdminRoutesDeps) {
       return c.json({ data: null, error: { message: "Fitur reset belum tersedia" }, meta: null }, 500);
     }
     const user = c.get("user");
-    const requestId = c.req.param("id");
+    const requestId = c.req.param("id") ?? "";
     const body = await c.req.json().catch(() => ({}));
     const reqItem = await deps.passwordResetRequestRepo.findById(requestId, user.schoolId);
     if (!reqItem) {

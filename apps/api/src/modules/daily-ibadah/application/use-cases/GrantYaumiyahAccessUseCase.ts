@@ -1,5 +1,8 @@
 import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
 import type { YaumiyahAccessRequestEntity } from "../../domain/entities/YaumiyahAccessRequest";
+import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
+import type { SendPushToUserUseCase } from "../../../notifications/application/use-cases/SendPushToUserUseCase";
+import { assertYaumiyahGrantDatePolicy } from "../../domain/services/YaumiyahAccessPolicy";
 
 export interface GrantYaumiyahAccessInput {
   schoolId: string;
@@ -10,18 +13,32 @@ export interface GrantYaumiyahAccessInput {
   durationHours?: number; // default 24
   granterId: string;
   granterRole: string;
+  todayDate?: Date;
 }
 
 export class GrantYaumiyahAccessUseCase {
-  constructor(private readonly repo: IYaumiyahAccessRequestRepository) {}
+  constructor(
+    private readonly repo: IYaumiyahAccessRequestRepository,
+    private readonly notificationRepo?: INotificationRepository,
+    private readonly pushToUser?: SendPushToUserUseCase
+  ) {}
 
   async execute(input: GrantYaumiyahAccessInput): Promise<YaumiyahAccessRequestEntity> {
     if (input.granterRole !== "teacher" && input.granterRole !== "koordinator_ttq") {
       throw new Error("Hanya guru atau koordinator yang berwenang memberikan akses langsung");
     }
 
-    if (input.startDate > input.endDate) {
-      throw new Error("Tanggal awal tidak boleh lebih besar dari tanggal akhir");
+    assertYaumiyahGrantDatePolicy(input.granterRole, input.startDate, input.endDate, input.todayDate);
+
+    if (input.granterRole === "teacher" && this.repo.isStudentAssignedToTeacher) {
+      const isAssigned = await this.repo.isStudentAssignedToTeacher(
+        input.studentId,
+        input.granterId,
+        input.schoolId
+      );
+      if (!isAssigned) {
+        throw new Error("Guru hanya dapat membuka akses untuk santri di kelas binaan");
+      }
     }
 
     const now = new Date();
@@ -44,6 +61,46 @@ export class GrantYaumiyahAccessUseCase {
       updatedAt: now,
     };
 
-    return this.repo.create(entity);
+    const saved = await this.repo.create(entity);
+
+    const dateRange =
+      input.startDate === input.endDate
+        ? input.startDate
+        : `${input.startDate} s.d ${input.endDate}`;
+    const title = "Akses Izin Susulan Yaumiyah Dibuka";
+    const message = `Akses susulan yaumiyah tanggal ${dateRange} telah dibuka selama ${durationHours} jam. Segera isi ibadahmu!`;
+
+    if (this.notificationRepo) {
+      try {
+        await this.notificationRepo.createNotification({
+          schoolId: input.schoolId,
+          userId: input.studentId,
+          title,
+          message,
+          type: "yaumiyah",
+          isRead: false,
+        });
+      } catch {
+        // Notif best-effort
+      }
+    }
+
+    if (this.pushToUser) {
+      try {
+        await this.pushToUser.execute({
+          userId: input.studentId,
+          schoolId: input.schoolId,
+          payload: {
+            title,
+            body: message,
+            url: "#/yaumiyah",
+          },
+        });
+      } catch {
+        // Push best-effort
+      }
+    }
+
+    return saved;
   }
 }
