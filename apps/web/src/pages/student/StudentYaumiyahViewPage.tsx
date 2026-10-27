@@ -334,6 +334,19 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
             </div>
           ) : (
             <>
+              {/* Alert jika draft berada pada tanggal terkunci */}
+              {ibadah?.status === "draft" && !windowStatus?.isOpen && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Lock className="h-4 w-4 text-amber-600" />
+                    <span>Draft Terkunci</span>
+                  </div>
+                  <p className="text-[11px] text-amber-700">
+                    Draft ini tersimpan pada tanggal yang telah melewati batas 1 hari. Ajukan izin susulan agar dapat mengubah atau mengirim ibadah tanggal ini.
+                  </p>
+                </div>
+              )}
+
               {/* Tilawah Qur'an Card */}
               <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -495,25 +508,45 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
       {/* Sticky Bottom Actions */}
       <div className="shrink-0 flex gap-3 border-t border-brand-line bg-white px-4 py-3 shadow-sm">
         {ibadah?.status === "draft" ? (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleEdit}
-              disabled={submitting}
-              className="h-11 flex-1 rounded-xl border-brand-amber font-bold text-brand-amber hover:bg-brand-amber/10"
-            >
-              UBAH
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting || !ibadah}
-              className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "KIRIM"}
-            </Button>
-          </>
+          windowStatus?.isOpen ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleEdit}
+                disabled={submitting}
+                className="h-11 flex-1 rounded-xl border-brand-amber font-bold text-brand-amber hover:bg-brand-amber/10"
+              >
+                UBAH
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !ibadah}
+                className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "KIRIM"}
+              </Button>
+            </>
+          ) : (
+            <div className="flex w-full gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setReqStartDate(selectedDate); setReqEndDate(selectedDate); setShowRequestModal(true); }}
+                className="h-11 flex-1 rounded-xl border-brand-cyan font-bold text-brand-cyan hover:bg-brand-cyan/10"
+              >
+                Ajukan Buka Akses
+              </Button>
+              <Button
+                type="button"
+                onClick={handleBack}
+                className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+              >
+                KEMBALI
+              </Button>
+            </div>
+          )
         ) : (
           <Button
             type="button"

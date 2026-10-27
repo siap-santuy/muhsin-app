@@ -153,12 +153,17 @@ export function KoorStudentPage() {
     }
   }
 
+  // Eager load pada saat komponen dimuat pertama kali
+  useEffect(() => {
+    loadParents();
+  }, []);
+
   useEffect(() => {
     load();
   }, [classFilter, activityDate]);
 
   useEffect(() => {
-    if (activeTab === "parents") {
+    if (activeTab === "parents" && parents.length === 0) {
       loadParents();
     }
   }, [activeTab]);

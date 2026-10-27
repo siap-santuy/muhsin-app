@@ -1,10 +1,15 @@
 ﻿import { useState, useEffect } from "react";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock, Loader2, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, Plus, Search, UserCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { KoorShell } from "@/components/layout/KoorShell";
+
+// Cache santri di memory browser selama 3 menit agar transisi modal instan tanpa re-fetch berulang
+let cachedStudents: any[] | null = null;
+let cachedStudentsTime = 0;
+const STUDENTS_CACHE_TTL = 3 * 60 * 1000;
 
 export function TeacherYaumiyahApprovalPage() {
   const user = useAuthStore((s) => s.user);
@@ -21,20 +26,26 @@ export function TeacherYaumiyahApprovalPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Direct Grant Form State (Mendukung Bulk Multi-Santri)
+  // Direct Grant Form State (Mendukung Bulk Multi-Santri dengan Combobox Terbuka/Tutup)
   const [showGrantModal, setShowGrantModal] = useState(false);
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [studentSearch, setStudentSearch] = useState("");
+  const [modalClassFilter, setModalClassFilter] = useState("all");
   const [grantStartDate, setGrantStartDate] = useState("");
   const [grantEndDate, setGrantEndDate] = useState("");
   const [grantReason, setGrantReason] = useState("");
   const [grantDurationHours, setGrantDurationHours] = useState(24);
   const [submittingGrant, setSubmittingGrant] = useState(false);
 
-  // Batas tanggal bulan berjalan untuk Guru
+  // Batas tanggal: tidak boleh melebihi hari ini, guru dibatasi bulan berjalan
   const today = new Date();
-  const currentMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const currentMonthPrefix = `${yyyy}-${mm}`;
   const currentMonthMinDate = `${currentMonthPrefix}-01`;
 
   // Reject Modal State
@@ -44,17 +55,20 @@ export function TeacherYaumiyahApprovalPage() {
   async function loadData(targetPage = page, status = activeTab === "pending" ? "pending" : "all") {
     setLoading(true);
     try {
+      const now = Date.now();
+      const needFetchStudents = !cachedStudents || now - cachedStudentsTime > STUDENTS_CACHE_TTL;
       const [res, studs] = await Promise.all([
         api.getYaumiyahAccessRequests({ status: status as any, page: targetPage, limit: 10 }),
-        students.length === 0 ? api.getStudents().catch(() => []) : Promise.resolve(students),
+        needFetchStudents ? api.getStudents().catch(() => []) : Promise.resolve(cachedStudents!),
       ]);
       setRequests(res.data || []);
       setTotalPages(res.meta?.totalPages || 1);
       setTotalItems(res.meta?.total || 0);
       setPage(res.meta?.page || 1);
-      if (studs.length > 0 && students.length === 0) {
+      if (studs && studs.length > 0) {
+        cachedStudents = studs;
+        cachedStudentsTime = now;
         setStudents(studs);
-        if (selectedStudentIds.length === 0) setSelectedStudentIds([studs[0].id]);
       }
     } catch (err: any) {
       setToast({ message: err.message || "Gagal memuat data", variant: "warning" });
@@ -103,6 +117,13 @@ export function TeacherYaumiyahApprovalPage() {
     }
     if (grantStartDate > grantEndDate) {
       setToast({ message: "Tanggal awal tidak boleh lebih besar dari tanggal akhir", variant: "warning" });
+      return;
+    }
+    if (grantStartDate > todayStr || grantEndDate > todayStr) {
+      setToast({
+        message: "Tidak dapat membuka akses susulan untuk tanggal masa depan (> hari ini)",
+        variant: "warning",
+      });
       return;
     }
     if (!isKoor && grantStartDate.slice(0, 7) < currentMonthPrefix) {
@@ -167,10 +188,14 @@ export function TeacherYaumiyahApprovalPage() {
         <Button
           type="button"
           size="sm"
-          onClick={() => setShowGrantModal(true)}
+          onClick={() => {
+            setSelectedStudentIds([]);
+            setIsStudentDropdownOpen(false);
+            setShowGrantModal(true);
+          }}
           className="h-8 rounded-lg bg-brand-cyan px-3 text-xs font-bold text-white hover:bg-brand-cyan-dark"
         >
-          <Plus className="mr-1 h-3.5 w-3.5" /> Buka Akses Manual
+          <Plus className="mr-1 h-3.5 w-3.5" /> Buka Akses Massal
         </Button>
       </div>
 
@@ -366,103 +391,172 @@ export function TeacherYaumiyahApprovalPage() {
             )}
 
             <div className="space-y-3">
-              {/* Pilihan Multi-Santri */}
+              {/* Pilihan Multi-Santri dengan Combobox Terbuka/Tutup */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-brand-navy">Pilih Santri</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-brand-cyan bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
-                      {selectedStudentIds.length} Santri Terpilih
+                  <label className="text-xs font-bold text-brand-navy">Pilih Santri Target</label>
+                  <span className="text-[10px] font-bold text-brand-cyan bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                    {selectedStudentIds.length} Santri Dipilih
+                  </span>
+                </div>
+
+                {/* Combobox Trigger Button (Collapsible) */}
+                <button
+                  type="button"
+                  onClick={() => setIsStudentDropdownOpen(!isStudentDropdownOpen)}
+                  className="flex w-full items-center justify-between rounded-xl border border-brand-line bg-gray-50/70 p-2.5 text-xs text-brand-navy hover:bg-white focus:border-brand-cyan transition-all text-left"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <UserCheck className="h-4 w-4 text-brand-cyan shrink-0" />
+                    <span className="font-semibold truncate">
+                      {selectedStudentIds.length === 0
+                        ? "Klik untuk memilih santri..."
+                        : selectedStudentIds.length === students.length
+                        ? `Semua Santri (${students.length} anak)`
+                        : `${selectedStudentIds.length} santri terpilih`}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedStudentIds.length === students.length) {
-                          setSelectedStudentIds([]);
-                        } else {
-                          setSelectedStudentIds(students.map((s) => s.id));
-                        }
-                      }}
-                      className="text-[10px] font-bold text-brand-cyan hover:underline"
-                    >
-                      {selectedStudentIds.length === students.length ? "Batal Semua" : "Pilih Semua"}
-                    </button>
                   </div>
-                </div>
-
-                {/* Pencarian Santri */}
-                <div className="relative mb-1.5">
-                  <input
-                    type="text"
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    placeholder="Cari nama santri atau kelas..."
-                    className="w-full rounded-xl border border-brand-line bg-gray-50/50 pl-8 pr-3 py-1.5 text-xs text-brand-navy outline-none focus:border-brand-cyan"
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 shrink-0 ${
+                      isStudentDropdownOpen ? "rotate-180" : ""
+                    }`}
                   />
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                </div>
+                </button>
 
-                {/* Daftar Checkbox Santri */}
-                <div className="max-h-36 overflow-y-auto rounded-xl border border-brand-line/70 bg-gray-50/30 p-2 space-y-1 divide-y divide-brand-line/30">
-                  {(() => {
-                    const q = studentSearch.toLowerCase();
-                    const filteredList = students.filter(
-                      (s) =>
-                        s.name.toLowerCase().includes(q) ||
-                        (s.className && s.className.toLowerCase().includes(q))
-                    );
+                {/* Collapsible Panel Dropdown */}
+                {isStudentDropdownOpen && (
+                  <div className="mt-1.5 rounded-2xl border border-brand-line bg-white p-3 shadow-md space-y-2 animate-in fade-in zoom-in-95 duration-100">
+                    {/* Search & Class Filter */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          placeholder="Cari nama santri..."
+                          className="w-full rounded-xl border border-brand-line bg-gray-50/50 pl-8 pr-3 py-1.5 text-xs text-brand-navy outline-none focus:border-brand-cyan"
+                        />
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                      </div>
+                      {(() => {
+                        const classNames = Array.from(new Set(students.map((s) => s.className).filter(Boolean))) as string[];
+                        if (classNames.length === 0) return null;
+                        return (
+                          <select
+                            value={modalClassFilter}
+                            onChange={(e) => setModalClassFilter(e.target.value)}
+                            className="rounded-xl border border-brand-line bg-gray-50/50 px-2 py-1.5 text-xs font-semibold text-brand-navy outline-none focus:border-brand-cyan"
+                          >
+                            <option value="all">Semua Kelas</option>
+                            {classNames.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
+                    </div>
 
-                    // Urutkan: yang tercentang di atas
-                    const sortedList = [...filteredList].sort((a, b) => {
-                      const aChecked = selectedStudentIds.includes(a.id);
-                      const bChecked = selectedStudentIds.includes(b.id);
-                      if (aChecked && !bChecked) return -1;
-                      if (!aChecked && bChecked) return 1;
-                      return a.name.localeCompare(b.name);
-                    });
+                    {/* Quick Select Actions */}
+                    {(() => {
+                      const q = studentSearch.toLowerCase();
+                      const currentFiltered = students.filter((s) => {
+                        const matchClass = modalClassFilter === "all" || s.className === modalClassFilter;
+                        const matchName = s.name.toLowerCase().includes(q) || (s.className && s.className.toLowerCase().includes(q));
+                        return matchClass && matchName;
+                      });
 
-                    if (sortedList.length === 0) {
+                      const allFilteredSelected =
+                        currentFiltered.length > 0 &&
+                        currentFiltered.every((s) => selectedStudentIds.includes(s.id));
+
                       return (
-                        <p className="py-2 text-center text-xs text-brand-text-muted">
-                          Tidak ada santri ditemukan
-                        </p>
-                      );
-                    }
-
-                    return sortedList.map((s) => {
-                      const isChecked = selectedStudentIds.includes(s.id);
-                      return (
-                        <label
-                          key={s.id}
-                          className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer transition-colors ${
-                            isChecked ? "bg-cyan-50/70 border border-cyan-200" : "hover:bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedStudentIds([...selectedStudentIds, s.id]);
-                                } else {
-                                  setSelectedStudentIds(selectedStudentIds.filter((id) => id !== s.id));
-                                }
-                              }}
-                              className="h-3.5 w-3.5 rounded border-brand-line text-brand-cyan focus:ring-brand-cyan"
-                            />
-                            <div>
-                              <p className={`text-xs font-bold ${isChecked ? "text-cyan-900" : "text-brand-navy"}`}>
-                                {s.name}
-                              </p>
-                              <p className="text-[10px] text-brand-text-muted">{s.className || "Kelas TTQ"}</p>
+                        <>
+                          <div className="flex items-center justify-between text-[11px] px-0.5 pt-0.5">
+                            <span className="text-brand-text-muted">
+                              {currentFiltered.length} santri ditemukan
+                            </span>
+                            <div className="flex gap-2 font-bold">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const filteredIds = currentFiltered.map((s) => s.id);
+                                  if (allFilteredSelected) {
+                                    setSelectedStudentIds(selectedStudentIds.filter((id) => !filteredIds.includes(id)));
+                                  } else {
+                                    setSelectedStudentIds(Array.from(new Set([...selectedStudentIds, ...filteredIds])));
+                                  }
+                                }}
+                                className="text-brand-cyan hover:underline"
+                              >
+                                {allFilteredSelected ? "Batal Semua" : `Pilih Semua (${currentFiltered.length})`}
+                              </button>
                             </div>
                           </div>
-                        </label>
+
+                          {/* List Checkbox Santri */}
+                          <div className="max-h-44 overflow-y-auto rounded-xl border border-brand-line/60 bg-gray-50/40 p-1.5 space-y-1 divide-y divide-brand-line/30">
+                            {currentFiltered.length === 0 ? (
+                              <p className="py-3 text-center text-xs text-brand-text-muted">
+                                Tidak ada santri yang cocok
+                              </p>
+                            ) : (
+                              currentFiltered.map((s) => {
+                                const isChecked = selectedStudentIds.includes(s.id);
+                                return (
+                                  <label
+                                    key={s.id}
+                                    className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer transition-colors ${
+                                      isChecked ? "bg-cyan-50/80 border border-cyan-200" : "hover:bg-white"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedStudentIds([...selectedStudentIds, s.id]);
+                                          } else {
+                                            setSelectedStudentIds(selectedStudentIds.filter((id) => id !== s.id));
+                                          }
+                                        }}
+                                        className="h-3.5 w-3.5 rounded border-brand-line text-brand-cyan focus:ring-brand-cyan"
+                                      />
+                                      <div className="truncate">
+                                        <p className={`text-xs font-bold truncate ${isChecked ? "text-cyan-900" : "text-brand-navy"}`}>
+                                          {s.name}
+                                        </p>
+                                        <p className="text-[10px] text-brand-text-muted">{s.className || "Kelas TTQ"}</p>
+                                      </div>
+                                    </div>
+                                    {isChecked && (
+                                      <span className="text-[9px] font-extrabold text-cyan-700 bg-cyan-100 px-1.5 py-0.5 rounded shrink-0">
+                                        Dipilih
+                                      </span>
+                                    )}
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
                       );
-                    });
-                  })()}
-                </div>
+                    })()}
+
+                    {/* Selesai Button to close dropdown */}
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsStudentDropdownOpen(false)}
+                        className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-gray-200"
+                      >
+                        Selesai Memilih
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -471,6 +565,7 @@ export function TeacherYaumiyahApprovalPage() {
                   <input
                     type="date"
                     min={!isKoor ? currentMonthMinDate : undefined}
+                    max={todayStr}
                     value={grantStartDate}
                     onChange={(e) => setGrantStartDate(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy"
@@ -481,6 +576,7 @@ export function TeacherYaumiyahApprovalPage() {
                   <input
                     type="date"
                     min={!isKoor ? currentMonthMinDate : undefined}
+                    max={todayStr}
                     value={grantEndDate}
                     onChange={(e) => setGrantEndDate(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy"

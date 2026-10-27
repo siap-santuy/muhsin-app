@@ -1,9 +1,39 @@
 [
   {
-    "version": "v1.5.0",
+    "version": "v1.5.1",
     "releaseDate": "27 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Perbaikan Proteksi Kunci Tanggal Yaumiyah Murid & Penyempurnaan UX Bulk Akses",
+    "summary": "Perbaikan bug form yaumiyah murid saat menggeser tanggal terkunci/terkirim (auto-redirect ke view mode), penguncian tanggal masa depan (> hari ini) di BE/FE, combobox collapsible santri dengan memory cache 3 menit, serta eager fetch jumlah total akun wali murid di tab Koordinator.",
+    "changes": [
+      {
+        "category": "bugfix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Form input yaumiyah murid otomatis terkunci dan dialihkan ke yaumiyah-view jika murid menggeser tanggal ke tanggal lampau yang terkunci atau sudah terkirim."
+      },
+      {
+        "category": "security",
+        "categoryLabel": "Otorisasi & Kebijakan",
+        "description": "Penguncian mutlak tanggal masa depan (> hari ini) pada pembukaan akses yaumiyah baik untuk Guru maupun Koordinator."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan UX",
+        "description": "Combobox pemilihan santri collapsible tertutup default tanpa auto-select santri pertama, dilengkapi filter kelas dan in-memory cache 3 menit."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan UX",
+        "description": "Tab Data Wali Murid di halaman Koordinator langsung menampilkan jumlah total riil sejak awal tanpa bernilai 0."
+      }
+    ]
+  },
+  {
+    "version": "v1.5.0",
+    "releaseDate": "27 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Buka Akses Susulan Yaumiyah Massal (Bulk), Kebijakan Tanggal Guru vs Koordinator, & Web Push",
     "summary": "Peningkatan kontrol izin susulan yaumiyah: guru dan koordinator dapat membuka akses susulan untuk banyak santri sekaligus (bulk direct-grant) dengan pencarian dan filter kelas, penegakan batasan tanggal bulan berjalan khusus guru (bulan lalu hanya melalui koordinator), validasi otorisasi santri binaan, serta integrasi Web Push Notification saat izin disetujui, ditolak, atau dibuka langsung.",
     "changes": [

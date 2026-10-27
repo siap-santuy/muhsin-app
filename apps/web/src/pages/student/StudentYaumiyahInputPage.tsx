@@ -85,6 +85,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
   const [rawatibState, setRawatibState] = useState<Record<string, boolean>>({});
   const [ibadahState, setIbadahState] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+  const [dateLoading, setDateLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
 
   // Sync if propInitialDate changes from route
@@ -136,8 +137,25 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
   useEffect(() => {
     // Reset or load existing data if available for this date
     async function loadDateData() {
+      setDateLoading(true);
       try {
-        const existing = await api.getDailyIbadah(selectedDate);
+        const [existing, winStatus] = await Promise.all([
+          api.getDailyIbadah(selectedDate).catch(() => null),
+          api.getDailyIbadahWindowStatus(selectedDate).catch(() => null),
+        ]);
+
+        // 1. Jika data tanggal ini sudah pernah terkirim (submitted), arahkan ke halaman view (read-only)
+        if (existing?.status === "submitted") {
+          window.location.hash = `#/yaumiyah-view?date=${selectedDate}`;
+          return;
+        }
+
+        // 2. Jika tanggal ini terkunci (di luar H dan H-1) dan tidak ada izin dispensasi aktif, arahkan ke view
+        if (winStatus && !winStatus.isOpen) {
+          window.location.hash = `#/yaumiyah-view?date=${selectedDate}`;
+          return;
+        }
+
         if (existing) {
           if (existing.sholatFardhu) {
             setSholatState({
@@ -198,6 +216,8 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
         setSurahEnd("");
         setAyatEnd("");
         setNotTilawah(false);
+      } finally {
+        setDateLoading(false);
       }
     }
     loadDateData();
@@ -435,6 +455,12 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
             maxDate={todayStr}
           />
 
+          {dateLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-cyan" />
+            </div>
+          ) : (
+            <>
           {/* Tilawah Section */}
           <section className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2">
@@ -707,6 +733,8 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
               ))}
             </div>
           </section>
+            </>
+          )}
         </div>
       </main>
 
@@ -716,7 +744,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
           type="button"
           variant="outline"
           onClick={handleSaveDraft}
-          disabled={loading}
+          disabled={loading || dateLoading}
           className="h-11 flex-1 rounded-xl border-brand-amber font-bold text-brand-amber hover:bg-brand-amber/10"
         >
           SIMPAN
@@ -724,7 +752,7 @@ export function StudentYaumiyahInputPage({ onBack, initialDate: propInitialDate 
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || dateLoading}
           className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "KIRIM"}

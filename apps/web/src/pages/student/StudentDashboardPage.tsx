@@ -310,7 +310,7 @@ export function StudentDashboardPage() {
               <p className="text-xs text-brand-text-muted truncate">
                 {target
                   ? `${target.surahStart}:${target.ayatStart} — ${target.surahEnd}:${target.ayatEnd}`
-                  : "Target Ritme: 2 Halaman / Bulan (10 Hal / Semester)"}
+                  : "Target Ritme: 2 Halaman / Bulan (10 Hal/Smt)"}
               </p>
             </div>
             <span className="shrink-0 rounded-lg bg-brand-cyan/15 px-2 py-1 text-[10px] font-bold text-brand-cyan-dark">

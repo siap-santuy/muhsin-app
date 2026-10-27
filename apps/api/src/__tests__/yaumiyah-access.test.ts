@@ -34,6 +34,16 @@ describe("Yaumiyah Access Date Policy & Role Permissions", () => {
       assertYaumiyahGrantDatePolicy("koordinator_ttq", "2026-08-01", "2026-08-10", refDate)
     ).not.toThrow();
   });
+
+  it("assertYaumiyahGrantDatePolicy: tolak tanggal masa depan (> hari ini) baik untuk guru maupun koor", () => {
+    expect(() =>
+      assertYaumiyahGrantDatePolicy("teacher", "2026-10-27", "2026-10-28", refDate)
+    ).toThrow("Tidak dapat membuka akses susulan untuk tanggal masa depan");
+
+    expect(() =>
+      assertYaumiyahGrantDatePolicy("koordinator_ttq", "2026-10-27", "2026-10-29", refDate)
+    ).toThrow("Tidak dapat membuka akses susulan untuk tanggal masa depan");
+  });
 });
 
 describe("GrantYaumiyahAccessUseCase & GrantBulkYaumiyahAccessUseCase", () => {

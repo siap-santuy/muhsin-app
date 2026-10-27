@@ -13,8 +13,14 @@ export function assertYaumiyahGrantDatePolicy(
     throw new Error("Tanggal awal tidak boleh lebih besar dari tanggal akhir");
   }
 
+  const now = referenceDate ?? new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  if (endDate > todayStr) {
+    throw new Error("Tidak dapat membuka akses susulan untuk tanggal masa depan");
+  }
+
   if (role === "teacher") {
-    const now = referenceDate ?? new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
