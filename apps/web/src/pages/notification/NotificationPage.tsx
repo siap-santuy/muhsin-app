@@ -87,7 +87,35 @@ export function NotificationPage() {
             return (
               <div
                 key={item.id}
-                onClick={() => markAsRead(item.id)}
+                onClick={() => {
+                  if (!item.read) markAsRead(item.id);
+                  const lowerTitle = (item.title || "").toLowerCase();
+                  const lowerMsg = (item.message || "").toLowerCase();
+
+                  if (item.type === "yaumiyah" || lowerTitle.includes("yaumiyah") || lowerMsg.includes("yaumiyah")) {
+                    if (role === "teacher") {
+                      window.location.hash = "#/yaumiyah-approval";
+                    } else if (role === "student") {
+                      window.location.hash = "#/yaumiyah";
+                    } else if (role === "parent") {
+                      window.location.hash = "#/yaumiyah";
+                    }
+                  } else if (item.type === "munaqosah" || lowerTitle.includes("munaqosah") || lowerMsg.includes("munaqosah")) {
+                    if (role === "teacher") {
+                      window.location.hash = "#/examiner";
+                    } else {
+                      window.location.hash = "#/dashboard";
+                    }
+                  } else if (item.type === "setoran" || lowerTitle.includes("setoran") || lowerMsg.includes("setoran")) {
+                    if (role === "teacher") {
+                      window.location.hash = "#/students";
+                    } else if (role === "parent") {
+                      window.location.hash = "#/history";
+                    }
+                  } else if (item.type === "raport" || lowerTitle.includes("raport") || lowerMsg.includes("raport")) {
+                    window.location.hash = "#/raport";
+                  }
+                }}
                 className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm transition-all cursor-pointer ${
                   item.read
                     ? "border-brand-line bg-white"
@@ -122,13 +150,21 @@ export function NotificationPage() {
     return null;
   }
 
+  function handleBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.hash = "#/dashboard";
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col bg-brand-page">
       {/* Mobile / Student / Teacher / Parent Top Header */}
       <div className="shrink-0 flex items-center justify-between bg-brand-page px-4 py-3">
         <button
           type="button"
-          onClick={() => (window.location.hash = "#/dashboard")}
+          onClick={handleBack}
           aria-label="Kembali"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
         >

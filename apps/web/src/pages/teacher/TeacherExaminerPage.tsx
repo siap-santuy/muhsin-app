@@ -88,7 +88,13 @@ export function TeacherExaminerPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => (window.location.hash = "#/dashboard")}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.hash = "#/dashboard";
+                }
+              }}
               aria-label="Kembali"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/10"
             >
