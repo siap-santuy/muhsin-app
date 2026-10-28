@@ -222,6 +222,47 @@ export function KoorDashboardPage() {
           })}
         </div>
 
+        {/* Chart Setoran */}
+        <div className="rounded-2xl border border-brand-line bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-brand-navy">
+                Aktivitas Setoran Pekan Ini
+              </h2>
+              <p className="text-xs text-brand-text-muted">
+                Jumlah setoran per kategori TTQ
+              </p>
+            </div>
+            <div className="flex gap-4 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-brand-cyan">
+                <span className="h-2.5 w-2.5 rounded-full bg-brand-cyan" />
+                Ziyadah
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-600">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                Muroja&apos;ah
+              </span>
+              <span className="flex items-center gap-1.5 text-purple-600">
+                <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                Tahsin
+              </span>
+            </div>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="Ziyadah" fill="#22bad0" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Murojaah" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Tahsin" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         {/* Banner Antrean Pengajuan Munaqosah (Muncul jika ada pengajuan) */}
         {pendingMunaqosahCount > 0 && (
           <div className="flex items-center justify-between rounded-2xl border-2 border-purple-200 bg-purple-50/70 p-4 shadow-xs">
@@ -484,47 +525,6 @@ export function KoorDashboardPage() {
             </div>
           </div>
         )}
-
-        {/* Chart Setoran */}
-        <div className="rounded-2xl border border-brand-line bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-brand-navy">
-                Aktivitas Setoran Pekan Ini
-              </h2>
-              <p className="text-xs text-brand-text-muted">
-                Jumlah setoran per kategori TTQ
-              </p>
-            </div>
-            <div className="flex gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-brand-cyan">
-                <span className="h-2.5 w-2.5 rounded-full bg-brand-cyan" />
-                Ziyadah
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-600">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Muroja&apos;ah
-              </span>
-              <span className="flex items-center gap-1.5 text-purple-600">
-                <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
-                Tahsin
-              </span>
-            </div>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="Ziyadah" fill="#22bad0" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Murojaah" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Tahsin" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
       </div>
     </KoorShell>
   );
