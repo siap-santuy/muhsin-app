@@ -27,10 +27,10 @@ export function Toast({ message, variant = "success", duration = 3000, onClose }
   const Icon = config.icon;
 
   return (
-    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-      <div className={cn("flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-lg bg-white/95 backdrop-blur-sm pointer-events-auto min-w-[280px] max-w-[420px]", config.bg)}>
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto px-4 max-w-sm w-full animate-in fade-in slide-in-from-top-3 duration-200">
+      <div className={cn("flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-2xl bg-white/95 backdrop-blur-md w-full", config.bg)}>
         <Icon className={cn("h-5 w-5 shrink-0", config.text)} />
-        <span className={cn("text-xs font-semibold flex-1 leading-snug", config.text)}>{message}</span>
+        <span className={cn("text-xs font-bold flex-1 leading-snug", config.text)}>{message}</span>
         <button type="button" onClick={onClose} className="ml-1 rounded-full p-1 hover:bg-black/5 transition-colors">
           <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
         </button>
@@ -45,16 +45,30 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 items-end pointer-events-none px-4 max-w-md w-full">
-      {toasts.map((t: ToastItem) => (
-        <Toast
-          key={t.id}
-          message={t.message}
-          variant={t.variant}
-          duration={t.duration}
-          onClose={() => removeToast(t.id)}
-        />
-      ))}
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none px-4 max-w-sm w-full">
+      {toasts.map((t: ToastItem) => {
+        const config = VARIANT_CONFIG[t.variant || "success"];
+        const Icon = config.icon;
+
+        return (
+          <div
+            key={t.id}
+            className="pointer-events-auto w-full animate-in fade-in slide-in-from-top-3 duration-200"
+          >
+            <div className={cn("flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-2xl bg-white/95 backdrop-blur-md w-full", config.bg)}>
+              <Icon className={cn("h-5 w-5 shrink-0", config.text)} />
+              <span className={cn("text-xs font-bold flex-1 leading-snug", config.text)}>{t.message}</span>
+              <button
+                type="button"
+                onClick={() => removeToast(t.id)}
+                className="ml-1 rounded-full p-1 hover:bg-black/5 transition-colors"
+              >
+                <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
