@@ -4,6 +4,7 @@ import {
   Bell,
   BookOpen,
   CheckCheck,
+  FileSpreadsheet,
   GraduationCap,
   HeartHandshake,
   Info,
@@ -68,6 +69,12 @@ const NAV_ITEMS = [
     icon: BookOpen,
     href: "#/yaumiyah-approval",
     badgeKey: "yaumiyahPending",
+  },
+  {
+    path: "raport-summary",
+    label: "Rekap Nilai Raport",
+    icon: FileSpreadsheet,
+    href: "#/raport-summary",
   },
 ];
 

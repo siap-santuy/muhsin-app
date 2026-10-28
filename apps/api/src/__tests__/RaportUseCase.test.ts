@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { GetMonthlyRaportUseCase } from "../modules/reports/application/use-cases/GetMonthlyRaportUseCase";
 import { GetSemesterRaportUseCase } from "../modules/reports/application/use-cases/GetSemesterRaportUseCase";
+import { GetRaportSummaryUseCase } from "../modules/reports/application/use-cases/GetRaportSummaryUseCase";
 import type { IRaportRepository } from "../modules/reports/domain/repositories/IRaportRepository";
-import type { MonthlyRaportData, SemesterRaportData } from "../modules/reports/domain/entities/Raport";
+import type {
+  MonthlyRaportData,
+  SemesterRaportData,
+  RaportSummaryItem,
+} from "../modules/reports/domain/entities/Raport";
 
 describe("Raport Module UseCases", () => {
   const mockMonthly: MonthlyRaportData = {
@@ -97,9 +102,43 @@ describe("Raport Module UseCases", () => {
     evaluasi: mockMonthly.evaluasi,
   };
 
+  const mockSummary: RaportSummaryItem[] = [
+    {
+      rank: 1,
+      studentId: "student-1",
+      studentName: "Fulan bin Fulan",
+      className: "VII Abu Bakar",
+      tahfidzScore: 92,
+      tahfidzGrade: "A",
+      tahsinScore: 90,
+      tahsinGrade: "A",
+      yaumiyahGrade: "A",
+      nilaiAkhir: 91,
+      gradeAkhir: "A",
+      arabicPredicate: "ممتاز",
+      isUnderTarget: false,
+    },
+    {
+      rank: 2,
+      studentId: "student-2",
+      studentName: "Zaid",
+      className: "VII Abu Bakar",
+      tahfidzScore: 68,
+      tahfidzGrade: "D",
+      tahsinScore: 70,
+      tahsinGrade: "C",
+      yaumiyahGrade: "C",
+      nilaiAkhir: 69,
+      gradeAkhir: "D",
+      arabicPredicate: "مقبول",
+      isUnderTarget: true,
+    },
+  ];
+
   const repo: IRaportRepository = {
     getMonthlyRaport: async () => mockMonthly,
     getSemesterRaport: async () => mockSemester,
+    getRaportSummary: async () => mockSummary,
   };
 
   it("GetMonthlyRaportUseCase returns correct monthly report shape", async () => {
@@ -118,5 +157,22 @@ describe("Raport Module UseCases", () => {
     expect(result.period.semester).toBe("Ganjil");
     expect(result.nilaiAkhir).toBe(89.0);
     expect(result.kategoriList).toHaveLength(2);
+  });
+
+  it("GetRaportSummaryUseCase returns ranked summary list", async () => {
+    const useCase = new GetRaportSummaryUseCase(repo);
+    const result = await useCase.execute({
+      schoolId: "school-1",
+      mode: "monthly",
+      month: "2026-10",
+      className: "VII Abu Bakar",
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0].rank).toBe(1);
+    expect(result[0].studentName).toBe("Fulan bin Fulan");
+    expect(result[0].isUnderTarget).toBe(false);
+    expect(result[1].rank).toBe(2);
+    expect(result[1].isUnderTarget).toBe(true);
   });
 });

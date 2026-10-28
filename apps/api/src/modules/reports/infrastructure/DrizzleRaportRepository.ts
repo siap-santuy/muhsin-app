@@ -11,9 +11,14 @@ import {
   munaqosahAssignments,
   assessmentSubcategories,
 } from "../../../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import type { IRaportRepository } from "../domain/repositories/IRaportRepository";
-import type { MonthlyRaportData, SemesterRaportData } from "../domain/entities/Raport";
+import type {
+  MonthlyRaportData,
+  SemesterRaportData,
+  RaportSummaryItem,
+  RaportSummaryFilter,
+} from "../domain/entities/Raport";
 
 function scoreToGrade(score: number): { grade: string; arabic: string } {
   if (score >= 90) return { grade: "A", arabic: "ممتاز" };
@@ -534,5 +539,293 @@ export class DrizzleRaportRepository implements IRaportRepository {
         monthlyResults[0]?.munaqosah ?? { keterangan: "-", nilai: "-" },
       evaluasi: lastMonthlyWithEval?.evaluasi ?? null,
     };
+  }
+
+  async getRaportSummary(filter: RaportSummaryFilter): Promise<RaportSummaryItem[]> {
+    // 1. Fetch filtered students
+    const studentConditions = [
+      eq(users.schoolId, filter.schoolId),
+      eq(users.role, "student"),
+    ];
+
+    if (filter.classId) {
+      studentConditions.push(eq(studentClassEnrollment.classId, filter.classId));
+    } else if (filter.className && filter.className !== "all") {
+      studentConditions.push(eq(classes.name, filter.className));
+    }
+
+    if (filter.teacherId) {
+      const teacherMappings = await this.db
+        .select({ studentId: studentTeacherMapping.studentId })
+        .from(studentTeacherMapping)
+        .where(
+          and(
+            eq(studentTeacherMapping.schoolId, filter.schoolId),
+            eq(studentTeacherMapping.teacherId, filter.teacherId)
+          )
+        );
+      const mappedStudentIds = teacherMappings.map((m) => m.studentId);
+      if (mappedStudentIds.length === 0) {
+        return [];
+      }
+      studentConditions.push(inArray(users.id, mappedStudentIds));
+    }
+
+    const studentRows = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        className: classes.name,
+      })
+      .from(users)
+      .leftJoin(
+        studentClassEnrollment,
+        and(
+          eq(studentClassEnrollment.studentId, users.id),
+          eq(studentClassEnrollment.schoolId, filter.schoolId)
+        )
+      )
+      .leftJoin(classes, eq(classes.id, studentClassEnrollment.classId))
+      .where(and(...studentConditions))
+      .orderBy(classes.name, users.name);
+
+    if (studentRows.length === 0) {
+      return [];
+    }
+
+    const studentIds = studentRows.map((s) => s.id);
+
+    // 2. Determine target months
+    let months: string[] = [];
+    if (filter.mode === "monthly") {
+      const targetMonth = filter.month || new Date().toISOString().slice(0, 7);
+      months = [targetMonth];
+    } else {
+      const semester = filter.semester || "Ganjil";
+      const isSem1 = semester.toLowerCase().includes("ganjil") || semester === "1";
+      const tahunAjaran = filter.tahunAjaran || "2026/2027";
+      const [startYearStr, endYearStr] = tahunAjaran.split("/").map((s) => s.trim());
+      const startYr = Number(startYearStr) || 2026;
+      const endYr = Number(endYearStr) || startYr + 1;
+      months = isSem1
+        ? [`${startYr}-07`, `${startYr}-08`, `${startYr}-09`, `${startYr}-10`, `${startYr}-11`, `${startYr}-12`]
+        : [`${endYr}-01`, `${endYr}-02`, `${endYr}-03`, `${endYr}-04`, `${endYr}-05`, `${endYr}-06`];
+    }
+
+    const minMonth = months[0];
+    const maxMonth = months[months.length - 1];
+
+    // 3. Batched fetch setoran entries
+    const setoranRows = await this.db
+      .select({
+        studentId: setoranEntries.studentId,
+        subcatCode: assessmentSubcategories.code,
+        date: setoranEntries.date,
+        referenceStart: setoranEntries.referenceStart,
+        scores: setoranEntries.scores,
+        keterangan: setoranEntries.keterangan,
+      })
+      .from(setoranEntries)
+      .leftJoin(
+        assessmentSubcategories,
+        eq(assessmentSubcategories.id, setoranEntries.subcategoryId)
+      )
+      .where(
+        and(
+          eq(setoranEntries.schoolId, filter.schoolId),
+          inArray(setoranEntries.studentId, studentIds),
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') >= ${minMonth}`,
+          sql`to_char(${setoranEntries.date}, 'YYYY-MM') <= ${maxMonth}`
+        )
+      );
+
+    // 4. Batched fetch daily ibadah
+    const ibadahRows = await this.db
+      .select({
+        studentId: dailyIbadah.studentId,
+        date: dailyIbadah.date,
+        tilawah: dailyIbadah.tilawah,
+        sholatFardhu: dailyIbadah.sholatFardhu,
+      })
+      .from(dailyIbadah)
+      .where(
+        and(
+          eq(dailyIbadah.schoolId, filter.schoolId),
+          inArray(dailyIbadah.studentId, studentIds),
+          sql`to_char(${dailyIbadah.date}, 'YYYY-MM') >= ${minMonth}`,
+          sql`to_char(${dailyIbadah.date}, 'YYYY-MM') <= ${maxMonth}`
+        )
+      );
+
+    // Grouping
+    const setoranByStudent = new Map<string, typeof setoranRows>();
+    for (const row of setoranRows) {
+      if (!setoranByStudent.has(row.studentId)) {
+        setoranByStudent.set(row.studentId, []);
+      }
+      setoranByStudent.get(row.studentId)!.push(row);
+    }
+
+    const ibadahByStudent = new Map<string, typeof ibadahRows>();
+    for (const row of ibadahRows) {
+      if (!ibadahByStudent.has(row.studentId)) {
+        ibadahByStudent.set(row.studentId, []);
+      }
+      ibadahByStudent.get(row.studentId)!.push(row);
+    }
+
+    const summaryItems: RaportSummaryItem[] = [];
+
+    for (const student of studentRows) {
+      const studentSetorans = setoranByStudent.get(student.id) || [];
+      const studentIbadahs = ibadahByStudent.get(student.id) || [];
+
+      // Filter out semester exam from regular daily average
+      const dailySetorans = studentSetorans.filter(
+        (s) =>
+          !s.keterangan?.includes("[Ujian Semester]") &&
+          !(s.scores as any)?.isExam &&
+          !(s.referenceStart as any)?.isExam
+      );
+
+      let tahfidzAvg = 0;
+      let tahsinAvg = 0;
+
+      if (filter.mode === "monthly") {
+        let tahfidzTotal = 0;
+        let tahfidzCount = 0;
+        let tahsinTotal = 0;
+        let tahsinCount = 0;
+
+        for (const s of dailySetorans) {
+          const scores = s.scores as Record<string, number>;
+          const vals = Object.values(scores).filter((v) => typeof v === "number");
+          if (vals.length > 0) {
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            const subCode = (s.subcatCode || "").toUpperCase();
+            const isSurah = !!(s.referenceStart && (s.referenceStart as any).surah);
+
+            if (subCode.includes("ZIYADAH") || (!subCode && isSurah) || subCode.includes("MUROJAAH")) {
+              tahfidzTotal += avg;
+              tahfidzCount++;
+            } else {
+              tahsinTotal += avg;
+              tahsinCount++;
+            }
+          }
+        }
+
+        tahfidzAvg = tahfidzCount > 0 ? Math.round(tahfidzTotal / tahfidzCount) : 0;
+        tahsinAvg = tahsinCount > 0 ? Math.round(tahsinTotal / tahsinCount) : 0;
+      } else {
+        // Semester mode: calculate monthly averages then average them
+        let sumTahfidz = 0;
+        let cntTahfidz = 0;
+        let sumTahsin = 0;
+        let cntTahsin = 0;
+
+        for (const m of months) {
+          const mSetorans = dailySetorans.filter((s) => s.date.startsWith(m));
+          let mTahfidzTotal = 0;
+          let mTahfidzCnt = 0;
+          let mTahsinTotal = 0;
+          let mTahsinCnt = 0;
+
+          for (const s of mSetorans) {
+            const scores = s.scores as Record<string, number>;
+            const vals = Object.values(scores).filter((v) => typeof v === "number");
+            if (vals.length > 0) {
+              const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+              const subCode = (s.subcatCode || "").toUpperCase();
+              const isSurah = !!(s.referenceStart && (s.referenceStart as any).surah);
+
+              if (subCode.includes("ZIYADAH") || (!subCode && isSurah) || subCode.includes("MUROJAAH")) {
+                mTahfidzTotal += avg;
+                mTahfidzCnt++;
+              } else {
+                mTahsinTotal += avg;
+                mTahsinCnt++;
+              }
+            }
+          }
+
+          if (mTahfidzCnt > 0) {
+            sumTahfidz += Math.round(mTahfidzTotal / mTahfidzCnt);
+            cntTahfidz++;
+          }
+          if (mTahsinCnt > 0) {
+            sumTahsin += Math.round(mTahsinTotal / mTahsinCnt);
+            cntTahsin++;
+          }
+        }
+
+        tahfidzAvg = cntTahfidz > 0 ? Math.round(sumTahfidz / cntTahfidz) : 0;
+        tahsinAvg = cntTahsin > 0 ? Math.round(sumTahsin / cntTahsin) : 0;
+      }
+
+      // Mutabaah calculation
+      let fardhuCount = 0;
+      let tilawahCount = 0;
+      for (const ib of studentIbadahs) {
+        if (ib.tilawah && (ib.tilawah as any).surahStart) tilawahCount++;
+        if (ib.sholatFardhu) {
+          const fVals = Object.values(ib.sholatFardhu as Record<string, string>);
+          fardhuCount += fVals.filter((v) => v === "BA" || v === "MA" || v === "H").length;
+        }
+      }
+
+      let yaumiyahGrade = "-";
+      if (filter.mode === "monthly") {
+        yaumiyahGrade = fardhuCount >= 120 || tilawahCount >= 20 ? "A" : fardhuCount >= 60 || tilawahCount > 0 ? "B" : (fardhuCount > 0 ? "C" : "-");
+      } else {
+        yaumiyahGrade = fardhuCount >= 720 || tilawahCount >= 120 ? "A" : fardhuCount >= 360 || tilawahCount > 0 ? "B" : (fardhuCount > 0 ? "C" : "-");
+      }
+
+      const validScores = [tahfidzAvg, tahsinAvg].filter((s) => s > 0);
+      const nilaiAkhir =
+        validScores.length > 0
+          ? Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 10) / 10
+          : 0;
+
+      const gradeObj = scoreToGrade(nilaiAkhir);
+      const tahfidzGradeObj = scoreToGrade(tahfidzAvg);
+      const tahsinGradeObj = scoreToGrade(tahsinAvg);
+
+      const isUnderTarget =
+        nilaiAkhir < 75 ||
+        gradeObj.grade === "C" ||
+        gradeObj.grade === "D" ||
+        gradeObj.grade === "-";
+
+      summaryItems.push({
+        rank: 0,
+        studentId: student.id,
+        studentName: student.name,
+        className: student.className ?? "-",
+        tahfidzScore: tahfidzAvg,
+        tahfidzGrade: tahfidzGradeObj.grade,
+        tahsinScore: tahsinAvg,
+        tahsinGrade: tahsinGradeObj.grade,
+        yaumiyahGrade,
+        nilaiAkhir,
+        gradeAkhir: gradeObj.grade,
+        arabicPredicate: gradeObj.arabic,
+        isUnderTarget,
+      });
+    }
+
+    // Default sorting: nilaiAkhir descending, then studentName ascending
+    summaryItems.sort((a, b) => {
+      if (b.nilaiAkhir !== a.nilaiAkhir) {
+        return b.nilaiAkhir - a.nilaiAkhir;
+      }
+      return a.studentName.localeCompare(b.studentName);
+    });
+
+    summaryItems.forEach((item, idx) => {
+      item.rank = idx + 1;
+    });
+
+    return summaryItems;
   }
 }

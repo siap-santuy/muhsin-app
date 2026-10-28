@@ -42,11 +42,18 @@ export function TeacherMonthlyRaportPage({
   const [loading, setLoading] = useState(true);
 
   const cleanMonth = (month || "").trim().toLowerCase();
-  const monthNum = MONTH_MAP[cleanMonth] ?? (cleanMonth.padStart(2, "0").slice(0, 2) || "09");
-  const [startYear, endYear] = (year || "2026/2027").split("/").map((s) => s.trim());
-  const numericMonth = Number(monthNum);
-  const targetYear = numericMonth >= 7 ? startYear : (endYear || startYear);
-  const monthCode = `${targetYear}-${monthNum}`;
+  let monthCode = "";
+  let targetYear = "";
+  if (/^\d{4}-\d{2}$/.test(cleanMonth)) {
+    monthCode = cleanMonth;
+    targetYear = cleanMonth.slice(0, 4);
+  } else {
+    const monthNum = MONTH_MAP[cleanMonth] ?? (cleanMonth.padStart(2, "0").slice(0, 2) || "09");
+    const [startYear, endYear] = (year || "2026/2027").split("/").map((s) => s.trim());
+    const numericMonth = Number(monthNum);
+    targetYear = numericMonth >= 7 ? startYear : (endYear || startYear);
+    monthCode = `${targetYear}-${monthNum}`;
+  }
 
   useEffect(() => {
     async function load() {

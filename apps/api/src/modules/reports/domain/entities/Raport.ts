@@ -139,3 +139,30 @@ export interface SemesterRaportData {
   sumatif?: RaportSumatif;
 }
 
+export interface RaportSummaryItem {
+  rank: number;
+  studentId: string;
+  studentName: string;
+  className: string;
+  tahfidzScore: number;
+  tahfidzGrade: string;
+  tahsinScore: number;
+  tahsinGrade: string;
+  yaumiyahGrade: string;
+  nilaiAkhir: number;
+  gradeAkhir: string;
+  arabicPredicate: string;
+  isUnderTarget: boolean; // Nilai kurang (< 75 atau grade C/D)
+}
+
+export interface RaportSummaryFilter {
+  schoolId: string;
+  mode: "monthly" | "semester";
+  month?: string; // YYYY-MM
+  semester?: string; // Ganjil / Genap
+  tahunAjaran?: string; // 2026/2027
+  classId?: string;
+  className?: string;
+  teacherId?: string;
+}
+

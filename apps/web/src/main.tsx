@@ -43,6 +43,7 @@ import { KoorStudentPage } from "@/pages/koordinator/KoorStudentPage";
 import { KoorTeacherPage } from "@/pages/koordinator/KoorTeacherPage";
 import { KoorKurikulumPage } from "@/pages/koordinator/KoorKurikulumPage";
 import { KoorMunaqosahPage } from "@/pages/koordinator/KoorMunaqosahPage";
+import { KoorRaportSummaryPage } from "@/pages/koordinator/KoorRaportSummaryPage";
 import { NotificationPage } from "@/pages/notification/NotificationPage";
 import { AboutPage } from "@/pages/settings/AboutPage";
 import { VersioningPage } from "@/pages/settings/VersioningPage";
@@ -357,6 +358,27 @@ function App() {
         return <KoorKurikulumPage />;
       case "munaqosah":
         return <KoorMunaqosahPage />;
+      case "raport-summary":
+      case "raport":
+        return <KoorRaportSummaryPage />;
+      case "monthly-raport":
+        return (
+          <TeacherMonthlyRaportPage
+            month={searchParams.get("month") || undefined}
+            year={searchParams.get("year") || undefined}
+            studentId={searchParams.get("studentId") || searchParams.get("student") || undefined}
+            onBack={() => { window.location.hash = "#/raport-summary"; }}
+          />
+        );
+      case "semester-raport":
+        return (
+          <TeacherSemesterRaportPage
+            semester={searchParams.get("semester") || undefined}
+            year={searchParams.get("year") || searchParams.get("tahunAjaran") || undefined}
+            studentId={searchParams.get("studentId") || searchParams.get("student") || undefined}
+            onBack={() => { window.location.hash = "#/raport-summary"; }}
+          />
+        );
       case "yaumiyah-approval":
       case "izin-susulan":
         return <TeacherYaumiyahApprovalPage />;

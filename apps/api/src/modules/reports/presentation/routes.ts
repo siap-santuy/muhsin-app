@@ -3,11 +3,13 @@ import type { AuthVariables } from "../../../middleware/auth.middleware";
 import { requireRole } from "../../../middleware/rbac.middleware";
 import type { GetMonthlyRaportUseCase } from "../application/use-cases/GetMonthlyRaportUseCase";
 import type { GetSemesterRaportUseCase } from "../application/use-cases/GetSemesterRaportUseCase";
+import type { GetRaportSummaryUseCase } from "../application/use-cases/GetRaportSummaryUseCase";
 import type { RecordParentViewUseCase } from "../../dashboard/application/use-cases/RecordParentViewUseCase";
 
 export interface RaportRoutesDeps {
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
+  getRaportSummaryUseCase: GetRaportSummaryUseCase;
   recordParentViewUseCase?: RecordParentViewUseCase;
   resolveStudentId?: (user: { userId: string; role: string; schoolId: string }, requestedStudentId?: string) => Promise<string>;
 }
@@ -79,6 +81,36 @@ export function createRaportRoutes(deps: RaportRoutesDeps) {
       trackParentView(deps.recordParentViewUseCase, user, targetStudentId);
 
       return c.json({ data: raport, error: null, meta: null }, 200);
+    }
+  );
+
+  // GET /raport/summary?mode=monthly|semester&month=&semester=&tahunAjaran=&classId=&className=
+  app.get(
+    "/summary",
+    requireRole("teacher", "koordinator_ttq"),
+    async (c) => {
+      const user = c.get("user");
+      const mode = (c.req.query("mode") === "semester" ? "semester" : "monthly") as "monthly" | "semester";
+      const month = c.req.query("month");
+      const semester = c.req.query("semester");
+      const tahunAjaran = c.req.query("tahunAjaran");
+      const classId = c.req.query("classId");
+      const className = c.req.query("className");
+
+      const teacherId = user.role === "teacher" ? user.userId : undefined;
+
+      const summary = await deps.getRaportSummaryUseCase.execute({
+        schoolId: user.schoolId,
+        mode,
+        month,
+        semester,
+        tahunAjaran,
+        classId,
+        className,
+        teacherId,
+      });
+
+      return c.json({ data: summary, error: null, meta: null }, 200);
     }
   );
 

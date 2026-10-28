@@ -1,4 +1,9 @@
-import type { MonthlyRaportData, SemesterRaportData } from "../entities/Raport";
+import type {
+  MonthlyRaportData,
+  SemesterRaportData,
+  RaportSummaryItem,
+  RaportSummaryFilter,
+} from "../entities/Raport";
 
 export interface IRaportRepository {
   getMonthlyRaport(
@@ -13,4 +18,6 @@ export interface IRaportRepository {
     tahunAjaran: string,
     schoolId: string
   ): Promise<SemesterRaportData>;
+
+  getRaportSummary(filter: RaportSummaryFilter): Promise<RaportSummaryItem[]>;
 }

@@ -513,6 +513,38 @@ class ApiClient {
     return this.request("GET", `/raport/semester?${query.toString()}`);
   }
 
+  async getRaportSummary(params: {
+    mode: "monthly" | "semester";
+    month?: string;
+    semester?: string;
+    tahunAjaran?: string;
+    classId?: string;
+    className?: string;
+  }): Promise<Array<{
+    rank: number;
+    studentId: string;
+    studentName: string;
+    className: string;
+    tahfidzScore: number;
+    tahfidzGrade: string;
+    tahsinScore: number;
+    tahsinGrade: string;
+    yaumiyahGrade: string;
+    nilaiAkhir: number;
+    gradeAkhir: string;
+    arabicPredicate: string;
+    isUnderTarget: boolean;
+  }>> {
+    const query = new URLSearchParams();
+    query.set("mode", params.mode);
+    if (params.month) query.set("month", params.month);
+    if (params.semester) query.set("semester", params.semester);
+    if (params.tahunAjaran) query.set("tahunAjaran", params.tahunAjaran);
+    if (params.classId) query.set("classId", params.classId);
+    if (params.className) query.set("className", params.className);
+    return this.request("GET", `/raport/summary?${query.toString()}`);
+  }
+
   async getDashboardSummary<T = any>(studentId?: string): Promise<T> {
     const targetStudentId = studentId || (typeof window !== "undefined" ? localStorage.getItem("parent_active_child_id") || undefined : undefined);
     const url = targetStudentId ? `/dashboard/summary?studentId=${targetStudentId}` : `/dashboard/summary`;

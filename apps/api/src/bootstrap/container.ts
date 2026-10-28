@@ -66,6 +66,7 @@ import { createTeacherRoutes } from "../modules/teachers/presentation/routes";
 import { DrizzleRaportRepository } from "../modules/reports/infrastructure/DrizzleRaportRepository";
 import { GetMonthlyRaportUseCase } from "../modules/reports/application/use-cases/GetMonthlyRaportUseCase";
 import { GetSemesterRaportUseCase } from "../modules/reports/application/use-cases/GetSemesterRaportUseCase";
+import { GetRaportSummaryUseCase } from "../modules/reports/application/use-cases/GetRaportSummaryUseCase";
 import { createRaportRoutes } from "../modules/reports/presentation/routes";
 
 // Dashboard module
@@ -173,6 +174,7 @@ export interface ContainerDeps {
   // Reports
   getMonthlyRaportUseCase: GetMonthlyRaportUseCase;
   getSemesterRaportUseCase: GetSemesterRaportUseCase;
+  getRaportSummaryUseCase: GetRaportSummaryUseCase;
   // Dashboard
   getDashboardSummaryUseCase: GetDashboardSummaryUseCase;
   getKoorStudentActivityUseCase: GetKoorStudentActivityUseCase;
@@ -381,6 +383,7 @@ export function createApp(deps: ContainerDeps): Hono {
   const raportRoutes = createRaportRoutes({
     getMonthlyRaportUseCase: deps.getMonthlyRaportUseCase,
     getSemesterRaportUseCase: deps.getSemesterRaportUseCase,
+    getRaportSummaryUseCase: deps.getRaportSummaryUseCase,
     recordParentViewUseCase: deps.recordParentViewUseCase,
     resolveStudentId: resolveStudent,
   });
@@ -553,6 +556,7 @@ export function buildContainer() {
   // UseCases — Reports
   const getMonthlyRaportUseCase = new GetMonthlyRaportUseCase(raportRepo);
   const getSemesterRaportUseCase = new GetSemesterRaportUseCase(raportRepo);
+  const getRaportSummaryUseCase = new GetRaportSummaryUseCase(raportRepo);
 
   // UseCases — Notifications
   const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepo);
@@ -634,6 +638,7 @@ export function buildContainer() {
       schoolAdminRepo,
       getMonthlyRaportUseCase,
       getSemesterRaportUseCase,
+      getRaportSummaryUseCase,
       getDashboardSummaryUseCase,
       getKoorStudentActivityUseCase,
       getKoorTeacherActivityUseCase,
