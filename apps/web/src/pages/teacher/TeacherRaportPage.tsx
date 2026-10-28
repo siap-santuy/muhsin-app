@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav, TEACHER_NAV_ITEMS } from "@/components/layout/BottomNav";
+import { Pagination } from "@/components/ui/Pagination";
 import { api } from "@/lib/api";
 
 interface MonthDef {
@@ -89,6 +90,10 @@ export function TeacherRaportPage() {
   // Summary data
   const [summaryItems, setSummaryItems] = useState<RaportSummaryItem[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
+
+  // Pagination for mobile leaderboard cards
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   // Derive years
   const [startYearStr, endYearStr] = selectedYear.split("/").map((s) => s.trim());
@@ -196,6 +201,18 @@ export function TeacherRaportPage() {
 
     return result;
   }, [summaryItems, searchQuery, onlyUnderTarget, sortField, sortDirection]);
+
+  // Reset page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, onlyUnderTarget, sortField, sortDirection, selectedClass, summaryMode, formattedMonthStr, selectedSemester, selectedYear]);
+
+  // Paginated items for mobile leaderboard cards
+  const totalPages = Math.max(1, Math.ceil(processedSummary.length / PAGE_SIZE));
+  const paginatedSummary = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return processedSummary.slice(start, start + PAGE_SIZE);
+  }, [processedSummary, currentPage, PAGE_SIZE]);
 
   // Quick stats
   const summaryStats = useMemo(() => {
@@ -492,7 +509,7 @@ export function TeacherRaportPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {processedSummary.map((item) => {
+                  {paginatedSummary.map((item) => {
                     const rankClass =
                       item.rank === 1
                         ? "bg-amber-400 text-white"
@@ -567,6 +584,20 @@ export function TeacherRaportPage() {
                       </div>
                     );
                   })}
+
+                  {/* Pagination Controls Mobile */}
+                  {totalPages > 1 && (
+                    <div className="mt-3 flex flex-col items-center gap-2 rounded-2xl bg-white p-3 border border-brand-line text-xs text-brand-text-muted">
+                      <span>
+                        Halaman <strong>{currentPage}</strong> dari <strong>{totalPages}</strong> ({processedSummary.length} santri)
+                      </span>
+                      <Pagination
+                        page={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { KoorShell } from "@/components/layout/KoorShell";
+import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
@@ -61,6 +62,10 @@ export function KoorRaportSummaryPage() {
   // Sorting
   const [sortField, setSortField] = useState<"rank" | "name">("rank");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   // Data states
   const [items, setItems] = useState<RaportSummaryItem[]>([]);
@@ -171,6 +176,18 @@ export function KoorRaportSummaryPage() {
 
     return { total, avgScore, passed, underTarget };
   }, [items]);
+
+  // Reset page when search, filter, or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, onlyUnderTarget, sortField, sortDirection, selectedClass, mode, formattedMonthStr, selectedSemester, selectedYear]);
+
+  // Paginated items
+  const totalPages = Math.max(1, Math.ceil(processedItems.length / PAGE_SIZE));
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return processedItems.slice(start, start + PAGE_SIZE);
+  }, [processedItems, currentPage, PAGE_SIZE]);
 
   function toggleSort(field: "rank" | "name") {
     if (sortField === field) {
@@ -472,7 +489,7 @@ export function KoorRaportSummaryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-line/60">
-                  {processedItems.map((item) => {
+                  {paginatedItems.map((item) => {
                     const rankBadgeClass =
                       item.rank === 1
                         ? "bg-amber-400 text-white shadow-xs"
@@ -614,6 +631,22 @@ export function KoorRaportSummaryPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-brand-line/60 bg-gray-50/50 px-4 py-3 text-xs text-brand-text-muted">
+                <span>
+                  Menampilkan <strong>{(currentPage - 1) * PAGE_SIZE + 1}</strong> -{" "}
+                  <strong>{Math.min(currentPage * PAGE_SIZE, processedItems.length)}</strong> dari{" "}
+                  <strong>{processedItems.length}</strong> santri
+                </span>
+                <Pagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
