@@ -1,9 +1,54 @@
 [
   {
-    "version": "v1.5.0",
-    "releaseDate": "27 Oktober 2026",
+    "version": "v1.6.0",
+    "releaseDate": "28 Oktober 2026",
     "isLatest": true,
     "badge": "Terbaru",
+    "title": "Rekap Nilai Raport Kolektif & Peringkat (Leger), Alur Koreksi Yaumiyah, & Peningkatan UX",
+    "summary": "Pembaruan komprehensif fitur akademik dan operasional: leger rekapitulasi nilai raport kolektif dan pemetaan ranking santri per bulan & semester (tabel matriks di Koordinator dan kartu leaderboard di Guru) dengan kolom rasio kehadiran, alur pengajuan koreksi yaumiyah bagi santri pada data yang telah terkirim (revert ke draft setelah disetujui), paginasi tabel data, perbaikan navigasi kembali notifikasi, serta floating toast overlay (z-9999).",
+    "changes": [
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Fitur Rekap Nilai Raport Kolektif (Leger Akademik) untuk Koordinator (#/raport-summary) dan Guru (#/raport): pemetaan nilai Tahfidz, Tahsin, Yaumiyah, Kehadiran, Nilai Akhir, Predikat, dan ranking santri otomatis."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Alur pengajuan koreksi yaumiyah: santri dapat mengajukan permohonan koreksi pada catatan yang sudah terkirim (submitted), yang jika disetujui guru/koor otomatis mengembalikan data ke draf untuk diperbaiki."
+      },
+      {
+        "category": "feature",
+        "categoryLabel": "Fitur Baru",
+        "description": "Kolom Rasio Kehadiran (Kehadiran Setoran TTQ) pada tabel rekap raport koordinator dan kartu leaderboard guru (format X/16 bulanan atau X/96 semesteran)."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Filter eksklusif Bulanan vs Semesteran: dropdown bulan otomatis disembunyikan saat mode semesteran aktif, dan kolom Nilai Akhir hanya ditampilkan pada mode semesteran."
+      },
+      {
+        "category": "enhancement",
+        "categoryLabel": "Peningkatan",
+        "description": "Paginasi data pada tabel matriks koordinator (15 santri/halaman), kartu mobile guru (10 santri/halaman), dan antrean permohonan susulan/koreksi yaumiyah."
+      },
+      {
+        "category": "bugfix",
+        "categoryLabel": "Perbaikan Bug",
+        "description": "Perbaikan tombol kembali notifikasi menggunakan history.back() serta navigasi langsung saat item notifikasi diklik."
+      },
+      {
+        "category": "ui",
+        "categoryLabel": "Tampilan UI",
+        "description": "Komponen Toast mengambang di layer teratas tengah atas (fixed z-9999) dengan efek backdrop blur sehingga tidak menggeser atau mendorong layout sticky bottom bar."
+      }
+    ]
+  },
+  {
+    "version": "v1.5.0",
+    "releaseDate": "27 Oktober 2026",
+    "isLatest": false,
+    "badge": "Stabil",
     "title": "Buka Akses Susulan Yaumiyah Massal (Bulk), Kebijakan Tanggal Guru vs Koordinator, & Web Push",
     "summary": "Peningkatan kontrol izin susulan yaumiyah: pembukaan akses susulan massal hingga 500 santri dengan combobox collapsible dan filter kelas, penegakan batasan tanggal bulan berjalan khusus guru (bulan lalu hanya melalui koordinator), penguncian tanggal masa depan (> hari ini), proteksi auto-redirect tanggal terkunci/terkirim pada murid, eager fetch wali murid, serta integrasi Web Push Notification ke santri.",
     "changes": [
