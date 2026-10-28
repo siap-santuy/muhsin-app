@@ -1,4 +1,5 @@
 ﻿import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
+import type { IDailyIbadahRepository } from "../../domain/repositories/IDailyIbadahRepository";
 import type { YaumiyahAccessRequestEntity } from "../../domain/entities/YaumiyahAccessRequest";
 import { getDaysDiffFromToday } from "../../domain/services/YaumiyahWindowService";
 import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
@@ -13,13 +14,15 @@ export interface RequestYaumiyahAccessInput {
   endDate: string;   // YYYY-MM-DD
   reason: string;
   todayStr?: string;
+  isCorrection?: boolean;
 }
 
 export class RequestYaumiyahAccessUseCase {
   constructor(
     private readonly repo: IYaumiyahAccessRequestRepository,
     private readonly notificationRepo?: INotificationRepository,
-    private readonly db?: Db
+    private readonly db?: Db,
+    private readonly dailyIbadahRepo?: IDailyIbadahRepository
   ) {}
 
   async execute(input: RequestYaumiyahAccessInput): Promise<YaumiyahAccessRequestEntity> {
@@ -34,8 +37,21 @@ export class RequestYaumiyahAccessUseCase {
       throw new Error("Tidak dapat meminta akses untuk tanggal masa depan");
     }
 
-    // Jika seluruh rentang masih dalam window H / H-1
-    if (diffStart <= 1 && diffEnd >= 0) {
+    // Cek apakah ini permohonan koreksi (ada data submitted pada tanggal tersebut)
+    let isCorrection = input.isCorrection ?? false;
+    if (!isCorrection && this.dailyIbadahRepo && input.startDate === input.endDate) {
+      const existing = await this.dailyIbadahRepo.findByStudentAndDate(
+        input.studentId,
+        input.startDate,
+        input.schoolId
+      );
+      if (existing && existing.status === "submitted") {
+        isCorrection = true;
+      }
+    }
+
+    // Jika seluruh rentang masih dalam window H / H-1 dan BUKAN koreksi submitted
+    if (diffStart <= 1 && diffEnd >= 0 && !isCorrection) {
       throw new Error("Tanggal hari ini dan kemarin dapat langsung diisi tanpa pengajuan akses");
     }
 
@@ -58,13 +74,17 @@ export class RequestYaumiyahAccessUseCase {
     }
 
     const now = new Date();
+    const finalReason = isCorrection
+      ? `[Koreksi] ${input.reason.trim()}`
+      : input.reason.trim();
+
     const entity: YaumiyahAccessRequestEntity = {
       id: crypto.randomUUID(),
       schoolId: input.schoolId,
       studentId: input.studentId,
       startDate: input.startDate,
       endDate: input.endDate,
-      reason: input.reason.trim(),
+      reason: finalReason,
       status: "pending",
       isDirectGrant: false,
       createdAt: now,
@@ -107,13 +127,21 @@ export class RequestYaumiyahAccessUseCase {
             ? input.startDate
             : `${input.startDate} s.d ${input.endDate}`;
 
+        const notifTitle = isCorrection
+          ? "Permohonan Koreksi Yaumiyah"
+          : "Permohonan Izin Susulan Yaumiyah";
+
+        const notifMsg = isCorrection
+          ? `${studentName} mengajukan koreksi yaumiyah tanggal ${rentangStr}: "${input.reason.trim()}"`
+          : `${studentName} mengajukan izin susulan yaumiyah tanggal ${rentangStr}: "${input.reason.trim()}"`;
+
         await Promise.all(
           Array.from(recipientIds).map((userId) =>
             this.notificationRepo!.createNotification({
               schoolId: input.schoolId,
               userId,
-              title: "Permohonan Izin Susulan Yaumiyah",
-              message: `${studentName} mengajukan izin susulan yaumiyah tanggal ${rentangStr}: "${input.reason.trim()}"`,
+              title: notifTitle,
+              message: notifMsg,
               type: "yaumiyah",
               isRead: false,
             })

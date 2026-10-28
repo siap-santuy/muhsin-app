@@ -1,4 +1,5 @@
 import type { IYaumiyahAccessRequestRepository } from "../../domain/repositories/IYaumiyahAccessRequestRepository";
+import type { IDailyIbadahRepository } from "../../domain/repositories/IDailyIbadahRepository";
 import type { YaumiyahAccessRequestEntity } from "../../domain/entities/YaumiyahAccessRequest";
 import type { INotificationRepository } from "../../../notifications/domain/repositories/INotificationRepository";
 import type { SendPushToUserUseCase } from "../../../notifications/application/use-cases/SendPushToUserUseCase";
@@ -17,7 +18,8 @@ export class ApproveYaumiyahAccessUseCase {
   constructor(
     private readonly repo: IYaumiyahAccessRequestRepository,
     private readonly notificationRepo?: INotificationRepository,
-    private readonly pushToUser?: SendPushToUserUseCase
+    private readonly pushToUser?: SendPushToUserUseCase,
+    private readonly dailyIbadahRepo?: IDailyIbadahRepository
   ) {}
 
   async execute(input: ApproveYaumiyahAccessInput): Promise<YaumiyahAccessRequestEntity> {
@@ -65,12 +67,36 @@ export class ApproveYaumiyahAccessUseCase {
 
     const saved = await this.repo.update(updated);
 
+    // Jika ini adalah permohonan koreksi (ada submitted data), kembalikan status ke draft
+    const isCorrection = request.reason.startsWith("[Koreksi]");
+    if (this.dailyIbadahRepo && request.startDate === request.endDate) {
+      const existing = await this.dailyIbadahRepo.findByStudentAndDate(
+        request.studentId,
+        request.startDate,
+        input.schoolId
+      );
+      if (existing && existing.status === "submitted") {
+        await this.dailyIbadahRepo.save({
+          ...existing,
+          status: "draft",
+          submittedAt: null,
+          updatedAt: now,
+        });
+      }
+    }
+
     const dateRange =
       request.startDate === request.endDate
         ? request.startDate
         : `${request.startDate} s.d ${request.endDate}`;
-    const title = "Izin Susulan Yaumiyah Disetujui";
-    const message = `Permohonan izin susulan tanggal ${dateRange} telah DISETUJUI. Akses pengisian terbuka selama ${durationHours} jam ke depan. Segera isi ibadahmu!`;
+
+    const title = isCorrection
+      ? "Izin Koreksi Yaumiyah Disetujui"
+      : "Izin Susulan Yaumiyah Disetujui";
+
+    const message = isCorrection
+      ? `Permohonan koreksi yaumiyah tanggal ${dateRange} telah DISETUJUI. Catatan telah dibuka kembali ke draf. Silakan perbaiki dan kirim ulang!`
+      : `Permohonan izin susulan tanggal ${dateRange} telah DISETUJUI. Akses pengisian terbuka selama ${durationHours} jam ke depan. Segera isi ibadahmu!`;
 
     if (this.notificationRepo) {
       try {
@@ -94,7 +120,7 @@ export class ApproveYaumiyahAccessUseCase {
           schoolId: input.schoolId,
           payload: {
             title,
-            body: `Izin susulan tanggal ${dateRange} telah disetujui (aktif ${durationHours} jam). Segera isi!`,
+            body: message,
             url: "#/yaumiyah",
           },
         });

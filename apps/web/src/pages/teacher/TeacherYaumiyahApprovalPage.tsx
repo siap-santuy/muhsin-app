@@ -237,14 +237,25 @@ export function TeacherYaumiyahApprovalPage() {
               </div>
 
               <div className="mt-3 rounded-xl bg-gray-50 p-2.5 text-xs text-brand-navy">
-                <p className="font-semibold text-brand-cyan">
-                  Rentang: {req.startDate === req.endDate ? req.startDate : `${req.startDate} s.d ${req.endDate}`}
+                <div className="flex flex-wrap items-center gap-1.5 font-semibold text-brand-cyan">
+                  <span>
+                    Tanggal: {req.startDate === req.endDate ? req.startDate : `${req.startDate} s.d ${req.endDate}`}
+                  </span>
+                  {req.reason?.startsWith("[Koreksi]") ? (
+                    <span className="rounded-md bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">
+                      Permohonan Koreksi
+                    </span>
+                  ) : (
+                    <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                      Pengisian Susulan
+                    </span>
+                  )}
                   {req.isDirectGrant && (
-                    <span className="ml-2 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                    <span className="rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
                       Buka Manual
                     </span>
                   )}
-                </p>
+                </div>
                 <p className="mt-1 text-gray-600 italic">&ldquo;{req.reason}&rdquo;</p>
                 {req.rejectionNote && (
                   <p className="mt-1 text-red-500 text-[11px]">Alasan tolak: {req.rejectionNote}</p>

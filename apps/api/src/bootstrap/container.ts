@@ -530,8 +530,8 @@ export function buildContainer() {
   const removePushSubscriptionUseCase = new RemovePushSubscriptionUseCase(pushSubscriptionRepo);
   const sendPushToUserUseCase = new SendPushToUserUseCase(pushSubscriptionRepo, pushSender);
 
-  const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, db);
-  const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
+  const requestYaumiyahAccessUseCase = new RequestYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, db, dailyIbadahRepo);
+  const approveYaumiyahAccessUseCase = new ApproveYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase, dailyIbadahRepo);
   const rejectYaumiyahAccessUseCase = new RejectYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
   const grantYaumiyahAccessUseCase = new GrantYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);
   const grantBulkYaumiyahAccessUseCase = new GrantBulkYaumiyahAccessUseCase(yaumiyahAccessRequestRepo, notificationRepo, sendPushToUserUseCase);

@@ -797,6 +797,22 @@ export class DrizzleRaportRepository implements IRaportRepository {
         gradeObj.grade === "D" ||
         gradeObj.grade === "-";
 
+      // Attendance (Kehadiran Setoran TTQ) calculation
+      const attendedDates = new Set<string>();
+      for (const s of studentSetorans) {
+        const ket = (s.keterangan ?? "").toLowerCase();
+        const isAbsent =
+          ket.includes("[sakit]") || ket.includes("sakit") ||
+          ket.includes("[izin]") || ket.includes("izin") ||
+          ket.includes("[alpa]") || ket.includes("alpha") || ket.includes("alpa");
+        if (!isAbsent && s.date) {
+          attendedDates.add(s.date);
+        }
+      }
+      const kehadiranCount = attendedDates.size;
+      const targetPertemuan = filter.mode === "monthly" ? 16 : 96; // 16 pertemuan/bulan atau 96 pertemuan/semester
+      const kehadiranRatio = `${kehadiranCount}/${targetPertemuan}`;
+
       summaryItems.push({
         rank: 0,
         studentId: student.id,
@@ -807,6 +823,8 @@ export class DrizzleRaportRepository implements IRaportRepository {
         tahsinScore: tahsinAvg,
         tahsinGrade: tahsinGradeObj.grade,
         yaumiyahGrade,
+        kehadiranCount,
+        kehadiranRatio,
         nilaiAkhir,
         gradeAkhir: gradeObj.grade,
         arabicPredicate: gradeObj.arabic,

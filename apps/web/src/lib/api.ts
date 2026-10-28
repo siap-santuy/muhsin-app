@@ -360,7 +360,7 @@ class ApiClient {
     }>("GET", `/daily-ibadah/window-status?date=${date}`);
   }
 
-  async requestYaumiyahAccess(data: { startDate: string; endDate: string; reason: string }) {
+  async requestYaumiyahAccess(data: { startDate: string; endDate: string; reason: string; isCorrection?: boolean }) {
     return this.request("POST", `/daily-ibadah/access-requests`, data);
   }
 
@@ -530,6 +530,8 @@ class ApiClient {
     tahsinScore: number;
     tahsinGrade: string;
     yaumiyahGrade: string;
+    kehadiranCount: number;
+    kehadiranRatio: string;
     nilaiAkhir: number;
     gradeAkhir: string;
     arabicPredicate: string;

@@ -93,6 +93,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
   const [toast, setToast] = useState<{ message: string; variant: "success" | "warning" } | null>(null);
   const [showSholatInfo, setShowSholatInfo] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isCorrectionMode, setIsCorrectionMode] = useState(false);
   const [reqStartDate, setReqStartDate] = useState(selectedDate);
   const [reqEndDate, setReqEndDate] = useState(selectedDate);
   const [reqReason, setReqReason] = useState("");
@@ -216,8 +217,14 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
         startDate: reqStartDate,
         endDate: reqEndDate,
         reason: reqReason.trim(),
+        isCorrection: isCorrectionMode,
       });
-      setToast({ message: "Permohonan buka akses berhasil dikirim", variant: "success" });
+      setToast({
+        message: isCorrectionMode
+          ? "Permohonan koreksi yaumiyah berhasil dikirim ke Guru/Koordinator"
+          : "Permohonan buka akses berhasil dikirim",
+        variant: "success",
+      });
       setShowRequestModal(false);
       setReqReason("");
       const win = await api.getDailyIbadahWindowStatus(selectedDate).catch(() => null);
@@ -570,13 +577,35 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
             </div>
           )
         ) : (
-          <Button
-            type="button"
-            onClick={handleBack}
-            className="h-11 w-full rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
-          >
-            KEMBALI
-          </Button>
+          <div className="flex w-full gap-2">
+            {windowStatus?.pendingRequest ? (
+              <div className="flex-1 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-center text-[11px] font-bold text-amber-700 flex items-center justify-center gap-1.5">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>Koreksi Ditinjau Guru</span>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setReqStartDate(selectedDate);
+                  setReqEndDate(selectedDate);
+                  setIsCorrectionMode(true);
+                  setShowRequestModal(true);
+                }}
+                className="h-11 flex-1 rounded-xl border-amber-400 font-bold text-amber-700 hover:bg-amber-50 text-xs"
+              >
+                Ajukan Koreksi
+              </Button>
+            )}
+            <Button
+              type="button"
+              onClick={handleBack}
+              className="h-11 flex-1 rounded-xl bg-brand-cyan font-bold text-white shadow-sm hover:bg-brand-cyan-dark"
+            >
+              KEMBALI
+            </Button>
+          </div>
         )}
       </div>
 
@@ -593,46 +622,63 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
         onClose={() => setShowSholatInfo(false)}
       />
 
-      {/* Modal Permohonan Buka Akses */}
+      {/* Modal Permohonan Buka Akses / Koreksi */}
       {showRequestModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-in fade-in zoom-in-95">
-            <h3 className="text-base font-bold text-brand-navy">Permohonan Izin Susulan</h3>
+            <h3 className="text-base font-bold text-brand-navy">
+              {isCorrectionMode ? "Permohonan Koreksi Catatan" : "Permohonan Izin Susulan"}
+            </h3>
             <p className="mt-1 text-xs text-brand-text-muted">
-              Ajukan izin pengisian susulan (satu atau rentang tanggal) ke Guru/Koordinator.
+              {isCorrectionMode
+                ? "Ajukan pembukaan kembali catatan tanggal ini ke Guru/Koordinator untuk memperbaiki isian yang keliru."
+                : "Ajukan izin pengisian susulan (satu atau rentang tanggal) ke Guru/Koordinator."}
             </p>
             <div className="mt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] font-bold text-brand-navy">Dari Tanggal</label>
-                  <input
-                    type="date"
-                    value={reqStartDate}
-                    max={reqEndDate}
-                    onChange={(e) => setReqStartDate(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
-                  />
+              {!isCorrectionMode ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-brand-navy">Dari Tanggal</label>
+                    <input
+                      type="date"
+                      value={reqStartDate}
+                      max={reqEndDate}
+                      onChange={(e) => setReqStartDate(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-brand-navy">Sampai Tanggal</label>
+                    <input
+                      type="date"
+                      value={reqEndDate}
+                      min={reqStartDate}
+                      onChange={(e) => setReqEndDate(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[11px] font-bold text-brand-navy">Sampai Tanggal</label>
-                  <input
-                    type="date"
-                    value={reqEndDate}
-                    min={reqStartDate}
-                    onChange={(e) => setReqEndDate(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-brand-line p-2 text-xs text-brand-navy focus:border-brand-cyan focus:outline-none"
-                  />
+              ) : (
+                <div className="rounded-xl bg-gray-50 p-2.5 text-xs text-brand-navy border border-brand-line">
+                  <span className="text-gray-500 text-[11px] block">Tanggal yang Dikoreksi:</span>
+                  <strong>{selectedDate}</strong>
                 </div>
-              </div>
+              )}
               <div>
-                <label className="text-[11px] font-bold text-brand-navy">Alasan Terlambat / Lupa</label>
-              <textarea
-                value={reqReason}
-                onChange={(e) => setReqReason(e.target.value)}
-                placeholder="Contoh: Sakit demam 2 hari / izin luar kota..."
-                rows={3}
-                className="mt-1 w-full rounded-xl border border-brand-line p-2.5 text-xs text-brand-navy placeholder:text-gray-400 focus:border-brand-cyan focus:outline-none"
-              />
+                <label className="text-[11px] font-bold text-brand-navy">
+                  {isCorrectionMode ? "Rincian Isian yang Keliru / Alasan Koreksi" : "Alasan Terlambat / Lupa"}
+                </label>
+                <textarea
+                  value={reqReason}
+                  onChange={(e) => setReqReason(e.target.value)}
+                  placeholder={
+                    isCorrectionMode
+                      ? "Contoh: Salah pilih sholat Subuh harusnya Berjamaah Awal Waktu..."
+                      : "Contoh: Sakit demam 2 hari / izin luar kota..."
+                  }
+                  rows={3}
+                  className="mt-1 w-full rounded-xl border border-brand-line p-2.5 text-xs text-brand-navy placeholder:text-gray-400 focus:border-brand-cyan focus:outline-none"
+                />
               </div>
             </div>
             <div className="mt-4 flex gap-2">
@@ -641,6 +687,7 @@ export function StudentYaumiyahViewPage({ initialDate: propInitialDate }: Studen
                 variant="outline"
                 onClick={() => {
                   setShowRequestModal(false);
+                  setIsCorrectionMode(false);
                   setReqReason("");
                 }}
                 disabled={submittingReq}

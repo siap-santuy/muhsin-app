@@ -149,6 +149,8 @@ export interface RaportSummaryItem {
   tahsinScore: number;
   tahsinGrade: string;
   yaumiyahGrade: string;
+  kehadiranCount: number;
+  kehadiranRatio: string;
   nilaiAkhir: number;
   gradeAkhir: string;
   arabicPredicate: string;

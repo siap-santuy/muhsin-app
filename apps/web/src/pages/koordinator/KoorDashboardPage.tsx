@@ -290,7 +290,20 @@ export function KoorDashboardPage() {
                 <tbody className="divide-y divide-amber-100">
                   {pendingRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-amber-100/30">
-                      <td className="py-2.5 font-bold">{req.studentName}</td>
+                      <td className="py-2.5 font-bold">
+                        <div>
+                          <span>{req.studentName}</span>
+                          {req.reason?.startsWith("[Koreksi]") ? (
+                            <span className="ml-1.5 rounded bg-purple-100 px-1.5 py-0.2 text-[9.5px] font-bold text-purple-700">
+                              Koreksi
+                            </span>
+                          ) : (
+                            <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.2 text-[9.5px] font-bold text-amber-700">
+                              Susulan
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-2.5 text-brand-text-muted">{req.className || "-"}</td>
                       <td className="py-2.5 font-semibold text-brand-cyan">
                         {req.startDate === req.endDate ? req.startDate : `${req.startDate} s.d ${req.endDate}`}

@@ -185,6 +185,92 @@ describe("Yaumiyah Access Request Flow & Rules", () => {
     expect(res.expiresAt).toBeDefined();
   });
 
+  it("RequestYaumiyahAccessUseCase: mengizinkan permohonan koreksi pada data yang sudah submitted", async () => {
+    const mockDailyRepo = {
+      findByStudentAndDate: vi.fn().mockResolvedValue({
+        id: "daily-1",
+        status: "submitted",
+        date: "2026-10-25",
+      }),
+      save: vi.fn(),
+    } as any;
+
+    const uc = new RequestYaumiyahAccessUseCase(
+      mockAccessRepo,
+      undefined,
+      undefined,
+      mockDailyRepo
+    );
+
+    const res = await uc.execute({
+      schoolId: "sch-1",
+      studentId: "stu-1",
+      startDate: "2026-10-25", // hari ini
+      endDate: "2026-10-25",
+      reason: "Salah pilih checklist sholat subuh",
+      todayStr: "2026-10-25",
+      isCorrection: true,
+    });
+
+    expect(res.status).toBe("pending");
+    expect(res.reason).toContain("[Koreksi]");
+  });
+
+  it("ApproveYaumiyahAccessUseCase: mengembalikan status yaumiyah ke draft jika koreksi disetujui", async () => {
+    const correctionReq: YaumiyahAccessRequestEntity = {
+      id: "req-corr-1",
+      schoolId: "sch-1",
+      studentId: "stu-1",
+      startDate: "2026-10-25",
+      endDate: "2026-10-25",
+      reason: "[Koreksi] Salah pilih checklist sholat subuh",
+      status: "pending",
+      isDirectGrant: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const repo: IYaumiyahAccessRequestRepository = {
+      ...mockAccessRepo,
+      findById: vi.fn().mockResolvedValue(correctionReq),
+      update: vi.fn().mockImplementation(async (e) => e),
+    };
+
+    const mockDailyRepo = {
+      findByStudentAndDate: vi.fn().mockResolvedValue({
+        id: "daily-1",
+        status: "submitted",
+        studentId: "stu-1",
+        date: "2026-10-25",
+      }),
+      save: vi.fn().mockImplementation(async (e) => e),
+    } as any;
+
+    const mockNotif = { createNotification: vi.fn().mockResolvedValue({}) } as any;
+    const uc = new ApproveYaumiyahAccessUseCase(repo, mockNotif, undefined, mockDailyRepo);
+
+    const res = await uc.execute({
+      requestId: "req-corr-1",
+      schoolId: "sch-1",
+      reviewerId: "teacher-1",
+      reviewerRole: "teacher",
+      todayDate: new Date("2026-10-25"),
+    });
+
+    expect(res.status).toBe("approved");
+    expect(mockDailyRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "draft",
+        submittedAt: null,
+      })
+    );
+    expect(mockNotif.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Izin Koreksi Yaumiyah Disetujui",
+      })
+    );
+  });
+
   describe("Submit & SaveDraft with Window & Access Check", () => {
     const mockDailyRepo: IDailyIbadahRepository = {
       findByStudentAndDate: vi.fn().mockResolvedValue(null),

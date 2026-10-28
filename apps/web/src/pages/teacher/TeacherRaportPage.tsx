@@ -58,6 +58,8 @@ interface RaportSummaryItem {
   tahsinScore: number;
   tahsinGrade: string;
   yaumiyahGrade: string;
+  kehadiranCount: number;
+  kehadiranRatio: string;
   nilaiAkhir: number;
   gradeAkhir: string;
   arabicPredicate: string;
@@ -574,6 +576,10 @@ export function TeacherRaportPage() {
                             <span>•</span>
                             <span>
                               Ibadah: <strong>{item.yaumiyahGrade}</strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Hadir: <strong>{item.kehadiranRatio ?? `${item.kehadiranCount ?? 0} hr`}</strong>
                             </span>
                           </div>
 

@@ -55,6 +55,7 @@ const requestAccessBodySchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   reason: z.string().min(5),
+  isCorrection: z.boolean().optional(),
 });
 
 const directGrantBodySchema = z.object({
@@ -272,6 +273,7 @@ export function createDailyIbadahRoutes(deps: DailyIbadahRoutesDeps) {
         startDate: parsed.data.startDate,
         endDate: parsed.data.endDate,
         reason: parsed.data.reason,
+        isCorrection: parsed.data.isCorrection,
       });
       return c.json({ data: entity, error: null, meta: null }, 201);
     } catch (err: any) {

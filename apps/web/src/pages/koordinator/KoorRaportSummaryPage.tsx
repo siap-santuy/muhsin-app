@@ -44,6 +44,8 @@ interface RaportSummaryItem {
   tahsinScore: number;
   tahsinGrade: string;
   yaumiyahGrade: string;
+  kehadiranCount: number;
+  kehadiranRatio: string;
   nilaiAkhir: number;
   gradeAkhir: string;
   arabicPredicate: string;
@@ -483,6 +485,7 @@ export function KoorRaportSummaryPage() {
                     <th className="py-3 px-3 text-center">Tahfidz</th>
                     <th className="py-3 px-3 text-center">Tahsin</th>
                     <th className="py-3 px-3 text-center">Yaumiyah</th>
+                    <th className="py-3 px-3 text-center">Kehadiran</th>
                     <th className="py-3 px-4 text-center">Nilai Akhir</th>
                     <th className="py-3 px-3 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Rapor</th>
@@ -577,6 +580,13 @@ export function KoorRaportSummaryPage() {
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
+                        </td>
+
+                        {/* Kehadiran Setoran */}
+                        <td className="py-3 px-3 text-center">
+                          <span className="font-bold text-brand-navy">
+                            {item.kehadiranRatio ?? `${item.kehadiranCount ?? 0} hari`}
+                          </span>
                         </td>
 
                         {/* Nilai Akhir */}
