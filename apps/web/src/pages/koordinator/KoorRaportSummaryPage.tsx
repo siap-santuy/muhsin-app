@@ -284,11 +284,15 @@ export function KoorRaportSummaryPage() {
                 <Trophy className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-brand-navy/60 uppercase">Rata-rata Nilai</p>
+                <p className="text-[10px] font-bold tracking-wider text-brand-navy/60 uppercase">
+                  {mode === "semester" ? "Rerata Nilai Akhir" : "Rerata Capaian"}
+                </p>
                 <p className="text-xl font-extrabold text-brand-navy">{stats.avgScore}</p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-emerald-600 font-bold">Rata-rata kumulatif</p>
+            <p className="mt-2 text-xs text-emerald-600 font-bold">
+              {mode === "semester" ? "Rerata kumulatif semester" : "Rerata capaian bulanan"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-brand-line bg-white p-4 shadow-sm">
@@ -486,7 +490,9 @@ export function KoorRaportSummaryPage() {
                     <th className="py-3 px-3 text-center">Tahsin</th>
                     <th className="py-3 px-3 text-center">Yaumiyah</th>
                     <th className="py-3 px-3 text-center">Kehadiran</th>
-                    <th className="py-3 px-4 text-center">Nilai Akhir</th>
+                    {mode === "semester" && (
+                      <th className="py-3 px-4 text-center">Nilai Akhir Semester</th>
+                    )}
                     <th className="py-3 px-3 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Rapor</th>
                   </tr>
@@ -589,26 +595,28 @@ export function KoorRaportSummaryPage() {
                           </span>
                         </td>
 
-                        {/* Nilai Akhir */}
-                        <td className="py-3 px-4 text-center">
-                          {item.nilaiAkhir > 0 ? (
-                            <div>
-                              <span
-                                className={`text-sm font-extrabold ${
-                                  item.isUnderTarget ? "text-red-600" : "text-brand-navy"
-                                }`}
-                              >
-                                {item.nilaiAkhir}
-                              </span>
-                              <span className="ml-1 text-[11px] font-bold text-brand-text-muted">
-                                ({item.gradeAkhir})
-                              </span>
-                              <p className="text-[9.5px] text-gray-400">{item.arabicPredicate}</p>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
+                        {/* Nilai Akhir Semester (Hanya ditampilkan pada Mode Semesteran) */}
+                        {mode === "semester" && (
+                          <td className="py-3 px-4 text-center">
+                            {item.nilaiAkhir > 0 ? (
+                              <div>
+                                <span
+                                  className={`text-sm font-extrabold ${
+                                    item.isUnderTarget ? "text-red-600" : "text-brand-navy"
+                                  }`}
+                                >
+                                  {item.nilaiAkhir}
+                                </span>
+                                <span className="ml-1 text-[11px] font-bold text-brand-text-muted">
+                                  ({item.gradeAkhir})
+                                </span>
+                                <p className="text-[9.5px] text-gray-400">{item.arabicPredicate}</p>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                        )}
 
                         {/* Status */}
                         <td className="py-3 px-3 text-center">

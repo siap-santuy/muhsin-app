@@ -548,19 +548,33 @@ export function TeacherRaportPage() {
                             </div>
                           </div>
 
-                          {/* Nilai Akhir Besar */}
-                          <div className="text-right shrink-0">
-                            <span
-                              className={`text-sm font-black ${
-                                item.isUnderTarget ? "text-red-600" : "text-brand-navy"
-                              }`}
-                            >
-                              {item.nilaiAkhir > 0 ? item.nilaiAkhir : "-"}
-                            </span>
-                            <span className="ml-1 text-[11px] font-bold text-brand-text-muted">
-                              ({item.gradeAkhir})
-                            </span>
-                          </div>
+                          {/* Nilai Akhir Besar (Hanya pada Mode Semesteran) */}
+                          {summaryMode === "semester" ? (
+                            <div className="text-right shrink-0">
+                              <span
+                                className={`text-sm font-black ${
+                                  item.isUnderTarget ? "text-red-600" : "text-brand-navy"
+                                }`}
+                              >
+                                {item.nilaiAkhir > 0 ? item.nilaiAkhir : "-"}
+                              </span>
+                              <span className="ml-1 text-[11px] font-bold text-brand-text-muted">
+                                ({item.gradeAkhir})
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-right shrink-0">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                                  !item.isUnderTarget
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {!item.isUnderTarget ? "Tuntas" : "Kurang"}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Breakdown Nilai Tahfidz, Tahsin, Yaumiyah */}
